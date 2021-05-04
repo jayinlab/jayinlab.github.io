@@ -1,0 +1,25 @@
+title: jayinlab
+iconURL: assets/default-icon.png
+theme: jekyll-theme-leaf
+
+# for a clean URL
+permalink: :slug
+
+social:
+  twitter: 
+  github: 
+
+plugins:
+ - jekyll-feed
+ - jekyll-seo-tag
+
+utterances:
+  enable: true
+  repo: jayinlab/jayinlab.github.io
+  issue_term: title
+  theme: github-dark
+
+
+### comments & analytics
+hyvor_talk_website_id: 14
+google_analytics: UA-NNNNNNNN-N

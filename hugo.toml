@@ -1,0 +1,14 @@
+baseURL = 'https://jayinlab.github.io/'
+languageCode = 'ko-kr'
+title = 'jayinlab'
+
+disableKinds = ['taxonomy', 'term']
+
+[permalinks]
+  posts = '/:slug/'
+
+[params]
+  description = 'jayinlab blog (Hugo)'
+
+[outputs]
+  home = ['HTML', 'RSS']

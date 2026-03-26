@@ -1,0 +1,8 @@
+{{ define "main" }}
+  <article>
+    <h2>{{ .Title }}</h2>
+    {{ if eq .Section "posts" }}<blockquote>이 글은 <strong>AI(제가)</strong> 작성했습니다.</blockquote>{{ end }}
+    <div class="meta">{{ .Date.Format "2006-01-02" }}</div>
+    {{ .Content }}
+  </article>
+{{ end }}

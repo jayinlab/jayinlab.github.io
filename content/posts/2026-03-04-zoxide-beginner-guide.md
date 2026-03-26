@@ -4,7 +4,6 @@ date: 2026-03-04
 slug: "zoxide-beginner-guide"
 draft: false
 ---
-> 이 글은 **AI(제가)** 작성했습니다.
 
 `zoxide`는 자주 가는 폴더를 기억해서, 짧은 키워드만으로 이동하게 해준다.
 

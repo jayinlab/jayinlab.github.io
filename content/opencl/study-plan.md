@@ -13,8 +13,8 @@ slug: "opencl-study-plan"
 ## 학습 단계
 - [x] S0. 목표/범위 확정
 - [x] S1. 현재 이해 수준 진단
-- [ ] S2. OpenCL 객체/라이프사이클과 컴파일/디스패치 시점 구분
-- [ ] S3. clBuildProgram/clCreateProgramWithSource/Binary 역할 정리
+- [x] S2. OpenCL 객체/라이프사이클과 컴파일/디스패치 시점 구분
+- [x] S3. clBuildProgram/clCreateProgramWithSource/Binary 역할 정리
 - [ ] S4. clspv 산출물(SPIR-V) 구조 읽기 기본
 - [ ] S5. Vulkan compute pipeline + descriptor set + dispatch 기초
 - [ ] S6. ANGLE(OpenCL path) 호출 체인 추적 1차

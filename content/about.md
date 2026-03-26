@@ -2,8 +2,12 @@
 title: "About"
 ---
 
-Hey! This is the "Leaf" Jekyll theme created by <a rel="me" target="_blank" href="https://twitter.com/_SupunKavinda">Supun Kavinda</a>.
+안녕하세요, **jayinlab** 블로그입니다.
 
-You can find the source code of this theme at <a href="https://github.com/SupunKavinda/jekyll-theme-leaf">Github</a>
+이 공간은 주로 아래 내용을 다룹니다.
 
-(Change this by editing `about.md` file)
+- 개발/CLI 도구 사용기
+- AI 및 자동화 관련 정리
+- 공부하면서 남기는 실전 메모
+
+현재 블로그는 **Hugo 기반**으로 운영되고 있습니다.

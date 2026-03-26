@@ -2,8 +2,8 @@
 title: "Contact"
 ---
 
-You can always contact the creator of this theme via [Twitter](https://twitter.com/_SupunKavinda).
+문의나 피드백은 아래 채널로 주세요.
 
-If you need help with Jekyll, ask questions on [Jekyll Talk](https://talk.jekyllrb.com/).
+- GitHub: [jayinlab](https://github.com/jayinlab)
 
-(Change this by editing `contact.md` file)
+필요하면 블로그 글의 주제 제안도 환영합니다.

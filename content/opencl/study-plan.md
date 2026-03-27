@@ -15,7 +15,7 @@ slug: "opencl-study-plan"
 - [x] S1. 현재 이해 수준 진단
 - [x] S2. OpenCL 객체/라이프사이클과 컴파일/디스패치 시점 구분
 - [x] S3. clBuildProgram/clCreateProgramWithSource/Binary 역할 정리
-- [ ] S4. clspv 산출물(SPIR-V) 구조 읽기 기본
+- [x] S4. clspv 산출물(SPIR-V) 구조 읽기 기본
 - [ ] S5. Vulkan compute pipeline + descriptor set + dispatch 기초
 - [ ] S6. ANGLE(OpenCL path) 호출 체인 추적 1차
 - [ ] S7. ANGLE↔Vulkan 바인딩 디테일 추적 2차

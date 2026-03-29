@@ -19,6 +19,7 @@ slug: "opencl-study-plan"
 - [x] S4-1. clspv 최소 실습(OpenCL C 1개 -> SPIR-V 대응표 작성)
 - [x] S5. Vulkan compute pipeline + descriptor set + dispatch 기초
 - [x] S5-1. Vulkan 용어 직관 보강(Descriptor Set/Layout, Pipeline Layout)
+- [x] S5-2. 용어 명명 배경(역사/설계 관점) 정리
 - [ ] S6. ANGLE(OpenCL path) 호출 체인 추적 1차
 - [ ] S7. ANGLE↔Vulkan 바인딩 디테일 추적 2차
 - [ ] S8. AMD PM4 개요(Type3, dispatch 관련 packet family)

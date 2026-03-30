@@ -29,18 +29,18 @@ draft: false
 
 <div class="mermaid">
 flowchart TD
-    A[OpenCL App\nclCreateProgramWithSource\nclBuildProgram\nclSetKernelArg\nclEnqueueNDRangeKernel] --> B[ANGLE OpenCL Path]
+    A["OpenCL App<br/>clCreateProgramWithSource<br/>clBuildProgram<br/>clSetKernelArg<br/>clEnqueueNDRangeKernel"] --> B["ANGLE OpenCL Path"]
 
-    B --> C1[Compile Chain\nSource/Program 처리\nclspv 관여\nSPIR-V 준비]
-    B --> C2[Submit Chain\nArg 상태 반영\nCommand Recording\nDispatch 준비]
+    B --> C1["Compile Chain<br/>Source/Program 처리<br/>clspv 관여<br/>SPIR-V 준비"]
+    B --> C2["Submit Chain<br/>Arg 상태 반영<br/>Command Recording<br/>Dispatch 준비"]
 
-    C1 --> D[Vulkan Layer\nShaderModule\nDescriptorSetLayout\nPipelineLayout\nComputePipeline]
+    C1 --> D["Vulkan Layer<br/>ShaderModule<br/>DescriptorSetLayout<br/>PipelineLayout<br/>ComputePipeline"]
     C2 --> D
 
-    D --> E[vkCmdBindPipeline\nvkCmdBindDescriptorSets\nPushConstants\nvkCmdDispatch]
-    E --> F[Driver Backend]
-    F --> G[AMD PM4 Command Stream\nType3 중심 시퀀스]
-    G --> H[Compute Execute]
+    D --> E["vkCmdBindPipeline<br/>vkCmdBindDescriptorSets<br/>PushConstants<br/>vkCmdDispatch"]
+    E --> F["Driver Backend"]
+    F --> G["AMD PM4 Command Stream<br/>Type3 중심 시퀀스"]
+    G --> H["Compute Execute"]
 </div>
 
 ## 지금 단계에서의 포커스

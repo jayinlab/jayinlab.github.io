@@ -29,18 +29,15 @@ draft: false
 
 <div class="mermaid">
 flowchart TD
-    A["OpenCL App<br/>clCreateProgramWithSource<br/>clBuildProgram<br/>clSetKernelArg<br/>clEnqueueNDRangeKernel"] --> B["ANGLE OpenCL Path"]
-
-    B --> C1["Compile Chain<br/>Source/Program 처리<br/>clspv 관여<br/>SPIR-V 준비"]
-    B --> C2["Submit Chain<br/>Arg 상태 반영<br/>Command Recording<br/>Dispatch 준비"]
-
-    C1 --> D["Vulkan Layer<br/>ShaderModule<br/>DescriptorSetLayout<br/>PipelineLayout<br/>ComputePipeline"]
+    A[OpenCL API] --> B[ANGLE OpenCL Path]
+    B --> C1[Compile Chain]
+    B --> C2[Submit Chain]
+    C1 --> D[Vulkan Objects]
     C2 --> D
-
-    D --> E["vkCmdBindPipeline<br/>vkCmdBindDescriptorSets<br/>PushConstants<br/>vkCmdDispatch"]
-    E --> F["Driver Backend"]
-    F --> G["AMD PM4 Command Stream<br/>Type3 중심 시퀀스"]
-    G --> H["Compute Execute"]
+    D --> E[Bind and Dispatch]
+    E --> F[Driver Backend]
+    F --> G[AMD PM4 Stream]
+    G --> H[Compute Execute]
 </div>
 
 ## 지금 단계에서의 포커스

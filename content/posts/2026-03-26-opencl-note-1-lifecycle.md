@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #1 — 객체 라이프사이클과 컴파일/디스패치 시점"
+title: "OpenCL Note #01 — 객체 라이프사이클과 컴파일/디스패치 시점"
 date: 2026-03-26
 slug: "opencl-note-1-lifecycle"
 draft: false
@@ -87,3 +87,12 @@ draft: false
 
 - Q: `clFinish`의 핵심 의미는?  
   A: 큐에 제출된 이전 작업 완료 보장(동기화).
+
+
+## 이해 확인 질문 정답 (토글)
+
+### 핵심 정답 요약
+<details>
+  <summary>정답 보기</summary>
+이 노트의 핵심은 **경계 구분**(compile vs submit, layout vs set)과 **연결**(OpenCL→SPIR-V→Vulkan→Dispatch)을 흔들리지 않게 잡는 것이다.
+</details>

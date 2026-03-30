@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #2 — Build/Compile 경계, Binary Path, 캐시, clspv 관여 시점"
+title: "OpenCL Note #02 — Build/Compile 경계, Binary Path, 캐시, clspv 관여 시점"
 date: 2026-03-26
 slug: "opencl-note-2-build-and-cache"
 draft: false
@@ -109,3 +109,12 @@ draft: false
 
 - Q: enqueue가 느릴 때 원인은?  
   A: compile/build + pipeline 생성 + JIT 초기비용이 섞일 수 있음.
+
+
+## 이해 확인 질문 정답 (토글)
+
+### 핵심 정답 요약
+<details>
+  <summary>정답 보기</summary>
+이 노트의 핵심은 **경계 구분**(compile vs submit, layout vs set)과 **연결**(OpenCL→SPIR-V→Vulkan→Dispatch)을 흔들리지 않게 잡는 것이다.
+</details>

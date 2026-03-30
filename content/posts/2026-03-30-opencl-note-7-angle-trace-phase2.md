@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #7 — ANGLE 코드 추적 2차: SPIR-V에서 Vulkan Pipeline/Layout으로"
+title: "OpenCL Note #10 — ANGLE 코드 추적 2차: SPIR-V에서 Vulkan Pipeline/Layout으로"
 date: 2026-03-30
 slug: "opencl-note-7-angle-trace-phase2"
 draft: false

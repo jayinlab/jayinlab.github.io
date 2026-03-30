@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #5 — SPIR-V와 Vulkan Descriptor/Pipeline Layout 매핑"
+title: "OpenCL Note #05 — SPIR-V와 Vulkan Descriptor/Pipeline Layout 매핑"
 date: 2026-03-29
 slug: "opencl-note-5-spirv-vulkan-mapping"
 draft: false
@@ -106,3 +106,12 @@ SPIR-V 모듈 + entrypoint(`vector_add`)로 compute pipeline을 만든다.
 
 - Q: dispatch 전 최소 바인딩 순서는?  
   A: Pipeline bind → Descriptor set bind → (필요 시 push constants) → Dispatch.
+
+
+## 이해 확인 질문 정답 (토글)
+
+### 핵심 정답 요약
+<details>
+  <summary>정답 보기</summary>
+이 노트의 핵심은 **경계 구분**(compile vs submit, layout vs set)과 **연결**(OpenCL→SPIR-V→Vulkan→Dispatch)을 흔들리지 않게 잡는 것이다.
+</details>

@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #4 — clspv 실전: OpenCL C 하나를 SPIR-V로 읽어보기"
+title: "OpenCL Note #04 — clspv 실전: OpenCL C 하나를 SPIR-V로 읽어보기"
 date: 2026-03-28
 slug: "opencl-note-4-clspv-practice"
 draft: false
@@ -126,3 +126,12 @@ spirv-dis vector_add.spv -o vector_add.spvasm
 
 - Q: 대응표를 왜 만들까?  
   A: OpenCL 인자와 SPIR-V 리소스 표현의 매핑을 명확히 하기 위해.
+
+
+## 이해 확인 질문 정답 (토글)
+
+### 핵심 정답 요약
+<details>
+  <summary>정답 보기</summary>
+이 노트의 핵심은 **경계 구분**(compile vs submit, layout vs set)과 **연결**(OpenCL→SPIR-V→Vulkan→Dispatch)을 흔들리지 않게 잡는 것이다.
+</details>

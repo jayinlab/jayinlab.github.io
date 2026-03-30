@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #6 — ANGLE 코드 추적 1차: Entry → Build/Enqueue 경로 분리"
+title: "OpenCL Note #08 — ANGLE 코드 추적 1차: Entry → Build/Enqueue 경로 분리"
 date: 2026-03-30
 slug: "opencl-note-6-angle-trace-phase1"
 draft: false
@@ -122,3 +122,12 @@ Note #7에서 할 것:
 
 - Q: 이번 단계 성공 기준은 100% 코드 이해인가?  
   A: 아니다. 분리된 경로 지도 확보가 성공 기준.
+
+
+## 이해 확인 질문 정답 (토글)
+
+### 핵심 정답 요약
+<details>
+  <summary>정답 보기</summary>
+이 노트의 핵심은 **경계 구분**(compile vs submit, layout vs set)과 **연결**(OpenCL→SPIR-V→Vulkan→Dispatch)을 흔들리지 않게 잡는 것이다.
+</details>

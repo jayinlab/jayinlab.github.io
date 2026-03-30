@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #6A — ANGLE 분리 지도(컴파일 체인 vs 커맨드 제출 체인)"
+title: "OpenCL Note #09 — ANGLE 분리 지도(컴파일 체인 vs 커맨드 제출 체인)"
 date: 2026-03-30
 slug: "opencl-note-6a-angle-trace-map"
 draft: false

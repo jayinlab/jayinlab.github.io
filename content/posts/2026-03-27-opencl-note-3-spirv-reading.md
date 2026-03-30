@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #3 — SPIR-V 최소 읽기법 (clspv 산출물 해석 시작)"
+title: "OpenCL Note #03 — SPIR-V 최소 읽기법 (clspv 산출물 해석 시작)"
 date: 2026-03-27
 slug: "opencl-note-3-spirv-reading"
 draft: false
@@ -106,3 +106,12 @@ clspv는 OpenCL 커널 모델을 Vulkan 친화 형태로 낮춘다.
 
 - Q: 왜 체인 분리가 중요한가?  
   A: 원인 분리(compile vs submit vs JIT), 디버깅/성능 분석 정확도 향상.
+
+
+## 이해 확인 질문 정답 (토글)
+
+### 핵심 정답 요약
+<details>
+  <summary>정답 보기</summary>
+이 노트의 핵심은 **경계 구분**(compile vs submit, layout vs set)과 **연결**(OpenCL→SPIR-V→Vulkan→Dispatch)을 흔들리지 않게 잡는 것이다.
+</details>

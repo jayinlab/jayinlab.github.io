@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #5A — Vulkan 용어 직관: Descriptor Set/Layout, Pipeline Layout (비유로 이해)"
+title: "OpenCL Note #06 — Vulkan 용어 직관: Descriptor Set/Layout, Pipeline Layout (비유로 이해)"
 date: 2026-03-29
 slug: "opencl-note-5a-vulkan-terms-intuition"
 draft: false
@@ -120,3 +120,12 @@ __kernel void vector_add(__global const float* a,
 
 - Q: Dispatch 전에 pipeline과 descriptor를 모두 bind해야 하는 이유는?  
   A: 연산 로직과 입력 데이터가 모두 있어야 실행 가능하기 때문.
+
+
+## 이해 확인 질문 정답 (토글)
+
+### 핵심 정답 요약
+<details>
+  <summary>정답 보기</summary>
+이 노트의 핵심은 **경계 구분**(compile vs submit, layout vs set)과 **연결**(OpenCL→SPIR-V→Vulkan→Dispatch)을 흔들리지 않게 잡는 것이다.
+</details>

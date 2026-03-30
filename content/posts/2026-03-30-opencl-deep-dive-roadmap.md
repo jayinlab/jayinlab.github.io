@@ -1,5 +1,5 @@
 ---
-title: "OpenCL 심화 로드맵 Overview — 다음에 보게 될 것들"
+title: "OpenCL Note #14 — 심화 로드맵 Overview (다음 라운드)"
 date: 2026-03-30
 slug: "opencl-deep-dive-roadmap"
 draft: false

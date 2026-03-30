@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #9 — AMD PM4 개요: Type3와 Dispatch 패킷 패밀리"
+title: "OpenCL Note #12 — AMD PM4 개요: Type3와 Dispatch 패킷 패밀리"
 date: 2026-03-30
 slug: "opencl-note-9-amd-pm4-overview"
 draft: false

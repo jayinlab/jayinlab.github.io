@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #5B — 왜 이름이 pipeline이고 descriptor set일까? (역사/설계 관점)"
+title: "OpenCL Note #07 — 왜 이름이 pipeline이고 descriptor set일까? (역사/설계 관점)"
 date: 2026-03-29
 slug: "opencl-note-5b-why-these-names"
 draft: false
@@ -97,3 +97,12 @@ Vulkan은 런타임 모호성을 줄이고 검증을 앞당기기 위해
 
 - Q: Pipeline Layout이 담는 두 축은?  
   A: Descriptor set layouts + push constant ranges.
+
+
+## 이해 확인 질문 정답 (토글)
+
+### 핵심 정답 요약
+<details>
+  <summary>정답 보기</summary>
+이 노트의 핵심은 **경계 구분**(compile vs submit, layout vs set)과 **연결**(OpenCL→SPIR-V→Vulkan→Dispatch)을 흔들리지 않게 잡는 것이다.
+</details>

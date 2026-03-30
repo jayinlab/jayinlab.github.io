@@ -1,5 +1,5 @@
 ---
-title: "OpenCL Note #8 — ANGLE+clspv+Vulkan first-run 지연 줄이기 실전 체크리스트"
+title: "OpenCL Note #11 — ANGLE+clspv+Vulkan first-run 지연 줄이기 실전 체크리스트"
 date: 2026-03-30
 slug: "opencl-note-8-first-run-latency"
 draft: false

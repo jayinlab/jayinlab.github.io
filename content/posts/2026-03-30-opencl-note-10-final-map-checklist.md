@@ -49,6 +49,23 @@ draft: false
 
 ---
 
+
+## 1-1) 종합 다이어그램 (Mermaid)
+
+<div class="mermaid">
+flowchart TD
+    A[OpenCL API] --> B[ANGLE OpenCL Path]
+    B --> C1[Compile Chain]
+    B --> C2[Submit Chain]
+    C1 --> D[Vulkan Objects
+ShaderModule/SetLayout/PipelineLayout/Pipeline]
+    C2 --> E[Vulkan Cmd
+Bind/Dispatch]
+    D --> E
+    E --> F[Driver Backend]
+    F --> G[AMD PM4 Type3 Sequence]
+</div>
+
 ## 2) 최종 체크리스트
 
 아래 항목을 네가 "설명 가능"하면 현재 단계 목표를 달성한 것.

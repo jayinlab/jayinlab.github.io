@@ -26,7 +26,7 @@ slug: "opencl-study-plan"
 - [x] S7. ANGLE↔Vulkan 바인딩 디테일 추적 2차
 - [x] S7-1. first-run 지연 분해/완화 전략 문서화
 - [x] S8. AMD PM4 개요(Type3, dispatch 관련 packet family)
-- [ ] S9. 종합 다이어그램/체크리스트 완성
+- [x] S9. 종합 다이어그램/체크리스트 완성
 
 ## 운영 원칙
 - 매 세션 시작 시 목표 재확인

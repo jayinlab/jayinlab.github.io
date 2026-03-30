@@ -23,7 +23,7 @@ slug: "opencl-study-plan"
 - [x] S6. ANGLE(OpenCL path) 호출 체인 추적 1차
 - [x] S6-1. 분리 지도 문서화(컴파일 체인 vs 제출 체인)
 - [x] S6-2. 클릭 토글형 Q&A(자기점검) 도입
-- [ ] S7. ANGLE↔Vulkan 바인딩 디테일 추적 2차
+- [x] S7. ANGLE↔Vulkan 바인딩 디테일 추적 2차
 - [ ] S8. AMD PM4 개요(Type3, dispatch 관련 packet family)
 - [ ] S9. 종합 다이어그램/체크리스트 완성
 

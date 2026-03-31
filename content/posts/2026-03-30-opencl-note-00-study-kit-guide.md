@@ -25,9 +25,12 @@ bash scripts/01_run_vector_add.sh
 bash scripts/02_compare_with_last.sh
 ```
 
-## 노트-스크립트 번호 매핑
-- Note #01 ~ #14 ↔ `scripts/01_*.sh` ~ `scripts/14_*.sh`
-- 실습이 없는 노트는 해당 스크립트가 핵심 요약을 출력한다.
+## 실습 스크립트(핵심만 유지)
+- `scripts/01_run_vector_add.sh` : 소스 → SPIR-V 변환 + 핵심 마커 출력
+- `scripts/02_compare_with_last.sh` : 이전 결과와 diff 비교
+- `scripts/03_set_example_variant.sh` : 예제 커널 변형(base/fma/muladd) 전환
+
+> 실습 효과가 낮은 보조 스크립트는 정리하고, 핵심 3개만 유지합니다.
 
 ## 이해 확인 질문
 ### Q1. 왜 번호 연동이 중요한가?

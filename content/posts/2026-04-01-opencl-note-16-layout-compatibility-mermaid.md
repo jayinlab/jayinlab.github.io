@@ -30,19 +30,19 @@ draft: false
 <div class="mermaid">
 flowchart LR
     subgraph PL[Pipeline Layout Contract]
-      C0[set0: b0 storage, b1 storage, b2 storage]
-      C1[push constant: 4 bytes int n]
+      C0["set0: b0 storage, b1 storage, b2 storage"]
+      C1["push constant: 4 bytes int n"]
     end
 
     subgraph P[Pipeline]
-      P1[Pipeline A]
-      P2[Pipeline B]
+      P1["Pipeline A"]
+      P2["Pipeline B"]
     end
 
     subgraph S[Descriptor Sets]
-      S1[Set X\nb0 storage\nb1 storage\nb2 storage]
-      S2[Set Y\nb0 uniform\nb1 storage\nb2 storage]
-      S3[Set Z\nb0 storage\nb1 storage]
+      S1["Set X<br/>b0 storage<br/>b1 storage<br/>b2 storage"]
+      S2["Set Y<br/>b0 uniform<br/>b1 storage<br/>b2 storage"]
+      S3["Set Z<br/>b0 storage<br/>b1 storage"]
     end
 
     PL --> P1

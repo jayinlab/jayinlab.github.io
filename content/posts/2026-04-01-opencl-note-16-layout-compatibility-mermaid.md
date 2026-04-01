@@ -29,30 +29,25 @@ draft: false
 
 <div class="mermaid">
 flowchart LR
-    subgraph PL[Pipeline Layout Contract]
-      C0["set0: b0 storage, b1 storage, b2 storage"]
-      C1["push constant: 4 bytes int n"]
-    end
-
-    subgraph P[Pipeline]
-      P1["Pipeline A"]
-      P2["Pipeline B"]
-    end
-
-    subgraph S[Descriptor Sets]
-      S1["Set X<br/>b0 storage<br/>b1 storage<br/>b2 storage"]
-      S2["Set Y<br/>b0 uniform<br/>b1 storage<br/>b2 storage"]
-      S3["Set Z<br/>b0 storage<br/>b1 storage"]
-    end
-
-    PL --> P1
-    PL --> P2
-
-    S1 -->|compatible| P1
-    S1 -->|compatible| P2
-
-    S2 -->|incompatible: b0 type mismatch| P1
-    S3 -->|incompatible: missing b2| P2
+subgraph PL["Pipeline Layout Contract"]
+C0["set0: b0 storage, b1 storage, b2 storage"]
+C1["push constant: 4 bytes int n"]
+end
+subgraph P["Pipeline"]
+P1["Pipeline A"]
+P2["Pipeline B"]
+end
+subgraph S["Descriptor Sets"]
+S1["Set X<br/>b0 storage<br/>b1 storage<br/>b2 storage"]
+S2["Set Y<br/>b0 uniform<br/>b1 storage<br/>b2 storage"]
+S3["Set Z<br/>b0 storage<br/>b1 storage"]
+end
+PL --> P1
+PL --> P2
+S1 -->|compatible| P1
+S1 -->|compatible| P2
+S2 -->|incompatible: b0 type mismatch| P1
+S3 -->|incompatible: missing b2| P2
 </div>
 
 이 그림에서 핵심은:

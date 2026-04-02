@@ -29,11 +29,13 @@ slug: "opencl-study-plan"
 - [x] S9. 종합 다이어그램/체크리스트 완성
 
 ## 심화 라운드 TODO
-- [ ] D1. ANGLE 실제 함수 체인 표 작성 (compile vs submit, 근거라인 포함)
+- [x] D1. ANGLE 실제 함수 체인 표 작성 (compile vs submit, 근거라인 포함)
 - [ ] D2. clspv 실습 확장 (local memory/barrier 커널 2개 추가)
 - [ ] D3. Vulkan 객체 생성 지점(ShaderModule/SetLayout/PipelineLayout/Pipeline) 근거 표 작성
 - [ ] D4. Dispatch 경로 계측 로그(compile vs submit 시간 분리)
 - [ ] D5. AMD PM4 자료와 dispatch 주변 패킷 패밀리 매핑 초안
+
+- [x] D1-1. 오답노트 운영 (틀린 개념 즉시 고정)
 
 ## 운영 원칙
 - 매 세션 시작 시 목표 재확인

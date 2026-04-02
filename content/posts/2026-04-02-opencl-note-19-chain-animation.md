@@ -1,78 +1,63 @@
 ---
-title: "OpenCL Note #19 — 애니메이션 실험 #2: Compile Chain vs Submit Chain"
+title: "OpenCL Note #19 — 애니메이션 실험 #2 (JS v2): Compile Chain vs Submit Chain"
 date: 2026-04-02
 slug: "opencl-note-19-chain-animation"
 draft: false
 ---
 
-이번 노트는 **compile chain과 submit chain 분리**를 애니메이션으로 보여준다.
+이번 버전은 JS 표준형 v2다.
 
-- 방식 A: CSS + SVG
-- 방식 B: JS (DOM 애니메이션)
+- 체인 2개 모두 안정적으로 표시
+- 속도 슬라이더 제공
+- 단계별 설명(compile 쪽은 느리고, submit 쪽은 빠름)
 
----
+<div id="chain-v2" style="border:1px solid #2a3142;border-radius:12px;padding:12px;background:#0f1624;position:relative;min-height:220px;">
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+    <label style="color:#cfe0ff;font-size:13px;">속도 배율</label>
+    <input id="speed" type="range" min="0.5" max="2.5" value="1" step="0.1">
+    <span id="speed-val" style="color:#9fb4da;font-size:13px;">1.0x</span>
+  </div>
 
-## A) CSS + SVG
+  <div style="position:relative;height:160px;border:1px solid #31415f;border-radius:10px;padding:10px;">
+    <div style="position:absolute;left:20px;top:35px;color:#cfe0ff;font-size:13px;">Compile chain (slow path)</div>
+    <div style="position:absolute;left:20px;top:95px;color:#cfe0ff;font-size:13px;">Submit chain (fast path)</div>
 
-<div style="border:1px solid #2a3142;border-radius:10px;padding:12px;margin:10px 0;">
-<svg viewBox="0 0 760 200" width="100%" style="background:#0f1624;border-radius:8px;">
-  <text x="20" y="28" fill="#cfe0ff" font-size="14">Compile Chain</text>
-  <line x1="20" y1="46" x2="720" y2="46" stroke="#4f648f" stroke-width="2"/>
-  <circle cx="20" cy="46" r="7" fill="#7ee0c6" class="dot-c"/>
+    <div style="position:absolute;left:20px;top:58px;width:700px;height:2px;background:#4f648f"></div>
+    <div style="position:absolute;left:20px;top:118px;width:700px;height:2px;background:#4f648f"></div>
 
-  <text x="20" y="108" fill="#cfe0ff" font-size="14">Submit Chain</text>
-  <line x1="20" y1="126" x2="720" y2="126" stroke="#4f648f" stroke-width="2"/>
-  <circle cx="20" cy="126" r="7" fill="#8ab4ff" class="dot-s"/>
+    <div id="dotC" style="position:absolute;left:20px;top:52px;width:12px;height:12px;border-radius:50%;background:#7ee0c6"></div>
+    <div id="dotS" style="position:absolute;left:20px;top:112px;width:12px;height:12px;border-radius:50%;background:#8ab4ff"></div>
 
-  <text x="190" y="40" fill="#9fb4da" font-size="12">Build/Transform</text>
-  <text x="500" y="40" fill="#9fb4da" font-size="12">Pipeline Prep</text>
-  <text x="190" y="120" fill="#9fb4da" font-size="12">Arg Bind</text>
-  <text x="500" y="120" fill="#9fb4da" font-size="12">Dispatch</text>
-</svg>
-</div>
-
-<style>
-@keyframes moveC { from { transform: translateX(0px);} to { transform: translateX(700px);} }
-@keyframes moveS { from { transform: translateX(0px);} to { transform: translateX(700px);} }
-.dot-c { animation: moveC 5s linear infinite; }
-.dot-s { animation: moveS 2.5s linear infinite; }
-</style>
-
----
-
-## B) JS (DOM 애니메이션)
-
-<div id="chain-js" style="border:1px solid #2a3142;border-radius:10px;padding:12px;position:relative;height:170px;background:#0f1624;overflow:hidden;">
-  <div style="position:absolute;left:20px;top:46px;width:700px;height:2px;background:#4f648f"></div>
-  <div style="position:absolute;left:20px;top:106px;width:700px;height:2px;background:#4f648f"></div>
-  <div style="position:absolute;left:20px;top:28px;color:#cfe0ff;font-size:13px;">Compile chain (slow)</div>
-  <div style="position:absolute;left:20px;top:88px;color:#cfe0ff;font-size:13px;">Submit chain (fast)</div>
-  <div id="dotC" style="position:absolute;left:20px;top:40px;width:12px;height:12px;border-radius:50%;background:#7ee0c6"></div>
-  <div id="dotS" style="position:absolute;left:20px;top:100px;width:12px;height:12px;border-radius:50%;background:#8ab4ff"></div>
+    <div id="msgC" style="position:absolute;left:740px;top:48px;color:#7ee0c6;font-size:12px;">build/prepare</div>
+    <div id="msgS" style="position:absolute;left:740px;top:108px;color:#8ab4ff;font-size:12px;">bind/dispatch</div>
+  </div>
 </div>
 
 <script>
 (() => {
-  const root = document.getElementById('chain-js');
+  const root = document.getElementById('chain-v2');
   if (!root) return;
-  const c = root.querySelector('#dotC');
-  const s = root.querySelector('#dotS');
+  const dotC = root.querySelector('#dotC');
+  const dotS = root.querySelector('#dotS');
+  const speed = root.querySelector('#speed');
+  const speedVal = root.querySelector('#speed-val');
+
   let t = 0;
-  function tick(){
+  function loop(){
     t += 1;
-    const xc = 20 + (t % 500) / 500 * 700;
-    const xs = 20 + (t % 250) / 250 * 700;
-    c.style.left = `${xc}px`;
-    s.style.left = `${xs}px`;
-    requestAnimationFrame(tick);
+    const k = parseFloat(speed.value || '1');
+    speedVal.textContent = k.toFixed(1) + 'x';
+
+    // compile path: slower cycle
+    const pc = ((t * k) % 520) / 520;
+    // submit path: faster cycle
+    const ps = ((t * k) % 260) / 260;
+
+    dotC.style.left = (20 + pc * 700) + 'px';
+    dotS.style.left = (20 + ps * 700) + 'px';
+
+    requestAnimationFrame(loop);
   }
-  requestAnimationFrame(tick);
+  requestAnimationFrame(loop);
 })();
 </script>
-
----
-
-## 확인 포인트
-
-- 두 점의 속도 차이로 compile vs submit의 특성을 직관적으로 느끼는지
-- 이 분리가 디버깅 관점에서 더 잘 떠오르는지

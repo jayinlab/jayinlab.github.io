@@ -1,107 +1,134 @@
 ---
-title: "OpenCL Note #18 — 애니메이션 실험 #1: Pipeline-Descriptor 호환/비호환"
+title: "OpenCL Note #18 — 애니메이션 실험 #1 (JS v2): Pipeline-Descriptor 호환/비호환"
 date: 2026-04-02
 slug: "opencl-note-18-compat-animation"
 draft: false
 ---
 
-이번 노트는 **같은 개념(호환/비호환)**을 두 가지 방식으로 시각화한다.
+이번 버전은 JS 표준형 v2다.
 
-- 방식 A: CSS + SVG
-- 방식 B: JS (DOM 애니메이션)
+- 요소 누락 버그 수정
+- Step 버튼(계약확인 → bind시도 → 결과)
+- 더 자세한 시각 요소(슬롯/타입/메시지)
 
----
+<div id="compat-v2" style="border:1px solid #2a3142;border-radius:12px;padding:12px;background:#0f1624;">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+    <button data-step="1">Step 1: 계약확인</button>
+    <button data-step="2">Step 2: Bind 시도</button>
+    <button data-step="3">Step 3: 결과확인</button>
+    <button data-case="good">Case: Set X (호환)</button>
+    <button data-case="bad">Case: Set Y (비호환)</button>
+  </div>
 
-## A) CSS + SVG
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div style="border:1px solid #31415f;border-radius:10px;padding:10px;">
+      <div style="color:#cfe0ff;font-weight:600;margin-bottom:6px;">Pipeline Layout Contract</div>
+      <div style="font-size:13px;color:#a9b7d3;line-height:1.5;">
+        set0:<br>
+        - b0: storage buffer<br>
+        - b1: storage buffer<br>
+        - b2: storage buffer<br>
+        push constant: int(4 bytes)
+      </div>
+    </div>
 
-<div style="border:1px solid #2a3142;border-radius:10px;padding:12px;margin:10px 0;">
-<svg viewBox="0 0 700 180" width="100%" style="background:#0f1624;border-radius:8px;">
-  <text x="20" y="26" fill="#cfe0ff" font-size="14">Pipeline Layout (set0: b0/b1/b2 = storage)</text>
-  <rect x="20" y="40" width="280" height="110" fill="#182338" stroke="#3c4a68" rx="8"/>
-  <rect x="40" y="70" width="70" height="60" fill="#22314d" stroke="#5d77a8"/>
-  <rect x="125" y="70" width="70" height="60" fill="#22314d" stroke="#5d77a8"/>
-  <rect x="210" y="70" width="70" height="60" fill="#22314d" stroke="#5d77a8"/>
-  <text x="58" y="145" fill="#8ea8d6" font-size="12">b0</text>
-  <text x="143" y="145" fill="#8ea8d6" font-size="12">b1</text>
-  <text x="228" y="145" fill="#8ea8d6" font-size="12">b2</text>
+    <div style="border:1px solid #31415f;border-radius:10px;padding:10px;">
+      <div style="color:#cfe0ff;font-weight:600;margin-bottom:6px;">Descriptor Set (Current)</div>
+      <div id="set-desc" style="font-size:13px;color:#a9b7d3;line-height:1.5;"></div>
+    </div>
+  </div>
 
-  <g id="plug-good" class="plug-good">
-    <rect x="380" y="78" width="48" height="44" fill="#1f7a5a" rx="6"/>
-    <text x="389" y="105" fill="#d9fff2" font-size="12">Set X</text>
-  </g>
+  <div style="margin-top:12px;border:1px solid #31415f;border-radius:10px;padding:10px;">
+    <div style="color:#cfe0ff;font-weight:600;margin-bottom:6px;">Binding Slots</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <div id="slot-b0" style="padding:8px 10px;border-radius:8px;background:#1b2438;color:#d5e0ff;">b0</div>
+      <div id="slot-b1" style="padding:8px 10px;border-radius:8px;background:#1b2438;color:#d5e0ff;">b1</div>
+      <div id="slot-b2" style="padding:8px 10px;border-radius:8px;background:#1b2438;color:#d5e0ff;">b2</div>
+    </div>
+  </div>
 
-  <g id="plug-bad" class="plug-bad">
-    <rect x="380" y="78" width="48" height="44" fill="#7a2a2a" rx="6"/>
-    <text x="389" y="105" fill="#ffdede" font-size="12">Set Y</text>
-  </g>
-
-  <text x="500" y="95" fill="#7ee0c6" font-size="13" class="txt-good">compatible</text>
-  <text x="485" y="95" fill="#ff9f9f" font-size="13" class="txt-bad">incompatible</text>
-</svg>
-</div>
-
-<style>
-@keyframes moveGood {
-  0%,45% { transform: translateX(0px); opacity:1; }
-  60%,100% { transform: translateX(-260px); opacity:1; }
-}
-@keyframes moveBad {
-  0%,45% { transform: translateX(0px); opacity:0; }
-  50%,100% { transform: translateX(-180px); opacity:1; }
-}
-@keyframes showGood { 0%,70% {opacity:0;} 75%,100% {opacity:1;} }
-@keyframes showBad { 0%,45% {opacity:0;} 50%,100% {opacity:1;} }
-.plug-good { animation: moveGood 6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.plug-bad { animation: moveBad 6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.txt-good { animation: showGood 6s linear infinite; }
-.txt-bad { animation: showBad 6s linear infinite; }
-</style>
-
----
-
-## B) JS (DOM 애니메이션)
-
-<div id="compat-js" style="border:1px solid #2a3142;border-radius:10px;padding:12px;position:relative;height:170px;background:#0f1624;overflow:hidden;">
-  <div style="color:#cfe0ff;font-size:13px;margin-bottom:10px;">JS loop: Set X(호환) / Set Y(비호환)</div>
-  <div style="position:absolute;left:20px;top:56px;width:250px;height:80px;border:1px solid #5d77a8;border-radius:8px;background:#182338;"></div>
-  <div id="plug" style="position:absolute;left:360px;top:76px;width:70px;height:42px;border-radius:6px;background:#1f7a5a;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;">Set X</div>
-  <div id="compat-status" style="position:absolute;left:460px;top:88px;color:#7ee0c6;font-size:13px;">compatible</div>
+  <div id="compat-status-v2" style="margin-top:12px;font-size:14px;color:#cfe0ff;">대기 중</div>
 </div>
 
 <script>
 (() => {
-  const root = document.getElementById('compat-js');
+  const root = document.getElementById('compat-v2');
   if (!root) return;
-  const plug = root.querySelector('#plug');
-  const status = root.querySelector('#compat-status');
-  let t = 0;
-  function step(){
-    t = (t + 1) % 360;
-    const phase = Math.floor(t / 180); // 0 good, 1 bad
-    const p = (t % 180) / 180;
-    const x = 360 - (phase === 0 ? 220 * p : 160 * p);
-    plug.style.left = x + 'px';
-    if(phase === 0){
-      plug.textContent = 'Set X';
-      plug.style.background = '#1f7a5a';
-      status.textContent = p > 0.8 ? 'compatible' : 'checking...';
-      status.style.color = '#7ee0c6';
-    } else {
-      plug.textContent = 'Set Y';
-      plug.style.background = '#7a2a2a';
-      status.textContent = p > 0.8 ? 'incompatible' : 'checking...';
-      status.style.color = '#ff9f9f';
-    }
-    requestAnimationFrame(step);
+
+  const desc = root.querySelector('#set-desc');
+  const status = root.querySelector('#compat-status-v2');
+  const slots = {
+    b0: root.querySelector('#slot-b0'),
+    b1: root.querySelector('#slot-b1'),
+    b2: root.querySelector('#slot-b2')
+  };
+
+  const cases = {
+    good: { name: 'Set X', b0: 'storage', b1: 'storage', b2: 'storage' },
+    bad:  { name: 'Set Y', b0: 'uniform', b1: 'storage', b2: 'storage' }
+  };
+
+  let current = 'good';
+
+  function renderSet() {
+    const c = cases[current];
+    desc.innerHTML = `${c.name}<br>- b0: ${c.b0}<br>- b1: ${c.b1}<br>- b2: ${c.b2}`;
   }
-  requestAnimationFrame(step);
+
+  function resetSlots() {
+    Object.values(slots).forEach(el => {
+      el.style.background = '#1b2438';
+      el.style.outline = 'none';
+    });
+  }
+
+  function step1() {
+    resetSlots();
+    status.textContent = 'Step1: 계약 확인 중... (set0는 b0/b1/b2 모두 storage 필요)';
+    status.style.color = '#9fc2ff';
+  }
+
+  function step2() {
+    resetSlots();
+    const c = cases[current];
+    ['b0','b1','b2'].forEach(k => {
+      if (c[k] === 'storage') {
+        slots[k].style.background = '#1f7a5a';
+      } else {
+        slots[k].style.background = '#7a2a2a';
+      }
+    });
+    status.textContent = 'Step2: Bind 시도 중...';
+    status.style.color = '#9fc2ff';
+  }
+
+  function step3() {
+    const c = cases[current];
+    const ok = c.b0 === 'storage' && c.b1 === 'storage' && c.b2 === 'storage';
+    status.textContent = ok
+      ? 'Step3 결과: compatible (bind 가능)'
+      : 'Step3 결과: incompatible (b0 타입 불일치)';
+    status.style.color = ok ? '#7ee0c6' : '#ff9f9f';
+  }
+
+  root.querySelectorAll('button[data-step]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const s = btn.getAttribute('data-step');
+      if (s === '1') step1();
+      else if (s === '2') step2();
+      else step3();
+    });
+  });
+
+  root.querySelectorAll('button[data-case]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      current = btn.getAttribute('data-case');
+      renderSet();
+      step1();
+    });
+  });
+
+  renderSet();
+  step1();
 })();
 </script>
-
----
-
-## 확인 포인트
-
-- CSS+SVG가 더 가볍고 안정적인지
-- JS 버전이 브라우저에서 더 부드러운지
-- 모바일에서 어떤 방식이 더 보기 쉬운지

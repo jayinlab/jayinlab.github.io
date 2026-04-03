@@ -68,41 +68,39 @@ bash ~/opencl_study/scripts/04_run_local_barrier.sh
 - 포인트: 접근 전에/후에 동기화(barrier)와 함께 읽어야 함
 
 실제 마커 예시(local_sum):
-```text
-11:               OpEntryPoint GLCompute %29 "local_sum" %gl_GlobalInvocationID %gl_LocalInvocationID %gl_WorkGroupID
-19:               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
-20:               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
-21:               OpDecorate %gl_LocalInvocationID BuiltIn LocalInvocationId
-22:               OpDecorate %gl_WorkGroupID BuiltIn WorkgroupId
-23:               OpDecorate %_runtimearr_float ArrayStride 4
-25:               OpDecorate %_struct_15 Block
-28:               OpDecorate %_struct_20 Block
-29:               OpDecorate %17 DescriptorSet 0
-30:               OpDecorate %17 Binding 0
-31:               OpDecorate %18 DescriptorSet 0
-32:               OpDecorate %18 Binding 1
-33:               OpDecorate %23 SpecId 3
-34:               OpDecorate %75 NoContraction
-35:               OpDecorate %5 SpecId 0
-36:               OpDecorate %6 SpecId 1
-37:               OpDecorate %7 SpecId 2
-55:%_ptr_Workgroup__arr_float_23 = OpTypePointer Workgroup %_arr_float_23
-64:%_ptr_Workgroup_float = OpTypePointer Workgroup %float
-71:%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
-72:         %10 = OpVariable %_ptr_Private_v3uint Private %gl_WorkGroupSize
-73:%gl_LocalInvocationID = OpVariable %_ptr_Input_v3uint Input
-74:%gl_WorkGroupID = OpVariable %_ptr_Input_v3uint Input
-75:         %17 = OpVariable %_ptr_StorageBuffer__struct_15 StorageBuffer
-76:         %18 = OpVariable %_ptr_StorageBuffer__struct_15 StorageBuffer
-77:         %22 = OpVariable %_ptr_PushConstant__struct_20 PushConstant
-78:         %26 = OpVariable %_ptr_Workgroup__arr_float_23 Workgroup
-88:         %42 = OpAccessChain %_ptr_Input_uint %gl_LocalInvocationID %uint_0
-101:         %58 = OpAccessChain %_ptr_Workgroup_float %26 %43
-103:               OpControlBarrier %uint_2 %uint_2 %uint_264
-116:         %73 = OpAccessChain %_ptr_Workgroup_float %26 %71
-141:        %105 = OpExtInst %void %91 ArgumentWorkgroup %95 %uint_2 %uint_3 %uint_4 %103
-144:        %109 = OpExtInst %void %91 SpecConstantWorkgroupSize %uint_0 %uint_1 %uint_2
-```
+<pre><code>               OpEntryPoint GLCompute %29 &quot;local_sum&quot; %gl_GlobalInvocationID %gl_LocalInvocationID %gl_WorkGroupID
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+               OpDecorate %gl_LocalInvocationID BuiltIn LocalInvocationId
+               OpDecorate %gl_WorkGroupID BuiltIn WorkgroupId
+               OpDecorate %_runtimearr_float ArrayStride 4
+               OpDecorate %_struct_15 Block
+               OpDecorate %_struct_20 Block
+               OpDecorate %17 DescriptorSet 0
+               OpDecorate %17 Binding 0
+               OpDecorate %18 DescriptorSet 0
+               OpDecorate %18 Binding 1
+               OpDecorate %23 SpecId 3
+               OpDecorate %75 NoContraction
+               OpDecorate %5 SpecId 0
+               OpDecorate %6 SpecId 1
+               OpDecorate %7 SpecId 2
+%_ptr_Workgroup__arr_float_23 = OpTypePointer Workgroup %_arr_float_23
+%_ptr_Workgroup_float = OpTypePointer Workgroup %float
+%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
+         %10 = OpVariable %_ptr_Private_v3uint Private %gl_WorkGroupSize
+%gl_LocalInvocationID = OpVariable %_ptr_Input_v3uint Input
+%gl_WorkGroupID = OpVariable %_ptr_Input_v3uint Input
+         %17 = OpVariable %_ptr_StorageBuffer__struct_15 StorageBuffer
+         %18 = OpVariable %_ptr_StorageBuffer__struct_15 StorageBuffer
+         %22 = OpVariable %_ptr_PushConstant__struct_20 PushConstant
+         %26 = OpVariable %_ptr_Workgroup__arr_float_23 Workgroup
+         %42 = OpAccessChain %_ptr_Input_uint %gl_LocalInvocationID %uint_0
+         %58 = OpAccessChain %_ptr_Workgroup_float %26 %43
+               OpControlBarrier %uint_2 %uint_2 %uint_264
+         %73 = OpAccessChain %_ptr_Workgroup_float %26 %71
+        %105 = OpExtInst %void %91 ArgumentWorkgroup %95 %uint_2 %uint_3 %uint_4 %103
+        %109 = OpExtInst %void %91 SpecConstantWorkgroupSize %uint_0 %uint_1 %uint_2</code></pre>
 
 ### 2) `barrier(...)`는 SPIR-V에서 동기화 opcode로 나타난다
 
@@ -112,37 +110,35 @@ bash ~/opencl_study/scripts/04_run_local_barrier.sh
 - SPIR-V에서 `OpControlBarrier`(또는 관련 동기화 명령)로 관찰
 
 실제 마커 예시(barrier_copy):
-```text
-11:               OpEntryPoint GLCompute %28 "barrier_copy" %gl_GlobalInvocationID %gl_LocalInvocationID
-19:               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
-20:               OpDecorate %gl_LocalInvocationID BuiltIn LocalInvocationId
-21:               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
-22:               OpDecorate %_runtimearr_float ArrayStride 4
-24:               OpDecorate %_struct_14 Block
-27:               OpDecorate %_struct_19 Block
-28:               OpDecorate %16 DescriptorSet 0
-29:               OpDecorate %16 Binding 0
-30:               OpDecorate %17 DescriptorSet 0
-31:               OpDecorate %17 Binding 1
-32:               OpDecorate %22 SpecId 3
-33:               OpDecorate %6 SpecId 0
-34:               OpDecorate %7 SpecId 1
-35:               OpDecorate %8 SpecId 2
-53:%_ptr_Workgroup__arr_float_22 = OpTypePointer Workgroup %_arr_float_22
-62:%_ptr_Workgroup_float = OpTypePointer Workgroup %float
-69:%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
-70:%gl_LocalInvocationID = OpVariable %_ptr_Input_v3uint Input
-71:         %11 = OpVariable %_ptr_Private_v3uint Private %gl_WorkGroupSize
-72:         %16 = OpVariable %_ptr_StorageBuffer__struct_14 StorageBuffer
-73:         %17 = OpVariable %_ptr_StorageBuffer__struct_14 StorageBuffer
-74:         %21 = OpVariable %_ptr_PushConstant__struct_19 PushConstant
-75:         %25 = OpVariable %_ptr_Workgroup__arr_float_22 Workgroup
-85:         %41 = OpAccessChain %_ptr_Input_uint %gl_LocalInvocationID %uint_0
-96:         %55 = OpAccessChain %_ptr_Workgroup_float %25 %42
-98:               OpControlBarrier %uint_2 %uint_2 %uint_264
-115:         %81 = OpExtInst %void %66 ArgumentWorkgroup %70 %uint_2 %uint_3 %uint_4 %79
-118:         %85 = OpExtInst %void %66 SpecConstantWorkgroupSize %uint_0 %uint_1 %uint_2
-```
+<pre><code>               OpEntryPoint GLCompute %28 &quot;barrier_copy&quot; %gl_GlobalInvocationID %gl_LocalInvocationID
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+               OpDecorate %gl_LocalInvocationID BuiltIn LocalInvocationId
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+               OpDecorate %_runtimearr_float ArrayStride 4
+               OpDecorate %_struct_14 Block
+               OpDecorate %_struct_19 Block
+               OpDecorate %16 DescriptorSet 0
+               OpDecorate %16 Binding 0
+               OpDecorate %17 DescriptorSet 0
+               OpDecorate %17 Binding 1
+               OpDecorate %22 SpecId 3
+               OpDecorate %6 SpecId 0
+               OpDecorate %7 SpecId 1
+               OpDecorate %8 SpecId 2
+%_ptr_Workgroup__arr_float_22 = OpTypePointer Workgroup %_arr_float_22
+%_ptr_Workgroup_float = OpTypePointer Workgroup %float
+%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
+%gl_LocalInvocationID = OpVariable %_ptr_Input_v3uint Input
+         %11 = OpVariable %_ptr_Private_v3uint Private %gl_WorkGroupSize
+         %16 = OpVariable %_ptr_StorageBuffer__struct_14 StorageBuffer
+         %17 = OpVariable %_ptr_StorageBuffer__struct_14 StorageBuffer
+         %21 = OpVariable %_ptr_PushConstant__struct_19 PushConstant
+         %25 = OpVariable %_ptr_Workgroup__arr_float_22 Workgroup
+         %41 = OpAccessChain %_ptr_Input_uint %gl_LocalInvocationID %uint_0
+         %55 = OpAccessChain %_ptr_Workgroup_float %25 %42
+               OpControlBarrier %uint_2 %uint_2 %uint_264
+         %81 = OpExtInst %void %66 ArgumentWorkgroup %70 %uint_2 %uint_3 %uint_4 %79
+         %85 = OpExtInst %void %66 SpecConstantWorkgroupSize %uint_0 %uint_1 %uint_2</code></pre>
 
 ### 3) 오늘 기억할 3줄
 

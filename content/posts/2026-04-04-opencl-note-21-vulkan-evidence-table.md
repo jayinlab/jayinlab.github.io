@@ -12,14 +12,23 @@ draft: false
 - ShaderModule / DescriptorSetLayout / PipelineLayout / ComputePipeline
 - 각각의 생성 지점과 호출 체인을 근거 라인과 함께 표로 남긴다.
 
-## 근거 표 템플릿
+## 지금 바로 쓰는 확정 맵 (API 기준)
 
-| 객체 | 후보 함수 | 호출 API | 파일 | 라인 | 상태 |
-|---|---|---|---|---:|---|
-| ShaderModule |  | vkCreateShaderModule |  |  | 후보 |
-| DescriptorSetLayout |  | vkCreateDescriptorSetLayout |  |  | 후보 |
-| PipelineLayout |  | vkCreatePipelineLayout |  |  | 후보 |
-| ComputePipeline |  | vkCreateComputePipelines |  |  | 후보 |
+- ShaderModule -> `vkCreateShaderModule`
+- DescriptorSetLayout -> `vkCreateDescriptorSetLayout`
+- PipelineLayout -> `vkCreatePipelineLayout`
+- ComputePipeline -> `vkCreateComputePipelines`
+
+위 4개는 **확정**이다. (Vulkan 객체 생성 API 자체는 변하지 않음)
+
+## 근거 표 (파일/라인 채우기용)
+
+| 객체 | 호출 API | 파일 | 라인 | 상태 |
+|---|---|---|---:|---|
+| ShaderModule | vkCreateShaderModule |  |  | 찾는 중 |
+| DescriptorSetLayout | vkCreateDescriptorSetLayout |  |  | 찾는 중 |
+| PipelineLayout | vkCreatePipelineLayout |  |  | 찾는 중 |
+| ComputePipeline | vkCreateComputePipelines |  |  | 찾는 중 |
 
 ## 최소 원칙
 1. 추정과 확정을 분리(상태 컬럼)

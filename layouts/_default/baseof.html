@@ -90,6 +90,25 @@
 
     .post-list li a { font-weight: 600; }
 
+    /* mobile-safe tables */
+    table {
+      width: 100%;
+      display: block;
+      overflow-x: auto;
+      border-collapse: collapse;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
     code, pre {
       background: #0f1624;
       border: 1px solid #334155;
@@ -102,7 +121,9 @@
     :not(pre) > code {
       padding: 2px 6px;
       font-size: .92em;
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     /* fenced code block container */

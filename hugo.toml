@@ -13,6 +13,11 @@ disableKinds = ['taxonomy', 'term']
 [outputs]
   home = ['HTML', 'RSS']
 
+[sitemap]
+  changeFreq = 'weekly'
+  filename = 'sitemap.xml'
+  priority = 0.5
+
 [markup]
   [markup.goldmark]
     [markup.goldmark.renderer]

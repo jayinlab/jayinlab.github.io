@@ -1,10 +1,9 @@
 {{ define "main" }}
   <h2>Posts</h2>
   <ul class="post-list">
-    {{ range sort (where .Site.RegularPages "Section" "posts") ".Date" "desc" }}
+    {{ range (where .Site.RegularPages "Section" "posts") }}
       <li>
         <a href="{{ .RelPermalink }}">{{ .Title }}</a>
-        <span class="meta">{{ .Date.Format "2006-01-02" }}</span>
       </li>
     {{ end }}
   </ul>

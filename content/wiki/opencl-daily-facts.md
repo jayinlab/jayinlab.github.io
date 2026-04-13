@@ -43,6 +43,22 @@ draft: false
 - AMD PM4에서 compute dispatch는 PACKET3 계열 명령으로 인코딩되어 큐에 기록된다.
 - 핵심은 “상태 설정 패킷 + dispatch 패킷”의 순서가 실제 커널 실행을 결정한다.
 
+
+- OpenCL의 NDRange는 전역 인덱스 공간이고, work-group은 이 공간을 나눈 실행 단위다.
+- `global_id`는 데이터 위치, `local_id`는 work-group 내부 위치를 뜻한다.
+
+- OpenCL의 `__private` 메모리는 각 work-item 전용이다.
+- 같은 알고리즘이라도 데이터 배치에 따라 메모리 대역폭 병목이 크게 달라진다.
+
+- Vulkan pipeline barrier는 실행 순서 + 메모리 가시성을 함께 맞춘다.
+- stage/access 마스크를 과하게 넓히면 동기화 비용이 커진다.
+
+- clspv는 OpenCL 런타임 API 전체를 대체하는 도구가 아니다.
+- 핵심 역할은 OpenCL C를 Vulkan compute 경로에서 쓸 SPIR-V로 변환하는 것이다.
+
+- command buffer는 "무엇을 실행할지"를 기록한 목록이고, queue submit은 그 목록을 실행 스케줄에 올리는 단계다.
+- tiny dispatch 워크로드에서는 기록 재사용과 제출 전략이 CPU 오버헤드를 크게 좌우한다.
+
 ---
 
 ## 운영 규칙 (누적 방식)

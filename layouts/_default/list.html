@@ -1,9 +1,15 @@
 {{ define "main" }}
   <h2>{{ .Title }}</h2>
   {{ .Content }}
-  <ul>
+  <ul class="post-list">
     {{ range .Pages }}
-      <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+      <li>
+        <span class="post-title-group">
+          {{ with .Params.difficulty }}<span class="diff-badge diff-{{ . }}">{{ . }}</span>{{ end }}
+          <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+        </span>
+        <span class="meta">{{ .Date.Format "2006-01-02" }}</span>
+      </li>
     {{ end }}
   </ul>
 {{ end }}

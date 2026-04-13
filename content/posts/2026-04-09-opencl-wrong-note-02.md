@@ -3,6 +3,10 @@ title: "OpenCL 오답노트 #02 — 부분정답/부분오답 포함 복습"
 date: 2026-04-09
 slug: "opencl-wrong-note-02"
 draft: false
+type: "wrong-note"
+series: "opencl-deep-dive"
+tags: ["opencl", "vulkan", "barrier"]
+difficulty: "intermediate"
 ---
 
 이번 노트는 2026-04-09 퀴즈에서 **완전히 맞지 못한 항목(오답 + 부분정답 + 부분오답)**을 한 번에 복습하기 위한 문서다.

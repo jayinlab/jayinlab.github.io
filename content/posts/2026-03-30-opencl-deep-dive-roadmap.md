@@ -3,6 +3,10 @@ title: "OpenCL Note #14 — 심화 로드맵 Overview (다음 라운드)"
 date: 2026-03-30
 slug: "opencl-deep-dive-roadmap"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["opencl", "vulkan", "pm4"]
+difficulty: "intermediate"
 ---
 
 좋아, 여기서부터는 "심화 라운드"다.

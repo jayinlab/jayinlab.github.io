@@ -3,6 +3,10 @@ title: "OpenCL Note #11 — ANGLE+clspv+Vulkan first-run 지연 줄이기 실전
 date: 2026-03-30
 slug: "opencl-note-8-first-run-latency"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["opencl", "vulkan", "angle", "performance"]
+difficulty: "intermediate"
 ---
 
 이번 노트 목표:

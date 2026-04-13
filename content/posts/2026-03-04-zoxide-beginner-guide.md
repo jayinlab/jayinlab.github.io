@@ -3,6 +3,10 @@ title: "zoxide 입문 가이드 - cd를 더 똑똑하게"
 date: 2026-03-04
 slug: "zoxide-beginner-guide"
 draft: false
+type: "note"
+series: "cli-tools"
+tags: ["cli", "tools", "ubuntu"]
+difficulty: "beginner"
 ---
 
 `zoxide`는 자주 가는 폴더를 기억해서, 짧은 키워드만으로 이동하게 해준다.

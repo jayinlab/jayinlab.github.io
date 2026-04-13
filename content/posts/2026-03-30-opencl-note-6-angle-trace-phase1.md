@@ -3,6 +3,10 @@ title: "OpenCL Note #08 — ANGLE 코드 추적 1차: Entry → Build/Enqueue �
 date: 2026-03-30
 slug: "opencl-note-6-angle-trace-phase1"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["angle", "opencl", "clspv"]
+difficulty: "intermediate"
 ---
 
 이번 노트 목표:

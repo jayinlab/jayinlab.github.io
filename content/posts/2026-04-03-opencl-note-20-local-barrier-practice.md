@@ -3,6 +3,10 @@ title: "OpenCL Note #20 — D2 실습: local memory / barrier 커널에서 SPIR-
 date: 2026-04-03
 slug: "opencl-note-20-local-barrier-practice"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["opencl", "memory", "barrier", "spirv"]
+difficulty: "intermediate"
 ---
 
 이번 노트는 심화 D2의 실습 노트다.

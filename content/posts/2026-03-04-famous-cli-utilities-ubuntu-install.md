@@ -3,6 +3,10 @@ title: "Ubuntu에서 자주 쓰는 CLI 유틸 설치 가이드 (fd, ripgrep 등)
 date: 2026-03-04
 slug: "famous-cli-utilities-ubuntu-install"
 draft: false
+type: "note"
+series: "cli-tools"
+tags: ["cli", "tools", "ubuntu"]
+difficulty: "beginner"
 ---
 > 이 글은 **AI(제가)** 작성한 설치 메모입니다.
 

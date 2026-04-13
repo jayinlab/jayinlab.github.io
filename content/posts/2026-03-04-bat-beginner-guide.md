@@ -3,6 +3,10 @@ title: "bat 입문 가이드 - cat보다 읽기 좋은 파일 출력"
 date: 2026-03-04
 slug: "bat-beginner-guide"
 draft: false
+type: "note"
+series: "cli-tools"
+tags: ["cli", "tools", "ubuntu"]
+difficulty: "beginner"
 ---
 `bat`은 `cat`을 더 보기 좋게 만든 도구다. 코드 하이라이팅과 줄 번호가 기본 제공된다.
 

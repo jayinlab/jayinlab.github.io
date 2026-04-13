@@ -145,6 +145,20 @@
       white-space: pre;
     }
 
+    /* wikilink styling */
+    a.wikilink {
+      color: var(--brand-2);
+      border-bottom: 1px dotted var(--brand-2);
+    }
+    a.wikilink:hover {
+      border-bottom-style: solid;
+    }
+    a.wikilink-missing {
+      color: var(--muted);
+      border-bottom: 1px dotted var(--muted);
+      cursor: help;
+    }
+
     /* Hugo/Chroma highlight normalization */
     .highlight pre,
     .highlight code,
@@ -202,8 +216,8 @@
       <nav>
         <a href="{{ "/" | relURL }}">Home</a>
         <a href="{{ "/wiki/" | relURL }}">Wiki</a>
+        <a href="{{ "/glossary/" | relURL }}">Glossary</a>
         <a href="{{ "/about/" | relURL }}">About</a>
-        <a href="{{ "/contact/" | relURL }}">Contact</a>
       </nav>
       <div class="global-ai-note">이 블로그의 콘텐츠는 AI가 작성·정리합니다.</div>
     </header>
@@ -220,6 +234,83 @@
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
     mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  </script>
+
+  <script>
+    // [[wikilink]] 및 [[wikilink|표시 텍스트]] → <a href="/glossary/slug/"> 변환
+    (function renderWikilinks() {
+      function toSlug(s) {
+        return s.trim().toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^\w\-가-힣]/g, '');
+      }
+
+      const wikiRE = /\[\[([^\]|#]+?)(?:\|([^\]]+?))?\]\]/g;
+
+      function processTextNode(node) {
+        const text = node.nodeValue;
+        if (!wikiRE.test(text)) return;
+        wikiRE.lastIndex = 0;
+
+        const frag = document.createDocumentFragment();
+        let last = 0, m;
+
+        while ((m = wikiRE.exec(text)) !== null) {
+          if (m.index > last) {
+            frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+          }
+          const term  = m[1].trim();
+          const label = m[2] ? m[2].trim() : term;
+          const slug  = toSlug(term);
+
+          const a = document.createElement('a');
+          a.href = '/glossary/' + slug + '/';
+          a.textContent = label;
+          a.className = 'wikilink';
+          a.title = term;
+
+          // 존재하지 않는 용어는 시각적으로 구분 (선택적 — fetch 없이 일단 동일 스타일)
+          frag.appendChild(a);
+          last = m.index + m[0].length;
+        }
+
+        if (last < text.length) {
+          frag.appendChild(document.createTextNode(text.slice(last)));
+        }
+
+        node.parentNode.replaceChild(frag, node);
+      }
+
+      function walk(root) {
+        const walker = document.createTreeWalker(
+          root,
+          NodeFilter.SHOW_TEXT,
+          {
+            acceptNode(node) {
+              const tag = node.parentNode && node.parentNode.nodeName;
+              // 코드 블록, 스크립트, 스타일, 이미 처리된 링크 안은 건너뜀
+              if (['CODE', 'PRE', 'SCRIPT', 'STYLE', 'A'].includes(tag)) {
+                return NodeFilter.FILTER_REJECT;
+              }
+              return /\[\[/.test(node.nodeValue)
+                ? NodeFilter.FILTER_ACCEPT
+                : NodeFilter.FILTER_SKIP;
+            }
+          }
+        );
+
+        const nodes = [];
+        let n;
+        while ((n = walker.nextNode())) nodes.push(n);
+        nodes.forEach(processTextNode);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => walk(document.body));
+      } else {
+        walk(document.body);
+      }
+    })();
   </script>
 
 </body>

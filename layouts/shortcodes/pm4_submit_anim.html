@@ -1,0 +1,538 @@
+<div id="pm4-anim-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+
+<style>
+#pm4-anim-root * { box-sizing: border-box; }
+#pm4-anim-root .pm4-card {
+  background: #0f1624;
+  border: 1px solid #2a3142;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+#pm4-anim-root .pm4-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: #6b7fa3;
+  margin-bottom: 10px;
+}
+#pm4-anim-root .pm4-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+#pm4-anim-root .pm4-box {
+  border: 1px solid #2a3142;
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 110px;
+  transition: background .3s, border-color .3s, box-shadow .3s;
+  background: #141a26;
+}
+#pm4-anim-root .pm4-box.active {
+  background: rgba(138,180,255,.15);
+  border-color: #8ab4ff;
+  box-shadow: 0 0 12px rgba(138,180,255,.25);
+}
+#pm4-anim-root .pm4-box.done {
+  background: rgba(126,224,198,.08);
+  border-color: #7ee0c6;
+}
+#pm4-anim-root .pm4-box.highlight {
+  background: rgba(255,200,80,.12);
+  border-color: #ffc850;
+  box-shadow: 0 0 10px rgba(255,200,80,.2);
+}
+#pm4-anim-root .pm4-label {
+  font-size: 11px;
+  color: #6b7fa3;
+  margin-bottom: 3px;
+}
+#pm4-anim-root .pm4-val {
+  font-weight: 600;
+  font-size: 13px;
+  font-family: ui-monospace, monospace;
+}
+#pm4-anim-root .pm4-arrow {
+  display: flex;
+  align-items: center;
+  color: #3a4560;
+  font-size: 18px;
+  padding: 0 2px;
+  transition: color .3s;
+}
+#pm4-anim-root .pm4-arrow.active { color: #8ab4ff; }
+
+/* ring buffer */
+#pm4-anim-root .ring-wrap {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#pm4-anim-root .ring-cell {
+  width: 52px;
+  height: 44px;
+  border: 1px solid #2a3142;
+  border-radius: 6px;
+  background: #141a26;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  transition: background .3s, border-color .3s;
+  text-align: center;
+  line-height: 1.3;
+}
+#pm4-anim-root .ring-cell.written {
+  background: rgba(138,180,255,.12);
+  border-color: #8ab4ff;
+}
+#pm4-anim-root .ring-cell.reading {
+  background: rgba(255,200,80,.15);
+  border-color: #ffc850;
+}
+#pm4-anim-root .ring-cell.done-cell {
+  background: rgba(126,224,198,.08);
+  border-color: #7ee0c6;
+}
+#pm4-anim-root .ptr-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+#pm4-anim-root .ptr-indicator {
+  width: 52px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  transition: color .3s;
+}
+
+/* packet detail */
+#pm4-anim-root .pkt-detail {
+  display: none;
+  background: #0a0e1a;
+  border: 1px solid #2a3142;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.7;
+}
+#pm4-anim-root .pkt-detail.show { display: block; }
+#pm4-anim-root .pkt-field { display: flex; gap: 8px; }
+#pm4-anim-root .pkt-bits { color: #6b7fa3; min-width: 60px; }
+#pm4-anim-root .pkt-name { color: #8ab4ff; min-width: 80px; }
+#pm4-anim-root .pkt-desc { color: #e6ebf5; }
+
+/* step explanation */
+#pm4-anim-root .step-box {
+  background: rgba(138,180,255,.07);
+  border: 1px solid #2a3142;
+  border-left: 3px solid #8ab4ff;
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-height: 52px;
+  line-height: 1.6;
+  transition: opacity .3s;
+}
+#pm4-anim-root .step-number {
+  display: inline-block;
+  background: #8ab4ff;
+  color: #0b0d12;
+  font-weight: 700;
+  font-size: 11px;
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-right: 6px;
+}
+
+/* controls */
+#pm4-anim-root .ctrl-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+#pm4-anim-root button {
+  background: #141a26;
+  border: 1px solid #2a3142;
+  border-radius: 8px;
+  color: #e6ebf5;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background .2s, border-color .2s;
+}
+#pm4-anim-root button:hover { background: #1e2840; border-color: #8ab4ff; }
+#pm4-anim-root button.primary {
+  background: rgba(138,180,255,.15);
+  border-color: #8ab4ff;
+  color: #8ab4ff;
+  font-weight: 600;
+}
+#pm4-anim-root .step-counter {
+  color: #6b7fa3;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* workgroup dots */
+#pm4-anim-root .wg-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+#pm4-anim-root .wg-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: #1e2840;
+  border: 1px solid #2a3142;
+  transition: background .2s, border-color .2s;
+}
+#pm4-anim-root .wg-dot.running {
+  background: rgba(126,224,198,.3);
+  border-color: #7ee0c6;
+}
+</style>
+
+<!-- Controls -->
+<div class="ctrl-row">
+  <button id="pm4-prev">← 이전</button>
+  <button id="pm4-next" class="primary">다음 단계 →</button>
+  <button id="pm4-auto">▶ 자동 재생</button>
+  <button id="pm4-reset">↺ 처음</button>
+  <span class="step-counter" id="pm4-counter">Step 0 / 7</span>
+</div>
+
+<!-- Step explanation -->
+<div class="step-box" id="pm4-step-desc">
+  <span class="step-number">시작</span>
+  <strong>PM4 제출 흐름 시뮬레이터</strong><br>
+  <span style="color:#9aa6bd;font-size:12px;">
+    "다음 단계" 버튼으로 vkQueueSubmit → PM4 → Ring Buffer → GPU 실행까지 따라가 보세요.
+  </span>
+</div>
+
+<!-- Layer 1: Application -->
+<div class="pm4-card" id="pm4-layer-app">
+  <div class="pm4-title">① Application Layer</div>
+  <div class="pm4-row">
+    <div class="pm4-box" id="box-app">
+      <div class="pm4-label">API call</div>
+      <div class="pm4-val" id="val-app" style="color:#9aa6bd;">대기 중</div>
+    </div>
+    <div class="pm4-arrow" id="arr-app-drv">→</div>
+    <div class="pm4-box" id="box-submit">
+      <div class="pm4-label">Submit Info</div>
+      <div class="pm4-val" id="val-submit" style="color:#9aa6bd;">-</div>
+    </div>
+  </div>
+</div>
+
+<!-- Layer 2: Driver -->
+<div class="pm4-card" id="pm4-layer-drv">
+  <div class="pm4-title">② Driver Layer — PM4 Packet 생성</div>
+  <div class="pm4-row">
+    <div class="pm4-box" id="box-pkt1">
+      <div class="pm4-label">Packet 1</div>
+      <div class="pm4-val" id="val-pkt1" style="color:#9aa6bd;">-</div>
+    </div>
+    <div class="pm4-arrow" id="arr-pkt">+</div>
+    <div class="pm4-box" id="box-pkt2">
+      <div class="pm4-label">Packet 2</div>
+      <div class="pm4-val" id="val-pkt2" style="color:#9aa6bd;">-</div>
+    </div>
+  </div>
+
+  <!-- Packet 1 detail -->
+  <div class="pkt-detail" id="detail-pkt1">
+    <div style="color:#ffc850;font-weight:700;margin-bottom:6px;">IT_SET_SH_REG — 셰이더 레지스터 설정</div>
+    <div class="pkt-field"><span class="pkt-bits">[31:30]</span><span class="pkt-name">Type</span><span class="pkt-desc">= 3 (Type-3 packet)</span></div>
+    <div class="pkt-field"><span class="pkt-bits">[29:16]</span><span class="pkt-name">Count</span><span class="pkt-desc">= N (payload 워드 수)</span></div>
+    <div class="pkt-field"><span class="pkt-bits">[15: 8]</span><span class="pkt-name">Opcode</span><span class="pkt-desc">= 0x76 (SET_SH_REG)</span></div>
+    <div style="margin-top:6px;color:#9aa6bd;font-size:11px;">
+      payload: descriptor set 주소, push constant 값 등 커널 인자 → GPU 레지스터로
+    </div>
+  </div>
+
+  <!-- Packet 2 detail -->
+  <div class="pkt-detail" id="detail-pkt2">
+    <div style="color:#8ab4ff;font-weight:700;margin-bottom:6px;">IT_DISPATCH_DIRECT — Compute Shader 실행</div>
+    <div class="pkt-field"><span class="pkt-bits">[31:30]</span><span class="pkt-name">Type</span><span class="pkt-desc">= 3 (Type-3 packet)</span></div>
+    <div class="pkt-field"><span class="pkt-bits">[29:16]</span><span class="pkt-name">Count</span><span class="pkt-desc">= 3</span></div>
+    <div class="pkt-field"><span class="pkt-bits">[15: 8]</span><span class="pkt-name">Opcode</span><span class="pkt-desc">= 0x15 (DISPATCH_DIRECT)</span></div>
+    <div class="pkt-field"><span class="pkt-bits">payload[0]</span><span class="pkt-name">DIM_X</span><span class="pkt-desc">= group count X</span></div>
+    <div class="pkt-field"><span class="pkt-bits">payload[1]</span><span class="pkt-name">DIM_Y</span><span class="pkt-desc">= group count Y</span></div>
+    <div class="pkt-field"><span class="pkt-bits">payload[2]</span><span class="pkt-name">DIM_Z</span><span class="pkt-desc">= group count Z</span></div>
+  </div>
+</div>
+
+<!-- Layer 3: Ring Buffer -->
+<div class="pm4-card" id="pm4-layer-ring">
+  <div class="pm4-title">③ Ring Buffer — GPU 커맨드 스트림</div>
+  <div class="ring-wrap" id="ring-cells"></div>
+  <div class="ptr-row" id="ring-ptrs"></div>
+  <div style="margin-top:8px;font-size:11px;color:#6b7fa3;">
+    <span style="color:#8ab4ff;font-weight:600;">WPTR</span> = 드라이버가 쓰는 위치 &nbsp;|&nbsp;
+    <span style="color:#ffc850;font-weight:600;">RPTR</span> = GPU가 읽는 위치
+  </div>
+</div>
+
+<!-- Layer 4: GPU -->
+<div class="pm4-card" id="pm4-layer-gpu">
+  <div class="pm4-title">④ GPU — Command Processor & Shader Engine</div>
+  <div class="pm4-row">
+    <div class="pm4-box" id="box-cp">
+      <div class="pm4-label">Command Processor</div>
+      <div class="pm4-val" id="val-cp" style="color:#9aa6bd;">idle</div>
+    </div>
+    <div class="pm4-arrow" id="arr-cp-se">→</div>
+    <div class="pm4-box" id="box-se">
+      <div class="pm4-label">Shader Engine</div>
+      <div class="pm4-val" id="val-se" style="color:#9aa6bd;">idle</div>
+    </div>
+  </div>
+  <div class="wg-grid" id="wg-grid"></div>
+  <div style="margin-top:6px;font-size:11px;color:#6b7fa3;" id="wg-label"></div>
+</div>
+
+<script>
+(function() {
+  const RING_SIZE = 8;
+  const WG_COUNT = 16;
+
+  // ring cells 생성
+  const ringCells = document.getElementById('ring-cells');
+  const ringPtrs  = document.getElementById('ring-ptrs');
+  for (let i = 0; i < RING_SIZE; i++) {
+    const c = document.createElement('div');
+    c.className = 'ring-cell';
+    c.id = 'rc-' + i;
+    c.innerHTML = '<span style="color:#2a3142">empty</span>';
+    ringCells.appendChild(c);
+
+    const p = document.createElement('div');
+    p.className = 'ptr-indicator';
+    p.id = 'rp-' + i;
+    ringPtrs.appendChild(p);
+  }
+
+  // workgroup dots 생성
+  const wgGrid = document.getElementById('wg-grid');
+  for (let i = 0; i < WG_COUNT; i++) {
+    const d = document.createElement('div');
+    d.className = 'wg-dot';
+    d.id = 'wg-' + i;
+    wgGrid.appendChild(d);
+  }
+
+  let currentStep = 0;
+  let autoTimer = null;
+
+  const STEPS = [
+    // step 0: 초기 상태 (설명만)
+    null,
+    // step 1: App이 vkQueueSubmit 호출
+    {
+      desc: '<span class="step-number">1</span><strong>App이 <code>vkQueueSubmit</code>를 호출합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">VkCommandBuffer에 기록된 명령들을 VkQueue에 제출. 이 순간부터 드라이버가 처리를 시작합니다.</span>',
+      fn: () => {
+        setBox('box-app', 'active', 'vkQueueSubmit()', '#8ab4ff');
+        setBox('box-submit', '', '1× CmdBuffer', '#e6ebf5');
+        setArrow('arr-app-drv', true);
+      }
+    },
+    // step 2: 드라이버가 command buffer 파싱
+    {
+      desc: '<span class="step-number">2</span><strong>드라이버가 Command Buffer를 파싱합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">드라이버는 vkCmdDispatch 등의 추상 명령을 실제 GPU 하드웨어 명령(PM4 packet)으로 변환하기 시작합니다.</span>',
+      fn: () => {
+        setBox('box-app', 'done', 'vkQueueSubmit()', '#7ee0c6');
+        setBox('box-submit', 'active', '파싱 중...', '#ffc850');
+      }
+    },
+    // step 3: IT_SET_SH_REG 패킷 생성
+    {
+      desc: '<span class="step-number">3</span><strong>Packet 1: <code>IT_SET_SH_REG</code> 생성</strong><br><span style="color:#9aa6bd;font-size:12px;">커널 인자(descriptor set 주소, push constant 등)를 GPU 셰이더 레지스터에 설정하는 패킷. 실행 전에 반드시 필요합니다.</span>',
+      fn: () => {
+        setBox('box-submit', 'done', '파싱 완료', '#7ee0c6');
+        setBox('box-pkt1', 'highlight', 'IT_SET_SH_REG', '#ffc850');
+        document.getElementById('detail-pkt1').classList.add('show');
+      }
+    },
+    // step 4: IT_DISPATCH_DIRECT 패킷 생성
+    {
+      desc: '<span class="step-number">4</span><strong>Packet 2: <code>IT_DISPATCH_DIRECT</code> 생성</strong><br><span style="color:#9aa6bd;font-size:12px;">실제 compute shader를 실행시키는 패킷. X/Y/Z workgroup 수를 payload에 담아 GPU에 전달합니다.</span>',
+      fn: () => {
+        setBox('box-pkt1', 'done', 'IT_SET_SH_REG', '#7ee0c6');
+        setBox('box-pkt2', 'active', 'IT_DISPATCH_DIRECT', '#8ab4ff');
+        document.getElementById('detail-pkt2').classList.add('show');
+        setArrow('arr-pkt', true);
+      }
+    },
+    // step 5: Ring buffer에 기록 + WPTR 전진
+    {
+      desc: '<span class="step-number">5</span><strong>Ring Buffer에 패킷 기록 → WPTR 전진</strong><br><span style="color:#9aa6bd;font-size:12px;">드라이버가 패킷들을 ring buffer에 순서대로 씁니다. 쓰기가 끝나면 WPTR 레지스터를 업데이트해 GPU에 신호를 보냅니다.</span>',
+      fn: () => {
+        setBox('box-pkt2', 'done', 'IT_DISPATCH_DIRECT', '#7ee0c6');
+        // ring buffer cells 0,1 기록
+        const labels = ['SET_SH_REG\n(header)', 'SET_SH_REG\n(payload)', 'DISPATCH\n(header)', 'DISPATCH\n(dim X/Y/Z)'];
+        for (let i = 0; i < 4; i++) {
+          const c = document.getElementById('rc-' + i);
+          c.className = 'ring-cell written';
+          c.innerHTML = '<span style="color:#8ab4ff;font-weight:600;">' + labels[i] + '</span>';
+        }
+        // empty cells
+        for (let i = 4; i < RING_SIZE; i++) {
+          const c = document.getElementById('rc-' + i);
+          c.innerHTML = '<span style="color:#2a3142">empty</span>';
+        }
+        // WPTR at 4
+        updatePtrs(4, 0);
+      }
+    },
+    // step 6: GPU CP가 감지 및 읽기
+    {
+      desc: '<span class="step-number">6</span><strong>GPU CP가 패킷을 감지하고 읽습니다</strong><br><span style="color:#9aa6bd;font-size:12px;">GPU의 Command Processor(CP)는 WPTR != RPTR를 감지하면 즉시 읽기를 시작합니다. SET_SH_REG → 레지스터 설정, 이어서 DISPATCH 패킷을 디코드합니다.</span>',
+      fn: () => {
+        setBox('box-cp', 'active', '패킷 읽는 중', '#8ab4ff');
+        setArrow('arr-cp-se', true);
+        for (let i = 0; i < 4; i++) {
+          document.getElementById('rc-' + i).className = 'ring-cell reading';
+        }
+        updatePtrs(4, 4);
+      }
+    },
+    // step 7: Shader Engine 실행
+    {
+      desc: '<span class="step-number">7</span><strong>Shader Engine에서 Workgroup 실행!</strong><br><span style="color:#9aa6bd;font-size:12px;">CP가 DISPATCH 패킷을 처리하면 Shader Engine에 work-group을 배분합니다. 각 work-group 안의 work-item들이 wavefront 단위로 병렬 실행됩니다.</span>',
+      fn: () => {
+        setBox('box-cp', 'done', '처리 완료', '#7ee0c6');
+        setBox('box-se', 'active', 'Dispatching...', '#8ab4ff');
+        for (let i = 0; i < 4; i++) {
+          document.getElementById('rc-' + i).className = 'ring-cell done-cell';
+        }
+        // workgroup dots
+        let delay = 0;
+        for (let i = 0; i < WG_COUNT; i++) {
+          ((idx, d) => setTimeout(() => {
+            document.getElementById('wg-' + idx).className = 'wg-dot running';
+          }, d))(i, delay);
+          delay += 60;
+        }
+        setTimeout(() => {
+          setBox('box-se', 'done', 'Running ✓', '#7ee0c6');
+          document.getElementById('wg-label').textContent = WG_COUNT + '개 work-group 실행 중 (각 64 work-item = 1 wavefront)';
+        }, WG_COUNT * 60 + 200);
+      }
+    }
+  ];
+
+  function setBox(id, cls, text, color) {
+    const el = document.getElementById(id);
+    el.className = 'pm4-box' + (cls ? ' ' + cls : '');
+    const val = el.querySelector('.pm4-val');
+    if (val) { val.textContent = text; val.style.color = color || '#e6ebf5'; }
+  }
+
+  function setArrow(id, active) {
+    const el = document.getElementById(id);
+    if (el) el.className = 'pm4-arrow' + (active ? ' active' : '');
+  }
+
+  function updatePtrs(wptr, rptr) {
+    for (let i = 0; i < RING_SIZE; i++) {
+      const p = document.getElementById('rp-' + i);
+      p.textContent = '';
+      p.style.color = '#6b7fa3';
+      if (i === wptr % RING_SIZE) { p.textContent = 'WPTR'; p.style.color = '#8ab4ff'; }
+      if (i === rptr % RING_SIZE && wptr !== rptr) { p.textContent += (p.textContent ? '/' : '') + 'RPTR'; p.style.color = '#ffc850'; }
+      if (wptr === rptr && i === wptr % RING_SIZE) { p.textContent = 'W=R'; p.style.color = '#7ee0c6'; }
+    }
+  }
+
+  function resetAll() {
+    currentStep = 0;
+    stopAuto();
+    document.getElementById('pm4-step-desc').innerHTML =
+      '<span class="step-number">시작</span><strong>PM4 제출 흐름 시뮬레이터</strong><br><span style="color:#9aa6bd;font-size:12px;">"다음 단계" 버튼으로 vkQueueSubmit → PM4 → Ring Buffer → GPU 실행까지 따라가 보세요.</span>';
+    document.getElementById('pm4-counter').textContent = 'Step 0 / 7';
+
+    ['box-app','box-submit','box-pkt1','box-pkt2','box-cp','box-se'].forEach(id => {
+      const el = document.getElementById(id);
+      el.className = 'pm4-box';
+      const val = el.querySelector('.pm4-val');
+      if (val) { val.style.color = '#9aa6bd'; }
+    });
+    document.getElementById('val-app').textContent = '대기 중';
+    document.getElementById('val-submit').textContent = '-';
+    document.getElementById('val-pkt1').textContent = '-';
+    document.getElementById('val-pkt2').textContent = '-';
+    document.getElementById('val-cp').textContent = 'idle';
+    document.getElementById('val-se').textContent = 'idle';
+    ['arr-app-drv','arr-pkt','arr-cp-se'].forEach(id => setArrow(id, false));
+    document.getElementById('detail-pkt1').classList.remove('show');
+    document.getElementById('detail-pkt2').classList.remove('show');
+
+    for (let i = 0; i < RING_SIZE; i++) {
+      const c = document.getElementById('rc-' + i);
+      c.className = 'ring-cell';
+      c.innerHTML = '<span style="color:#2a3142">empty</span>';
+      document.getElementById('rp-' + i).textContent = '';
+    }
+    for (let i = 0; i < WG_COUNT; i++) {
+      document.getElementById('wg-' + i).className = 'wg-dot';
+    }
+    document.getElementById('wg-label').textContent = '';
+  }
+
+  function goStep(n) {
+    if (n < 1 || n >= STEPS.length) return;
+    currentStep = n;
+    const s = STEPS[n];
+    document.getElementById('pm4-step-desc').innerHTML = s.desc;
+    document.getElementById('pm4-counter').textContent = 'Step ' + n + ' / ' + (STEPS.length - 1);
+    s.fn();
+  }
+
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('pm4-auto').textContent = '▶ 자동 재생';
+  }
+
+  document.getElementById('pm4-next').addEventListener('click', () => {
+    stopAuto();
+    if (currentStep < STEPS.length - 1) goStep(currentStep + 1);
+  });
+
+  document.getElementById('pm4-prev').addEventListener('click', () => {
+    stopAuto();
+    if (currentStep > 1) { resetAll(); for (let i = 1; i < currentStep; i++) goStep(i); }
+    else resetAll();
+  });
+
+  document.getElementById('pm4-reset').addEventListener('click', () => {
+    resetAll();
+  });
+
+  document.getElementById('pm4-auto').addEventListener('click', () => {
+    if (autoTimer) { stopAuto(); return; }
+    document.getElementById('pm4-auto').textContent = '⏸ 일시정지';
+    if (currentStep === 0) goStep(1);
+    autoTimer = setInterval(() => {
+      if (currentStep >= STEPS.length - 1) { stopAuto(); return; }
+      goStep(currentStep + 1);
+    }, 2200);
+  });
+})();
+</script>
+</div>

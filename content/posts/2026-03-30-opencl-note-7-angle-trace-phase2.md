@@ -3,6 +3,10 @@ title: "OpenCL Note #10 — ANGLE 코드 추적 2차: SPIR-V에서 Vulkan Pipeli
 date: 2026-03-30
 slug: "opencl-note-7-angle-trace-phase2"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["angle", "spirv", "vulkan", "pipeline"]
+difficulty: "intermediate"
 ---
 
 이번 노트 목표:

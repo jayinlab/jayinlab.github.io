@@ -3,6 +3,10 @@ title: "OpenCL Note #18 — 애니메이션 실험 #1 (JS v3): Pipeline-Descript
 date: 2026-04-02
 slug: "opencl-note-18-compat-animation"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["vulkan", "pipeline", "descriptor", "animation"]
+difficulty: "intermediate"
 ---
 
 이번 버전은 JS 표준형 v2다.

@@ -3,6 +3,10 @@ title: "OpenCL Note #05 — SPIR-V와 Vulkan Descriptor/Pipeline Layout 매핑"
 date: 2026-03-29
 slug: "opencl-note-5-spirv-vulkan-mapping"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["spirv", "vulkan", "descriptor"]
+difficulty: "intermediate"
 ---
 
 이번 노트 목표:

@@ -3,6 +3,10 @@ title: "OpenCL Note #01 — 객체 라이프사이클과 컴파일/디스패치 
 date: 2026-03-26
 slug: "opencl-note-1-lifecycle"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["opencl", "execution", "lifecycle"]
+difficulty: "beginner"
 ---
 
 이번 노트의 목표는 **OpenCL API 호출 순서**와 **실제 내부 작업 시점**을 분리해서 이해하는 것이다.

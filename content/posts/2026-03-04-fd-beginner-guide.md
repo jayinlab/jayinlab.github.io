@@ -3,6 +3,10 @@ title: "fd 입문 가이드 - find보다 빠르게 파일 찾기"
 date: 2026-03-04
 slug: "fd-beginner-guide"
 draft: false
+type: "note"
+series: "cli-tools"
+tags: ["cli", "tools", "ubuntu"]
+difficulty: "beginner"
 ---
 `fd`는 파일/폴더를 빠르게 찾는 도구다. `find`보다 문법이 직관적이라 초심자에게 특히 좋다.
 

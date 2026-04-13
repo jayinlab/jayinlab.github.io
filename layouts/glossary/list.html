@@ -1,0 +1,32 @@
+{{ define "main" }}
+  <h2>{{ .Title }}</h2>
+  {{ .Content }}
+
+  <div style="margin-top: 16px;">
+    {{ $pages := .Pages.ByTitle }}
+    {{ $letters := slice }}
+    {{ range $pages }}
+      {{ $first := substr .Title 0 1 | upper }}
+      {{ if not (in $letters $first) }}
+        {{ $letters = $letters | append $first }}
+      {{ end }}
+    {{ end }}
+
+    {{ range $letters }}
+      {{ $letter := . }}
+      <div style="margin-top: 20px;">
+        <div style="font-size: 1.1rem; font-weight: 700; color: var(--brand); border-bottom: 1px solid var(--line); padding-bottom: 4px; margin-bottom: 8px;">{{ $letter }}</div>
+        <ul class="post-list">
+          {{ range $pages }}
+            {{ if eq (substr .Title 0 1 | upper) $letter }}
+              <li>
+                <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+                <span class="meta">{{ range .Params.tags }}{{ . }} {{ end }}</span>
+              </li>
+            {{ end }}
+          {{ end }}
+        </ul>
+      </div>
+    {{ end }}
+  </div>
+{{ end }}

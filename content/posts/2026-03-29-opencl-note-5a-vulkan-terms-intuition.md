@@ -3,6 +3,10 @@ title: "OpenCL Note #06 — Vulkan 용어 직관: Descriptor Set/Layout, Pipelin
 date: 2026-03-29
 slug: "opencl-note-5a-vulkan-terms-intuition"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["vulkan", "descriptor", "pipeline"]
+difficulty: "beginner"
 ---
 
 이번 노트는 "외우는 용어"를 "이해되는 구조"로 바꾸는 용도다.

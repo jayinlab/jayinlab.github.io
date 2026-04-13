@@ -3,6 +3,10 @@ title: "fzf 입문 가이드 - 터미널에서 빠르게 선택하기"
 date: 2026-03-04
 slug: "fzf-beginner-guide"
 draft: false
+type: "note"
+series: "cli-tools"
+tags: ["cli", "tools", "ubuntu"]
+difficulty: "beginner"
 ---
 `fzf`는 "목록에서 원하는 항목을 빠르게 고르는" 퍼지 파인더다.
 

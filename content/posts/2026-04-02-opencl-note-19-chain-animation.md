@@ -3,6 +3,10 @@ title: "OpenCL Note #19 — 애니메이션 실험 #2 (JS v3): Compile Chain vs 
 date: 2026-04-02
 slug: "opencl-note-19-chain-animation"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["angle", "vulkan", "animation"]
+difficulty: "intermediate"
 ---
 
 이번 버전은 JS 표준형 v2다.

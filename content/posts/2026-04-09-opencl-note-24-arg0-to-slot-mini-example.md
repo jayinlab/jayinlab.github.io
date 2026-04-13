@@ -3,6 +3,10 @@ title: "OpenCL Note #24 — Arg0가 슬롯으로 떨어지는 미니 예제"
 date: 2026-04-09
 slug: "opencl-note-24-arg0-to-slot-mini-example"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["vulkan", "descriptor", "opencl"]
+difficulty: "intermediate"
 ---
 
 이 글은 OpenCL 커널 인자 하나(특히 arg0)가 어떻게 Vulkan descriptor 슬롯(set/binding) 관점으로 매핑되는지 직관적으로 설명한다.

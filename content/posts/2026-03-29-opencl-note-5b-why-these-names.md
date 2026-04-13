@@ -3,6 +3,10 @@ title: "OpenCL Note #07 — 왜 이름이 pipeline이고 descriptor set일까? (
 date: 2026-03-29
 slug: "opencl-note-5b-why-these-names"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["vulkan", "pipeline", "descriptor"]
+difficulty: "beginner"
 ---
 
 이번 노트는 용어 암기가 아니라, **이름의 배경**을 이해해서 오래 기억하는 목적이다.

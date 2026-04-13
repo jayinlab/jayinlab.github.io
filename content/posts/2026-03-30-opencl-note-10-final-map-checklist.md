@@ -3,6 +3,10 @@ title: "OpenCL Note #13 — 종합 다이어그램 + 최종 체크리스트 (S9)
 date: 2026-03-30
 slug: "opencl-note-10-final-map-checklist"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["opencl", "vulkan", "pm4"]
+difficulty: "intermediate"
 ---
 
 이번 노트는 지금까지 학습한 전체를 한 장으로 묶는 최종 정리다.

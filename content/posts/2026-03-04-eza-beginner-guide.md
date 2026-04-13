@@ -3,6 +3,10 @@ title: "eza 입문 가이드 - ls를 더 보기 좋게"
 date: 2026-03-04
 slug: "eza-beginner-guide"
 draft: false
+type: "note"
+series: "cli-tools"
+tags: ["cli", "tools", "ubuntu"]
+difficulty: "beginner"
 ---
 
 `eza`는 `ls`를 더 읽기 쉽게 만든 도구다. 파일 타입, 권한, 시간 정보를 보기 좋게 정리해 준다.

@@ -3,6 +3,10 @@ title: "OpenCL Note #21 — D3 시작: Vulkan 객체 생성 근거 표(채우는
 date: 2026-04-04
 slug: "opencl-note-21-vulkan-evidence-table"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["vulkan", "pipeline", "descriptor"]
+difficulty: "advanced"
 ---
 
 이번 노트는 D3(근거 표 작성)의 시작점이다.

@@ -3,6 +3,10 @@ title: "OpenCL Note #16 — Pipeline/Layout/Descriptor 호환성 그림으로 �
 date: 2026-04-01
 slug: "opencl-note-16-layout-compatibility-mermaid"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["vulkan", "pipeline", "descriptor", "mermaid"]
+difficulty: "intermediate"
 ---
 
 이번 노트는 네 질문에 정확히 맞춘 "그림 중심" 설명이다.

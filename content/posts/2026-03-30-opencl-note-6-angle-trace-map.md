@@ -3,6 +3,10 @@ title: "OpenCL Note #09 — ANGLE 분리 지도(컴파일 체인 vs 커맨드 �
 date: 2026-03-30
 slug: "opencl-note-6a-angle-trace-map"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["angle", "opencl", "vulkan"]
+difficulty: "intermediate"
 ---
 
 이번 문서는 네 요청대로 **분리된 지도**를 먼저 제공한다.

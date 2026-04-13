@@ -3,6 +3,10 @@ title: "OpenCL Note #12 — AMD PM4 개요: Type3와 Dispatch 패킷 패밀리"
 date: 2026-03-30
 slug: "opencl-note-9-amd-pm4-overview"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["pm4", "gpu", "amd"]
+difficulty: "intermediate"
 ---
 
 이번 노트 목표:

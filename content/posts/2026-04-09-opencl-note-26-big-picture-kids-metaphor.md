@@ -3,6 +3,10 @@ title: "OpenCL Note #26 — 초등학생 버전 큰 그림: 박스 배송 시스
 date: 2026-04-09
 slug: "opencl-note-26-big-picture-kids-metaphor"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["opencl", "vulkan", "gpu"]
+difficulty: "beginner"
 ---
 
 이 글은 어려운 용어를 잠시 내려놓고,

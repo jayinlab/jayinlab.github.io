@@ -3,6 +3,10 @@ title: "OpenCL Note #17 — D1 초안: ANGLE 함수 체인 표(compile vs submit
 date: 2026-04-02
 slug: "opencl-note-17-angle-chain-table-draft"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["angle", "vulkan", "pipeline"]
+difficulty: "advanced"
 ---
 
 이번 노트는 심화 D1의 첫 산출물: **함수 체인 표 초안**이다.

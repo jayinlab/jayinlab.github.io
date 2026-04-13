@@ -3,6 +3,10 @@ title: "OpenCL Note #02 — Build/Compile 경계, Binary Path, 캐시, clspv 관
 date: 2026-03-26
 slug: "opencl-note-2-build-and-cache"
 draft: false
+type: "note"
+series: "opencl-deep-dive"
+tags: ["opencl", "clspv", "spirv"]
+difficulty: "beginner"
 ---
 
 이번 노트 목표는 아래 4가지를 명확히 분리하는 것이다.

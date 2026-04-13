@@ -516,8 +516,9 @@
 
   document.getElementById('pm4-prev').addEventListener('click', () => {
     stopAuto();
-    if (currentStep > 1) { resetAll(); for (let i = 1; i < currentStep; i++) goStep(i); }
-    else resetAll();
+    const target = currentStep - 1;  // resetAll() 전에 저장
+    resetAll();
+    for (let i = 1; i <= target; i++) goStep(i);
   });
 
   document.getElementById('pm4-reset').addEventListener('click', () => {

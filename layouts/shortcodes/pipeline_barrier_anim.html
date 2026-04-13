@@ -1,0 +1,266 @@
+<div id="pba-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#pba-root * { box-sizing: border-box; }
+#pba-root .pba-card { background:#0f1624;border:1px solid #2a3142;border-radius:12px;padding:14px 16px;margin-bottom:12px; }
+#pba-root .pba-title { font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#6b7fa3;margin-bottom:10px; }
+
+/* pipeline stages */
+#pba-root .stages-row { display:flex;gap:4px;align-items:stretch;flex-wrap:wrap; }
+#pba-root .stage-box {
+  flex:1; min-width:90px; border:1px solid #2a3142; border-radius:8px; padding:8px 8px;
+  background:#141a26; text-align:center; transition:background .3s,border-color .3s,box-shadow .3s;
+}
+#pba-root .stage-box.src  { background:rgba(255,200,80,.12);border-color:#ffc850;box-shadow:0 0 10px rgba(255,200,80,.2); }
+#pba-root .stage-box.dst  { background:rgba(138,180,255,.12);border-color:#8ab4ff;box-shadow:0 0 10px rgba(138,180,255,.2); }
+#pba-root .stage-box.done { background:rgba(126,224,198,.08);border-color:#7ee0c6; }
+#pba-root .stage-box.hazard { background:rgba(255,80,80,.15);border-color:#ff5050;box-shadow:0 0 10px rgba(255,80,80,.2); }
+#pba-root .stage-name { font-weight:700;font-size:11px; }
+#pba-root .stage-status { font-size:10px;margin-top:3px; }
+
+#pba-root .stage-arrow { display:flex;align-items:center;color:#3a4560;font-size:16px;transition:color .3s; }
+#pba-root .stage-arrow.active { color:#8ab4ff; }
+#pba-root .stage-arrow.blocked { color:#ff5050; }
+
+/* barrier block */
+#pba-root .barrier-block {
+  border:2px dashed #3a4560; border-radius:8px; padding:8px 12px; text-align:center;
+  background:#0d111c; transition:border-color .3s,background .3s,box-shadow .3s;
+  margin:0 4px;
+}
+#pba-root .barrier-block.active {
+  border-color:#8ab4ff; background:rgba(138,180,255,.1); box-shadow:0 0 16px rgba(138,180,255,.3);
+}
+#pba-root .barrier-block.enforcing {
+  border-color:#7ee0c6; background:rgba(126,224,198,.1); box-shadow:0 0 16px rgba(126,224,198,.3);
+}
+
+/* access mask */
+#pba-root .mask-row { display:flex;gap:6px;flex-wrap:wrap;margin-top:6px; }
+#pba-root .mask-chip {
+  padding:3px 8px;border-radius:999px;font-size:11px;font-family:ui-monospace,monospace;
+  border:1px solid #2a3142; background:#0a0e1a; transition:background .3s,border-color .3s;
+}
+#pba-root .mask-chip.src-chip { background:rgba(255,200,80,.12);border-color:#ffc850;color:#ffc850; }
+#pba-root .mask-chip.dst-chip { background:rgba(138,180,255,.12);border-color:#8ab4ff;color:#8ab4ff; }
+
+/* hazard indicator */
+#pba-root .hazard-box {
+  border:1px solid #ff5050; border-radius:8px; padding:8px 12px; background:rgba(255,50,50,.1);
+  display:none; margin-top:8px;
+}
+#pba-root .hazard-box.show { display:block; }
+#pba-root .safe-box {
+  border:1px solid #7ee0c6; border-radius:8px; padding:8px 12px; background:rgba(126,224,198,.08);
+  display:none; margin-top:8px;
+}
+#pba-root .safe-box.show { display:block; }
+
+/* step box */
+#pba-root .step-box { background:rgba(138,180,255,.07);border:1px solid #2a3142;border-left:3px solid #8ab4ff;border-radius:8px;padding:10px 14px;min-height:52px;line-height:1.6; }
+#pba-root .step-number { display:inline-block;background:#8ab4ff;color:#0b0d12;font-weight:700;font-size:11px;border-radius:999px;padding:1px 7px;margin-right:6px; }
+
+/* controls */
+#pba-root .ctrl-row { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center; }
+#pba-root button { background:#141a26;border:1px solid #2a3142;border-radius:8px;color:#e6ebf5;padding:6px 14px;cursor:pointer;font-size:12px;transition:background .2s,border-color .2s; }
+#pba-root button:hover { background:#1e2840;border-color:#8ab4ff; }
+#pba-root button.primary { background:rgba(138,180,255,.15);border-color:#8ab4ff;color:#8ab4ff;font-weight:600; }
+#pba-root .step-counter { color:#6b7fa3;font-size:12px;margin-left:auto; }
+#pba-root .tab-row { display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap; }
+#pba-root .tab-btn { padding:5px 12px;border-radius:999px;font-size:12px;background:#141a26;border:1px solid #2a3142;color:#9aa6bd;cursor:pointer;transition:background .2s,border-color .2s,color .2s; }
+#pba-root .tab-btn.active { background:rgba(138,180,255,.15);border-color:#8ab4ff;color:#8ab4ff;font-weight:600; }
+</style>
+
+<!-- tabs -->
+<div class="tab-row">
+  <button class="tab-btn active" data-sc="0">시나리오 1: Barrier 없을 때 (Hazard)</button>
+  <button class="tab-btn" data-sc="1">시나리오 2: Barrier 있을 때 (올바른 순서)</button>
+</div>
+
+<!-- controls -->
+<div class="ctrl-row">
+  <button id="pba-prev">← 이전</button>
+  <button id="pba-next" class="primary">다음 단계 →</button>
+  <button id="pba-auto">▶ 자동 재생</button>
+  <button id="pba-reset">↺ 처음</button>
+  <span class="step-counter" id="pba-counter">Step 0</span>
+</div>
+
+<!-- step desc -->
+<div class="step-box" id="pba-step-desc">
+  <span class="step-number">시작</span>
+  <strong>Pipeline Barrier 시뮬레이터</strong><br>
+  <span style="color:#9aa6bd;font-size:12px;">시나리오를 선택하고 탐색하세요.</span>
+</div>
+
+<!-- Pipeline stages -->
+<div class="pba-card">
+  <div class="pba-title">파이프라인 실행 순서</div>
+  <div class="stages-row" id="pba-stages-row">
+    <div class="stage-box" id="pba-s0">
+      <div class="stage-name" id="pba-sn0">Dispatch A</div>
+      <div class="stage-status" id="pba-ss0" style="color:#3a4560;">대기</div>
+    </div>
+    <div class="stage-arrow" id="pba-a01">→</div>
+    <div class="stage-box" id="pba-s1">
+      <div class="stage-name" id="pba-sn1">Shader A</div>
+      <div class="stage-status" id="pba-ss1" style="color:#3a4560;">대기</div>
+    </div>
+    <div class="stage-arrow" id="pba-a12">→</div>
+    <!-- barrier slot -->
+    <div class="barrier-block" id="pba-barrier">
+      <div style="font-weight:700;font-size:11px;" id="pba-bar-label">?</div>
+      <div style="font-size:10px;color:#6b7fa3;margin-top:2px;" id="pba-bar-sub"></div>
+    </div>
+    <div class="stage-arrow" id="pba-a23">→</div>
+    <div class="stage-box" id="pba-s2">
+      <div class="stage-name" id="pba-sn2">Dispatch B</div>
+      <div class="stage-status" id="pba-ss2" style="color:#3a4560;">대기</div>
+    </div>
+    <div class="stage-arrow" id="pba-a34">→</div>
+    <div class="stage-box" id="pba-s3">
+      <div class="stage-name" id="pba-sn3">Shader B</div>
+      <div class="stage-status" id="pba-ss3" style="color:#3a4560;">대기</div>
+    </div>
+  </div>
+</div>
+
+<!-- Access mask detail -->
+<div class="pba-card" id="pba-mask-card" style="display:none;">
+  <div class="pba-title">Barrier 파라미터</div>
+  <div style="font-size:12px;font-family:ui-monospace,monospace;line-height:1.8;" id="pba-mask-detail"></div>
+</div>
+
+<!-- Hazard / Safe indicator -->
+<div class="hazard-box" id="pba-hazard">
+  <strong style="color:#ff7070;">⚠ Data Hazard!</strong>
+  <div style="font-size:12px;margin-top:4px;color:#ffaaaa;" id="pba-hazard-msg"></div>
+</div>
+<div class="safe-box" id="pba-safe">
+  <strong style="color:#7ee0c6;">✓ 올바른 순서 보장됨</strong>
+  <div style="font-size:12px;margin-top:4px;color:#aef0df;" id="pba-safe-msg"></div>
+</div>
+
+<script>
+(function(){
+const SCENES = [
+  // scene 0: no barrier → hazard
+  [
+    { desc:'<span class="step-number">1</span><strong>Shader A가 버퍼에 결과를 씁니다</strong><br><span style="color:#9aa6bd;font-size:12px;">첫 번째 compute dispatch(A)가 실행됩니다. Shader A는 버퍼 X에 계산 결과를 씁니다. 아직 완료되지 않았습니다.</span>', stages:[{c:'src',s:'실행 중'},{c:'src',s:'버퍼 X에 쓰는 중...'},'','',''], bar:{cls:'',lbl:'(barrier 없음)',sub:''}, arrs:[false,false,false,false] },
+    { desc:'<span class="step-number">2</span><strong>Shader A 완료 전에 Shader B가 시작됩니다!</strong><br><span style="color:#9aa6bd;font-size:12px;">barrier가 없으면 GPU는 Dispatch B를 Shader A 완료를 기다리지 않고 실행할 수 있습니다. GPU는 파이프라인을 최대한 채우려 하기 때문입니다.</span>', stages:[{c:'src',s:'실행 중'},{c:'src',s:'쓰기 아직 안 끝남'},{c:null,s:''},{c:'dst',s:'시작됨!'},{c:'dst',s:'버퍼 X 읽기 시도'}], bar:{cls:'',lbl:'(barrier 없음)',sub:''}, arrs:[false,false,false,true] },
+    { desc:'<span class="step-number">3</span><strong>Shader B가 아직 업데이트 안 된 데이터를 읽습니다!</strong><br><span style="color:#9aa6bd;font-size:12px;">Shader B는 버퍼 X를 읽었지만, Shader A가 아직 다 쓰지 않았습니다. 오래된 데이터 또는 쓰레기 값을 읽을 수 있습니다. 이것이 Read-After-Write(RAW) hazard입니다.</span>', stages:[{c:'src',s:'실행 중'},{c:'src',s:'쓰기 중...'},{c:null,s:''},{c:'hazard',s:'동시 실행!'},{c:'hazard',s:'❌ 오염된 데이터 읽음'}], bar:{cls:'',lbl:'(barrier 없음)',sub:''}, arrs:[false,false,false,true], hazard:true, hazardMsg:'Read-After-Write Hazard: Shader B가 Shader A의 쓰기가 끝나기 전에 같은 버퍼를 읽었습니다. 결과가 올바르지 않습니다.' },
+  ],
+  // scene 1: with barrier
+  [
+    { desc:'<span class="step-number">1</span><strong>Shader A가 버퍼 X에 쓰기 시작합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">첫 번째 dispatch(A)의 Shader A가 실행됩니다. 버퍼 X에 계산 결과를 씁니다.</span>', stages:[{c:'src',s:'실행 중'},{c:'src',s:'버퍼 X에 쓰는 중...',},'','',''], bar:{cls:'',lbl:'vkCmdPipelineBarrier',sub:'대기 중'}, arrs:[false,false,false,false] },
+    { desc:'<span class="step-number">2</span><strong>Shader A 완료 — Barrier가 활성화됩니다</strong><br><span style="color:#9aa6bd;font-size:12px;">Shader A가 완료되고 모든 쓰기가 flush됩니다. Barrier가 이 지점을 감지하고 "src stage 완료"를 확인합니다.</span>', stages:[{c:'done',s:'완료 ✓'},{c:'done',s:'쓰기 완료 ✓'},'','',''], bar:{cls:'active',lbl:'vkCmdPipelineBarrier',sub:'src stage 완료 감지'}, arrs:[true,false,false,false], mask:true },
+    { desc:'<span class="step-number">3</span><strong>Barrier가 메모리를 flush하고 가시성을 보장합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">srcAccessMask: SHADER_WRITE → Shader A의 쓰기가 완전히 가시화되도록 캐시를 flush합니다. dstAccessMask: SHADER_READ → Shader B가 읽기 전에 캐시를 invalidate합니다.</span>', stages:[{c:'done',s:'완료 ✓'},{c:'done',s:'완료 ✓'},'','',''], bar:{cls:'enforcing',lbl:'vkCmdPipelineBarrier',sub:'메모리 flush + 캐시 invalidate'}, arrs:[true,false,false,false], mask:true },
+    { desc:'<span class="step-number">4</span><strong>Barrier 통과 → Dispatch B 시작 허용</strong><br><span style="color:#9aa6bd;font-size:12px;">Barrier가 모든 보장을 완료했습니다. 이제 Dispatch B를 시작해도 안전합니다. Shader B는 Shader A가 쓴 최신 데이터를 볼 수 있습니다.</span>', stages:[{c:'done',s:'완료 ✓'},{c:'done',s:'완료 ✓'},{c:null,s:''},{c:'dst',s:'시작 허용됨'},{c:'dst',s:'정확한 데이터 읽기'}], bar:{cls:'enforcing',lbl:'✓ Barrier 통과',sub:'dst stage 허용'}, arrs:[true,true,true,true], safe:true, safeMsg:'Shader B는 Shader A가 쓴 최신 값을 정확하게 읽습니다.' },
+    { desc:'<span class="step-number">5</span><strong>Shader B가 올바른 결과를 가지고 실행됩니다</strong><br><span style="color:#9aa6bd;font-size:12px;">순서가 보장되었습니다. 이것이 vkCmdPipelineBarrier의 역할입니다 — GPU 파이프라인의 두 단계 사이 실행 순서와 메모리 가시성을 모두 보장합니다.</span>', stages:[{c:'done',s:'완료 ✓'},{c:'done',s:'완료 ✓'},{c:null,s:''},{c:'done',s:'완료 ✓'},{c:'done',s:'✅ 올바른 결과'}], bar:{cls:'enforcing',lbl:'✓ Barrier 완료',sub:''}, arrs:[true,true,true,true], safe:true, safeMsg:'두 dispatch 간 실행 순서와 메모리 가시성이 완전히 보장됩니다.' },
+  ],
+];
+
+const MASK_HTML = `<div style="margin-bottom:6px;"><span style="color:#ffc850;font-weight:700;">srcStageMask</span>: VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT</div>
+<div style="margin-bottom:6px;"><span style="color:#ffc850;font-weight:700;">srcAccessMask</span>: VK_ACCESS_SHADER_WRITE_BIT &nbsp;← Shader A의 쓰기</div>
+<div style="margin-bottom:6px;"><span style="color:#8ab4ff;font-weight:700;">dstStageMask</span>: VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT</div>
+<div><span style="color:#8ab4ff;font-weight:700;">dstAccessMask</span>: VK_ACCESS_SHADER_READ_BIT &nbsp;← Shader B가 읽기 전</div>`;
+
+let scene = 0, step = 0, autoTimer = null;
+const getSteps = () => SCENES[scene];
+
+function applyStep(s) {
+  document.getElementById('pba-step-desc').innerHTML = s.desc;
+  document.getElementById('pba-counter').textContent = 'Step ' + step + ' / ' + getSteps().length;
+
+  // stages
+  const ids = ['pba-s0','pba-s1','pba-s2','pba-s3'];
+  const snames = ['Dispatch A','Shader A','Dispatch B','Shader B'];
+  const statusEls = ['pba-ss0','pba-ss1','pba-ss2','pba-ss3'];
+  const arrIds = ['pba-a01','pba-a12','pba-a23','pba-a34'];
+
+  s.stages.forEach((st, i) => {
+    const el = document.getElementById(ids[i]);
+    if (!st || st.c === null) { el.className = 'stage-box'; document.getElementById(statusEls[i]).textContent = '대기'; document.getElementById(statusEls[i]).style.color = '#3a4560'; return; }
+    el.className = 'stage-box' + (st.c ? ' ' + st.c : '');
+    const ssel = document.getElementById(statusEls[i]);
+    ssel.textContent = st.s || '';
+    ssel.style.color = st.c === 'src' ? '#ffc850' : st.c === 'dst' ? '#8ab4ff' : st.c === 'done' ? '#7ee0c6' : st.c === 'hazard' ? '#ff7070' : '#6b7fa3';
+  });
+
+  s.arrs.forEach((a, i) => {
+    const el = document.getElementById(arrIds[i]);
+    if (el) el.className = 'stage-arrow' + (a ? ' active' : (scene === 0 && i === 3 ? ' blocked' : ''));
+  });
+
+  // barrier
+  const barEl = document.getElementById('pba-barrier');
+  barEl.className = 'barrier-block ' + (s.bar.cls || '');
+  document.getElementById('pba-bar-label').textContent = s.bar.lbl;
+  document.getElementById('pba-bar-sub').textContent = s.bar.sub;
+
+  // mask
+  const maskCard = document.getElementById('pba-mask-card');
+  if (s.mask) {
+    maskCard.style.display = '';
+    document.getElementById('pba-mask-detail').innerHTML = MASK_HTML;
+  } else if (step === 1) {
+    maskCard.style.display = 'none';
+  }
+
+  // hazard/safe
+  document.getElementById('pba-hazard').className = 'hazard-box' + (s.hazard ? ' show' : '');
+  document.getElementById('pba-safe').className = 'safe-box' + (s.safe ? ' show' : '');
+  if (s.hazardMsg) document.getElementById('pba-hazard-msg').textContent = s.hazardMsg;
+  if (s.safeMsg) document.getElementById('pba-safe-msg').textContent = s.safeMsg;
+}
+
+function resetAll() {
+  stopAuto();
+  step = 0;
+  document.getElementById('pba-step-desc').innerHTML = '<span class="step-number">시작</span><strong>Pipeline Barrier 시뮬레이터</strong><br><span style="color:#9aa6bd;font-size:12px;">시나리오를 선택하고 탐색하세요.</span>';
+  document.getElementById('pba-counter').textContent = 'Step 0';
+  ['pba-s0','pba-s1','pba-s2','pba-s3'].forEach((id,i) => {
+    document.getElementById(id).className = 'stage-box';
+    const sel = document.getElementById('pba-ss'+i); sel.textContent = '대기'; sel.style.color = '#3a4560';
+  });
+  ['pba-a01','pba-a12','pba-a23','pba-a34'].forEach(id => { const e = document.getElementById(id); if(e) e.className = 'stage-arrow'; });
+  document.getElementById('pba-barrier').className = 'barrier-block';
+  document.getElementById('pba-bar-label').textContent = '?';
+  document.getElementById('pba-bar-sub').textContent = '';
+  document.getElementById('pba-mask-card').style.display = 'none';
+  document.getElementById('pba-hazard').className = 'hazard-box';
+  document.getElementById('pba-safe').className = 'safe-box';
+}
+
+function goStep(n) {
+  const steps = getSteps();
+  if (n < 1 || n > steps.length) return;
+  step = n;
+  applyStep(steps[n-1]);
+}
+
+function stopAuto() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+  document.getElementById('pba-auto').textContent = '▶ 자동 재생';
+}
+
+document.querySelectorAll('#pba-root .tab-btn').forEach((btn, i) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#pba-root .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    scene = i;
+    resetAll();
+  });
+});
+
+document.getElementById('pba-next').addEventListener('click', () => { stopAuto(); if (step < getSteps().length) goStep(step + 1); });
+document.getElementById('pba-prev').addEventListener('click', () => { stopAuto(); const t = step - 1; resetAll(); for (let i = 1; i <= t; i++) goStep(i); });
+document.getElementById('pba-reset').addEventListener('click', resetAll);
+document.getElementById('pba-auto').addEventListener('click', () => {
+  if (autoTimer) { stopAuto(); return; }
+  document.getElementById('pba-auto').textContent = '⏸ 일시정지';
+  if (step === 0) goStep(1);
+  autoTimer = setInterval(() => { if (step >= getSteps().length) { stopAuto(); return; } goStep(step + 1); }, 2400);
+});
+})();
+</script>
+</div>

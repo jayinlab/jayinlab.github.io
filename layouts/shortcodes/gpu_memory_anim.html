@@ -1,0 +1,405 @@
+<div id="gma-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#gma-root * { box-sizing: border-box; }
+
+#gma-root .gma-card {
+  background: #0f1624;
+  border: 1px solid #2a3142;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+#gma-root .gma-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .6px;
+  text-transform: uppercase; color: #6b7fa3; margin-bottom: 10px;
+}
+
+/* memory layer rows */
+#gma-root .mem-layers { display: flex; flex-direction: column; gap: 6px; }
+#gma-root .mem-layer {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid #2a3142; border-radius: 8px;
+  padding: 9px 12px; background: #141a26;
+  transition: background .35s, border-color .35s, box-shadow .35s;
+}
+#gma-root .mem-layer.active {
+  background: rgba(138,180,255,.15); border-color: #8ab4ff;
+  box-shadow: 0 0 14px rgba(138,180,255,.25);
+}
+#gma-root .mem-layer.hit {
+  background: rgba(126,224,198,.12); border-color: #7ee0c6;
+  box-shadow: 0 0 10px rgba(126,224,198,.2);
+}
+#gma-root .mem-layer.miss {
+  background: rgba(255,100,100,.08); border-color: #ff6464;
+}
+
+#gma-root .layer-icon { font-size: 18px; width: 26px; text-align: center; }
+#gma-root .layer-info { flex: 1; }
+#gma-root .layer-name { font-weight: 700; font-size: 13px; }
+#gma-root .layer-meta { font-size: 11px; color: #6b7fa3; margin-top: 1px; }
+#gma-root .layer-latency {
+  font-family: ui-monospace, monospace; font-size: 11px;
+  padding: 2px 8px; border-radius: 999px;
+  border: 1px solid #2a3142; background: #0a0e1a;
+  white-space: nowrap;
+}
+#gma-root .layer-status {
+  font-size: 11px; font-weight: 700; min-width: 50px; text-align: right;
+  transition: color .3s;
+}
+
+/* data packet */
+#gma-root .data-packet {
+  display: inline-block;
+  background: rgba(138,180,255,.25); border: 1px solid #8ab4ff;
+  border-radius: 6px; padding: 3px 10px; font-size: 12px;
+  font-weight: 700; color: #8ab4ff; font-family: ui-monospace, monospace;
+  transition: background .3s, border-color .3s, color .3s;
+}
+#gma-root .data-packet.found {
+  background: rgba(126,224,198,.25); border-color: #7ee0c6; color: #7ee0c6;
+}
+#gma-root .data-packet.miss-pkt {
+  background: rgba(255,100,100,.15); border-color: #ff6464; color: #ff9090;
+}
+
+/* work-item box */
+#gma-root .wi-box {
+  border: 1px solid #2a3142; border-radius: 8px; padding: 8px 12px;
+  background: #141a26; display: flex; align-items: center; gap: 10px;
+  margin-bottom: 8px; transition: border-color .3s;
+}
+#gma-root .wi-box.requesting { border-color: #8ab4ff; }
+
+/* step box */
+#gma-root .step-box {
+  background: rgba(138,180,255,.07);
+  border: 1px solid #2a3142; border-left: 3px solid #8ab4ff;
+  border-radius: 8px; padding: 10px 14px; min-height: 52px; line-height: 1.6;
+}
+#gma-root .step-number {
+  display: inline-block; background: #8ab4ff; color: #0b0d12;
+  font-weight: 700; font-size: 11px; border-radius: 999px; padding: 1px 7px; margin-right: 6px;
+}
+
+/* controls */
+#gma-root .ctrl-row {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;
+}
+#gma-root button {
+  background: #141a26; border: 1px solid #2a3142; border-radius: 8px;
+  color: #e6ebf5; padding: 6px 14px; cursor: pointer; font-size: 12px;
+  transition: background .2s, border-color .2s;
+}
+#gma-root button:hover { background: #1e2840; border-color: #8ab4ff; }
+#gma-root button.primary {
+  background: rgba(138,180,255,.15); border-color: #8ab4ff; color: #8ab4ff; font-weight: 600;
+}
+#gma-root .step-counter { color: #6b7fa3; font-size: 12px; margin-left: auto; }
+
+/* scenario tabs */
+#gma-root .tab-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+#gma-root .tab-btn {
+  padding: 5px 12px; border-radius: 999px; font-size: 12px;
+  background: #141a26; border: 1px solid #2a3142; color: #9aa6bd; cursor: pointer;
+  transition: background .2s, border-color .2s, color .2s;
+}
+#gma-root .tab-btn.active {
+  background: rgba(138,180,255,.15); border-color: #8ab4ff; color: #8ab4ff; font-weight: 600;
+}
+
+/* bandwidth bar */
+#gma-root .bw-bar-wrap { margin-top: 6px; }
+#gma-root .bw-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+#gma-root .bw-label { font-size: 11px; min-width: 80px; color: #9aa6bd; }
+#gma-root .bw-track { flex: 1; height: 10px; background: #1e2840; border-radius: 999px; overflow: hidden; }
+#gma-root .bw-fill { height: 100%; border-radius: 999px; transition: width .6s; }
+#gma-root .bw-val { font-size: 11px; font-family: ui-monospace, monospace; min-width: 70px; color: #e6ebf5; }
+</style>
+
+<!-- Scenario tabs -->
+<div class="tab-row">
+  <button class="tab-btn active" data-scene="0">시나리오 1: Cache Hit</button>
+  <button class="tab-btn" data-scene="1">시나리오 2: Cache Miss</button>
+  <button class="tab-btn" data-scene="2">시나리오 3: 메모리 대역폭 비교</button>
+</div>
+
+<!-- Controls -->
+<div class="ctrl-row">
+  <button id="gma-prev">← 이전</button>
+  <button id="gma-next" class="primary">다음 단계 →</button>
+  <button id="gma-auto">▶ 자동 재생</button>
+  <button id="gma-reset">↺ 처음</button>
+  <span class="step-counter" id="gma-counter">Step 0</span>
+</div>
+
+<!-- Step description -->
+<div class="step-box" id="gma-step-desc">
+  <span class="step-number">시작</span>
+  <strong>GPU 메모리 계층 시뮬레이터</strong><br>
+  <span style="color:#9aa6bd;font-size:12px;">위의 시나리오를 선택하고 "다음 단계"로 탐색하세요.</span>
+</div>
+
+<!-- Work-item request -->
+<div class="gma-card" id="gma-wi-card">
+  <div class="gma-title">Work-Item 요청</div>
+  <div class="wi-box" id="gma-wi-box">
+    <span style="font-size:20px;">🔲</span>
+    <div>
+      <div style="font-weight:600;" id="gma-wi-label">work-item #42</div>
+      <div style="font-size:11px;color:#6b7fa3;" id="gma-wi-req">대기 중...</div>
+    </div>
+    <div style="margin-left:auto;" id="gma-wi-pkt"></div>
+  </div>
+</div>
+
+<!-- Memory Layers -->
+<div class="gma-card">
+  <div class="gma-title">GPU 메모리 계층 (빠름 → 느림)</div>
+  <div class="mem-layers" id="gma-layers">
+    <div class="mem-layer" id="gml-0">
+      <span class="layer-icon">⚡</span>
+      <div class="layer-info">
+        <div class="layer-name">Register / Private Memory</div>
+        <div class="layer-meta">per work-item · 수 KB · 레지스터 파일</div>
+      </div>
+      <span class="layer-latency" style="color:#7ee0c6;">~1 cycle</span>
+      <span class="layer-status" id="gms-0" style="color:#3a4560;">—</span>
+    </div>
+    <div class="mem-layer" id="gml-1">
+      <span class="layer-icon">🔶</span>
+      <div class="layer-info">
+        <div class="layer-name">LDS / Local Memory</div>
+        <div class="layer-meta">per work-group · 32–64 KB · Compute Unit 내부</div>
+      </div>
+      <span class="layer-latency" style="color:#8ab4ff;">~2–4 cycles</span>
+      <span class="layer-status" id="gms-1" style="color:#3a4560;">—</span>
+    </div>
+    <div class="mem-layer" id="gml-2">
+      <span class="layer-icon">🟦</span>
+      <div class="layer-info">
+        <div class="layer-name">L1 Cache</div>
+        <div class="layer-meta">per CU · 16–32 KB · 읽기 전용 or 읽기+쓰기</div>
+      </div>
+      <span class="layer-latency" style="color:#8ab4ff;">~20–40 cycles</span>
+      <span class="layer-status" id="gms-2" style="color:#3a4560;">—</span>
+    </div>
+    <div class="mem-layer" id="gml-3">
+      <span class="layer-icon">🟨</span>
+      <div class="layer-info">
+        <div class="layer-name">L2 Cache</div>
+        <div class="layer-meta">shared across CUs · 1–4 MB · 칩 전체 공유</div>
+      </div>
+      <span class="layer-latency" style="color:#ffc850;">~100–200 cycles</span>
+      <span class="layer-status" id="gms-3" style="color:#3a4560;">—</span>
+    </div>
+    <div class="mem-layer" id="gml-4">
+      <span class="layer-icon">🟥</span>
+      <div class="layer-info">
+        <div class="layer-name">Global Memory (VRAM)</div>
+        <div class="layer-meta">전체 GPU · 8–32 GB · HBM/GDDR6</div>
+      </div>
+      <span class="layer-latency" style="color:#ff9090;">~400–800 cycles</span>
+      <span class="layer-status" id="gms-4" style="color:#3a4560;">—</span>
+    </div>
+    <div class="mem-layer" id="gml-5">
+      <span class="layer-icon">💾</span>
+      <div class="layer-info">
+        <div class="layer-name">System Memory (RAM)</div>
+        <div class="layer-meta">CPU 메모리 · PCIe 경유 · 수백 GB</div>
+      </div>
+      <span class="layer-latency" style="color:#ff6464;">~2000+ cycles</span>
+      <span class="layer-status" id="gms-5" style="color:#3a4560;">—</span>
+    </div>
+  </div>
+</div>
+
+<!-- Bandwidth comparison (scene 2) -->
+<div class="gma-card" id="gma-bw-card" style="display:none;">
+  <div class="gma-title">메모리 대역폭 비교</div>
+  <div class="bw-bar-wrap" id="gma-bw-bars">
+    <div class="bw-bar-row">
+      <span class="bw-label">Register</span>
+      <div class="bw-track"><div class="bw-fill" id="bw-0" style="width:0%;background:#7ee0c6;"></div></div>
+      <span class="bw-val" id="bwv-0">—</span>
+    </div>
+    <div class="bw-bar-row">
+      <span class="bw-label">LDS</span>
+      <div class="bw-track"><div class="bw-fill" id="bw-1" style="width:0%;background:#8ab4ff;"></div></div>
+      <span class="bw-val" id="bwv-1">—</span>
+    </div>
+    <div class="bw-bar-row">
+      <span class="bw-label">L1 Cache</span>
+      <div class="bw-track"><div class="bw-fill" id="bw-2" style="width:0%;background:#8ab4ff;"></div></div>
+      <span class="bw-val" id="bwv-2">—</span>
+    </div>
+    <div class="bw-bar-row">
+      <span class="bw-label">L2 Cache</span>
+      <div class="bw-track"><div class="bw-fill" id="bw-3" style="width:0%;background:#ffc850;"></div></div>
+      <span class="bw-val" id="bwv-3">—</span>
+    </div>
+    <div class="bw-bar-row">
+      <span class="bw-label">VRAM</span>
+      <div class="bw-track"><div class="bw-fill" id="bw-4" style="width:0%;background:#ff9090;"></div></div>
+      <span class="bw-val" id="bwv-4">—</span>
+    </div>
+    <div class="bw-bar-row">
+      <span class="bw-label">PCIe (RAM)</span>
+      <div class="bw-track"><div class="bw-fill" id="bw-5" style="width:0%;background:#ff6464;"></div></div>
+      <span class="bw-val" id="bwv-5">—</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* ── 시나리오 정의 ── */
+  const SCENES = [
+    // scene 0: Cache Hit (L1에서 히트)
+    [
+      { desc: '<span class="step-number">1</span><strong>work-item이 데이터를 요청합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">work-item #42가 global 버퍼의 특정 주소에 있는 float 값을 읽으려 합니다. 먼저 가장 가까운 캐시부터 확인합니다.</span>', wi:'float buf[512] 읽기 요청', layers:[{id:0,cls:'active',s:'검색 중...'},{id:1,cls:'active',s:'검색 중...'},{id:2,cls:'active',s:'검색 중...'}] },
+      { desc: '<span class="step-number">2</span><strong>Register / LDS 확인 — Miss</strong><br><span style="color:#9aa6bd;font-size:12px;">이 데이터는 Register나 LDS에 없습니다. Register는 현재 work-item의 지역 변수만 있고, LDS는 같은 work-group이 명시적으로 올린 데이터만 있습니다.</span>', wi:'float buf[512] 읽기 요청', layers:[{id:0,cls:'miss',s:'Miss ✗'},{id:1,cls:'miss',s:'Miss ✗'},{id:2,cls:'active',s:'검색 중...'}] },
+      { desc: '<span class="step-number">3</span><strong>L1 Cache — Hit! ✓</strong><br><span style="color:#9aa6bd;font-size:12px;">L1 캐시에 해당 데이터가 있습니다. ~20–40 cycle 만에 데이터를 가져옵니다. L2나 VRAM까지 내려가지 않아도 됩니다.</span>', wi:'float buf[512] 읽기 요청', layers:[{id:0,cls:'miss',s:'Miss ✗'},{id:1,cls:'miss',s:'Miss ✗'},{id:2,cls:'hit',s:'Hit ✓'}], pkt:'found' },
+      { desc: '<span class="step-number">4</span><strong>데이터가 work-item에 전달됩니다</strong><br><span style="color:#9aa6bd;font-size:12px;">L1에서 찾은 데이터가 work-item의 레지스터로 로드됩니다. 전체 latency: ~20–40 cycles. L1 hit율이 높을수록 커널 성능이 좋습니다.</span>', wi:'데이터 수신 완료 ✓', layers:[{id:0,cls:'hit',s:'로드 ✓'},{id:1,cls:'miss',s:'Miss ✗'},{id:2,cls:'hit',s:'Hit ✓'}], pkt:'found' },
+    ],
+    // scene 1: Cache Miss (VRAM까지)
+    [
+      { desc: '<span class="step-number">1</span><strong>work-item이 처음 보는 데이터를 요청합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">커널이 처음 실행되어 캐시가 비어 있습니다. 아직 어느 레벨 캐시에도 이 데이터가 없는 상태 — cold miss라고 합니다.</span>', wi:'float bigbuf[1M] 최초 읽기', layers:[] },
+      { desc: '<span class="step-number">2</span><strong>Register / LDS — Miss</strong><br><span style="color:#9aa6bd;font-size:12px;">당연히 없습니다.</span>', wi:'float bigbuf[1M] 최초 읽기', layers:[{id:0,cls:'miss',s:'Miss ✗'},{id:1,cls:'miss',s:'Miss ✗'}] },
+      { desc: '<span class="step-number">3</span><strong>L1 Cache — Miss</strong><br><span style="color:#9aa6bd;font-size:12px;">L1에도 없습니다. 더 아래로 내려갑니다.</span>', wi:'float bigbuf[1M] 최초 읽기', layers:[{id:0,cls:'miss',s:'Miss ✗'},{id:1,cls:'miss',s:'Miss ✗'},{id:2,cls:'miss',s:'Miss ✗'}] },
+      { desc: '<span class="step-number">4</span><strong>L2 Cache — Miss</strong><br><span style="color:#9aa6bd;font-size:12px;">L2에도 없습니다. 이제 VRAM(글로벌 메모리)까지 가야 합니다. 여기서부터 latency가 크게 늘어납니다.</span>', wi:'float bigbuf[1M] 최초 읽기', layers:[{id:0,cls:'miss',s:'Miss ✗'},{id:1,cls:'miss',s:'Miss ✗'},{id:2,cls:'miss',s:'Miss ✗'},{id:3,cls:'miss',s:'Miss ✗'}] },
+      { desc: '<span class="step-number">5</span><strong>VRAM(Global Memory) — 데이터 발견</strong><br><span style="color:#9aa6bd;font-size:12px;">VRAM에서 데이터를 찾았습니다. ~400–800 cycles 대기. 이 데이터는 L2 → L1에 캐시되어, 다음 접근부터는 hit됩니다.</span>', wi:'float bigbuf[1M] 최초 읽기', layers:[{id:0,cls:'miss',s:'Miss ✗'},{id:1,cls:'miss',s:'Miss ✗'},{id:2,cls:'miss',s:'Miss ✗'},{id:3,cls:'miss',s:'Miss ✗'},{id:4,cls:'hit',s:'Hit ✓'}], pkt:'found' },
+      { desc: '<span class="step-number">6</span><strong>캐시 라인이 채워집니다 (캐시 fill)</strong><br><span style="color:#9aa6bd;font-size:12px;">VRAM에서 가져온 데이터가 L2 → L1 순서로 캐시 라인을 채웁니다. 다음 같은 주소 접근은 L1 hit가 됩니다. 이것이 "temporal locality"를 활용하는 방식입니다.</span>', wi:'데이터 수신 완료 ✓', layers:[{id:0,cls:'hit',s:'로드 ✓'},{id:1,cls:'miss',s:'—'},{id:2,cls:'hit',s:'채워짐 ✓'},{id:3,cls:'hit',s:'채워짐 ✓'},{id:4,cls:'hit',s:'Hit ✓'}], pkt:'found' },
+    ],
+    // scene 2: bandwidth comparison
+    [
+      { desc: '<span class="step-number">1</span><strong>메모리 계층별 대역폭(bandwidth) 비교</strong><br><span style="color:#9aa6bd;font-size:12px;">latency뿐 아니라 bandwidth도 중요합니다. 초당 얼마나 많은 데이터를 처리할 수 있는지입니다. 막대가 길수록 빠릅니다.</span>', bw:true, bws:[0,0,0,0,0,0] },
+      { desc: '<span class="step-number">2</span><strong>Register는 사실상 무제한</strong><br><span style="color:#9aa6bd;font-size:12px;">레지스터 파일은 wavefront 전체가 같은 cycle에 접근합니다. wavefront 당 수 TB/s 수준 — 비교 대상이 없는 압도적 속도.</span>', bw:true, bws:[100,0,0,0,0,0], bwLabels:['~수 TB/s','','','','',''] },
+      { desc: '<span class="step-number">3</span><strong>LDS는 ~10 TB/s</strong><br><span style="color:#9aa6bd;font-size:12px;">AMD RDNA 기준 CU당 LDS bandwidth는 ~10 TB/s. work-group 내 공유 계산에는 LDS가 최적입니다.</span>', bw:true, bws:[100,80,0,0,0,0], bwLabels:['~수 TB/s','~10 TB/s','','','',''] },
+      { desc: '<span class="step-number">4</span><strong>L1/L2 캐시</strong><br><span style="color:#9aa6bd;font-size:12px;">L1: ~수백 GB/s (CU당). L2: ~수 TB/s (칩 전체 합산). 캐시 히트가 나면 VRAM까지 안 가도 됩니다.</span>', bw:true, bws:[100,80,55,40,0,0], bwLabels:['~수 TB/s','~10 TB/s','~수백 GB/s','~수 TB/s 합산','',''] },
+      { desc: '<span class="step-number">5</span><strong>VRAM — ~1 TB/s (HBM 기준)</strong><br><span style="color:#9aa6bd;font-size:12px;">AMD MI300 같은 HBM GPU는 VRAM bandwidth ~5 TB/s. 소비자용 GDDR6 GPU는 ~500–700 GB/s. 커널이 "bandwidth-bound"이면 여기서 막힙니다.</span>', bw:true, bws:[100,80,55,40,18,0], bwLabels:['~수 TB/s','~10 TB/s','~수백 GB/s','~수 TB/s 합산','~500GB–5TB/s',''] },
+      { desc: '<span class="step-number">6</span><strong>PCIe (System Memory) — ~64 GB/s</strong><br><span style="color:#9aa6bd;font-size:12px;">PCIe 5.0 x16 기준 ~64 GB/s. VRAM의 수십 분의 1. GPU 커널 실행 중 CPU 메모리를 직접 접근하면 이 속도 병목이 생깁니다. 그래서 가능하면 미리 clEnqueueCopyBuffer로 VRAM에 올려두는 것이 중요합니다.</span>', bw:true, bws:[100,80,55,40,18,5], bwLabels:['~수 TB/s','~10 TB/s','~수백 GB/s','~수 TB/s 합산','~500GB–5TB/s','~64 GB/s (PCIe5)'] },
+    ],
+  ];
+
+  let scene = 0;
+  let step = 0;
+  let autoTimer = null;
+
+  function getSteps() { return SCENES[scene]; }
+
+  function resetLayers() {
+    for (let i = 0; i < 6; i++) {
+      document.getElementById('gml-' + i).className = 'mem-layer';
+      document.getElementById('gms-' + i).textContent = '—';
+      document.getElementById('gms-' + i).style.color = '#3a4560';
+    }
+  }
+
+  function applyStep(s) {
+    document.getElementById('gma-step-desc').innerHTML = s.desc;
+    document.getElementById('gma-counter').textContent = 'Step ' + step + ' / ' + (getSteps().length);
+
+    // work-item
+    if (s.wi !== undefined) {
+      document.getElementById('gma-wi-req').textContent = s.wi;
+      document.getElementById('gma-wi-box').className = 'wi-box requesting';
+    }
+    const pktEl = document.getElementById('gma-wi-pkt');
+    if (s.pkt === 'found') {
+      pktEl.innerHTML = '<span class="data-packet found">data ✓</span>';
+    } else if (s.pkt === 'miss') {
+      pktEl.innerHTML = '<span class="data-packet miss-pkt">miss ✗</span>';
+    } else if (step === 1 && !s.pkt) {
+      pktEl.innerHTML = '<span class="data-packet">data?</span>';
+    }
+
+    // layers
+    resetLayers();
+    if (s.layers) {
+      s.layers.forEach(l => {
+        const el = document.getElementById('gml-' + l.id);
+        el.className = 'mem-layer ' + l.cls;
+        const st = document.getElementById('gms-' + l.id);
+        st.textContent = l.s;
+        st.style.color = l.cls === 'hit' ? '#7ee0c6' : l.cls === 'miss' ? '#ff9090' : '#8ab4ff';
+      });
+    }
+
+    // bandwidth
+    if (s.bw) {
+      document.getElementById('gma-bw-card').style.display = '';
+      s.bws.forEach((v, i) => {
+        document.getElementById('bw-' + i).style.width = v + '%';
+        document.getElementById('bwv-' + i).textContent = (s.bwLabels && s.bwLabels[i]) ? s.bwLabels[i] : (v > 0 ? v + '%' : '—');
+      });
+    } else {
+      document.getElementById('gma-bw-card').style.display = 'none';
+    }
+  }
+
+  function resetAll() {
+    stopAuto();
+    step = 0;
+    document.getElementById('gma-step-desc').innerHTML = '<span class="step-number">시작</span><strong>GPU 메모리 계층 시뮬레이터</strong><br><span style="color:#9aa6bd;font-size:12px;">위의 시나리오를 선택하고 "다음 단계"로 탐색하세요.</span>';
+    document.getElementById('gma-counter').textContent = 'Step 0';
+    document.getElementById('gma-wi-req').textContent = '대기 중...';
+    document.getElementById('gma-wi-box').className = 'wi-box';
+    document.getElementById('gma-wi-pkt').innerHTML = '';
+    resetLayers();
+    document.getElementById('gma-bw-card').style.display = 'none';
+    for (let i = 0; i < 6; i++) {
+      document.getElementById('bw-' + i).style.width = '0%';
+      document.getElementById('bwv-' + i).textContent = '—';
+    }
+  }
+
+  function goStep(n) {
+    const steps = getSteps();
+    if (n < 1 || n > steps.length) return;
+    step = n;
+    applyStep(steps[n - 1]);
+  }
+
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('gma-auto').textContent = '▶ 자동 재생';
+  }
+
+  // scene tabs
+  document.querySelectorAll('#gma-root .tab-btn').forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#gma-root .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      scene = i;
+      resetAll();
+    });
+  });
+
+  document.getElementById('gma-next').addEventListener('click', () => {
+    stopAuto();
+    if (step < getSteps().length) goStep(step + 1);
+  });
+
+  document.getElementById('gma-prev').addEventListener('click', () => {
+    stopAuto();
+    const target = step - 1;
+    resetAll();
+    for (let i = 1; i <= target; i++) goStep(i);
+  });
+
+  document.getElementById('gma-reset').addEventListener('click', resetAll);
+
+  document.getElementById('gma-auto').addEventListener('click', () => {
+    if (autoTimer) { stopAuto(); return; }
+    document.getElementById('gma-auto').textContent = '⏸ 일시정지';
+    if (step === 0) goStep(1);
+    autoTimer = setInterval(() => {
+      if (step >= getSteps().length) { stopAuto(); return; }
+      goStep(step + 1);
+    }, 2400);
+  });
+})();
+</script>
+</div>

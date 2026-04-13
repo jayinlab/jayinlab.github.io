@@ -1,0 +1,219 @@
+<div id="ib-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#ib-root * { box-sizing: border-box; }
+#ib-root .ib-card { background:#0f1624;border:1px solid #2a3142;border-radius:12px;padding:14px 16px;margin-bottom:12px; }
+#ib-root .ib-title { font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#6b7fa3;margin-bottom:10px; }
+
+/* buffer cells */
+#ib-root .buf-row { display:flex;gap:4px;flex-wrap:wrap;align-items:center; }
+#ib-root .buf-cell {
+  min-width:80px;height:48px;border:1px solid #2a3142;border-radius:7px;background:#141a26;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:10px;text-align:center;line-height:1.3;padding:4px;
+  transition:background .35s,border-color .35s,box-shadow .35s;
+}
+#ib-root .buf-cell.active  { background:rgba(138,180,255,.15);border-color:#8ab4ff;box-shadow:0 0 12px rgba(138,180,255,.25); }
+#ib-root .buf-cell.reading { background:rgba(255,200,80,.13);border-color:#ffc850; }
+#ib-root .buf-cell.done    { background:rgba(126,224,198,.08);border-color:#7ee0c6; }
+#ib-root .buf-cell.ib-cell { background:rgba(126,224,198,.06);border-color:#3a5a50; }
+#ib-root .buf-cell.ib-active { background:rgba(126,224,198,.18);border-color:#7ee0c6;box-shadow:0 0 12px rgba(126,224,198,.25); }
+#ib-root .buf-cell.ptr-cell { background:rgba(255,150,50,.12);border-color:#ff9632; }
+#ib-root .buf-cell.ptr-active { background:rgba(255,150,50,.25);border-color:#ff9632;box-shadow:0 0 12px rgba(255,150,50,.2); }
+
+#ib-root .cell-name { font-weight:700;font-size:10px; }
+#ib-root .cell-sub  { font-size:9px;color:#6b7fa3;margin-top:1px; }
+
+/* arrow */
+#ib-root .buf-arrow { color:#3a4560;font-size:20px;transition:color .3s; }
+#ib-root .buf-arrow.active { color:#8ab4ff; }
+#ib-root .buf-arrow.ib-active { color:#7ee0c6; }
+#ib-root .jump-arrow { display:flex;flex-direction:column;align-items:center;color:#ff9632;font-size:11px;font-weight:700;padding:0 4px; }
+
+/* CP indicator */
+#ib-root .cp-row { display:flex;align-items:center;gap:10px;border:1px solid #2a3142;border-radius:8px;padding:8px 12px;background:#141a26;transition:border-color .3s; }
+#ib-root .cp-row.active { border-color:#8ab4ff; }
+#ib-root .cp-row.ib-mode { border-color:#7ee0c6; }
+
+/* step box */
+#ib-root .step-box { background:rgba(138,180,255,.07);border:1px solid #2a3142;border-left:3px solid #8ab4ff;border-radius:8px;padding:10px 14px;min-height:52px;line-height:1.6; }
+#ib-root .step-number { display:inline-block;background:#8ab4ff;color:#0b0d12;font-weight:700;font-size:11px;border-radius:999px;padding:1px 7px;margin-right:6px; }
+
+/* controls */
+#ib-root .ctrl-row { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center; }
+#ib-root button { background:#141a26;border:1px solid #2a3142;border-radius:8px;color:#e6ebf5;padding:6px 14px;cursor:pointer;font-size:12px;transition:background .2s,border-color .2s; }
+#ib-root button:hover { background:#1e2840;border-color:#8ab4ff; }
+#ib-root button.primary { background:rgba(138,180,255,.15);border-color:#8ab4ff;color:#8ab4ff;font-weight:600; }
+#ib-root .step-counter { color:#6b7fa3;font-size:12px;margin-left:auto; }
+</style>
+
+<!-- controls -->
+<div class="ctrl-row">
+  <button id="ib-prev">← 이전</button>
+  <button id="ib-next" class="primary">다음 단계 →</button>
+  <button id="ib-auto">▶ 자동 재생</button>
+  <button id="ib-reset">↺ 처음</button>
+  <span class="step-counter" id="ib-counter">Step 0</span>
+</div>
+
+<!-- step desc -->
+<div class="step-box" id="ib-step-desc">
+  <span class="step-number">시작</span>
+  <strong>PM4 Indirect Buffer 시뮬레이터</strong><br>
+  <span style="color:#9aa6bd;font-size:12px;">"다음 단계"로 Main Ring → IB → 실행 → 복귀 흐름을 따라가세요.</span>
+</div>
+
+<!-- CP Status -->
+<div class="ib-card">
+  <div class="ib-title">Command Processor (CP)</div>
+  <div class="cp-row" id="ib-cp">
+    <span style="font-size:20px;">⚙️</span>
+    <div>
+      <div style="font-weight:700;" id="ib-cp-label">대기 중</div>
+      <div style="font-size:11px;color:#6b7fa3;" id="ib-cp-sub">—</div>
+    </div>
+    <div style="margin-left:auto;font-family:ui-monospace,monospace;font-size:11px;" id="ib-cp-pc">PC: —</div>
+  </div>
+</div>
+
+<!-- Main Ring Buffer -->
+<div class="ib-card">
+  <div class="ib-title">Main Ring Buffer</div>
+  <div class="buf-row" id="ib-main-row">
+    <div class="buf-cell" id="ib-m0"><span class="cell-name">SET_SH_REG</span><span class="cell-sub">shader 인자</span></div>
+    <div class="buf-arrow" id="ib-ma0">→</div>
+    <div class="buf-cell ptr-cell" id="ib-m1"><span class="cell-name" style="color:#ff9632;">IT_INDIRECT_BUFFER</span><span class="cell-sub">ptr: IB 주소<br>size: 5 dwords</span></div>
+    <div class="buf-arrow" id="ib-ma1">→</div>
+    <div class="buf-cell" id="ib-m2"><span class="cell-name">IT_EVENT_WRITE</span><span class="cell-sub">fence signal</span></div>
+  </div>
+  <div style="margin-top:8px;font-size:11px;color:#6b7fa3;">
+    <span id="ib-wptr-label">WPTR: → IT_EVENT_WRITE 이후</span>
+  </div>
+</div>
+
+<!-- Jump indicator -->
+<div style="text-align:center;padding:4px 0;font-size:12px;color:#ff9632;font-weight:700;" id="ib-jump-label"></div>
+
+<!-- Indirect Buffer -->
+<div class="ib-card">
+  <div class="ib-title" style="color:#7ee0c6;">Indirect Buffer (IB) — 별도 메모리 영역</div>
+  <div class="buf-row" id="ib-ib-row">
+    <div class="buf-cell ib-cell" id="ib-ib0"><span class="cell-name">SET_SH_REG</span><span class="cell-sub">추가 인자</span></div>
+    <div class="buf-arrow" id="ib-iba0">→</div>
+    <div class="buf-cell ib-cell" id="ib-ib1"><span class="cell-name">DISPATCH_DIRECT</span><span class="cell-sub">group X/Y/Z</span></div>
+    <div class="buf-arrow" id="ib-iba1">→</div>
+    <div class="buf-cell ib-cell" id="ib-ib2"><span class="cell-name">DISPATCH_DIRECT</span><span class="cell-sub">(2nd batch)</span></div>
+    <div class="buf-arrow" id="ib-iba2">→</div>
+    <div class="buf-cell ib-cell" id="ib-ib3"><span class="cell-name">NOP / END</span><span class="cell-sub">IB 끝</span></div>
+  </div>
+</div>
+
+<!-- Return indicator -->
+<div style="text-align:center;padding:4px 0;font-size:12px;color:#8ab4ff;font-weight:700;" id="ib-return-label"></div>
+
+<script>
+(function(){
+const STEPS = [
+  { desc:'<span class="step-number">1</span><strong>CP가 Main Ring Buffer를 읽기 시작합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">Command Processor가 ring buffer에서 패킷을 순서대로 읽습니다. 첫 번째 패킷 SET_SH_REG를 처리합니다.</span>',
+    cp:{cls:'active',lbl:'Main Ring 읽는 중',sub:'SET_SH_REG 처리',pc:'PC: ring[0]'},
+    main:[{c:'reading'},{c:null},{c:null}], ib:[null,null,null,null], arrs:[false,false], ibarrs:[false,false,false], jump:'', ret:'' },
+  { desc:'<span class="step-number">2</span><strong>IT_INDIRECT_BUFFER 패킷을 만났습니다!</strong><br><span style="color:#9aa6bd;font-size:12px;">CP가 <code>IT_INDIRECT_BUFFER</code> 패킷을 읽었습니다. 이 패킷에는 "다음에 실행할 패킷들이 있는 메모리 주소(포인터)"와 크기가 들어 있습니다.</span>',
+    cp:{cls:'active',lbl:'IT_INDIRECT_BUFFER 디코딩',sub:'ptr: 0x80000000, size: 5 dwords',pc:'PC: ring[1]'},
+    main:[{c:'done'},{c:'ptr-active'},{c:null}], ib:[null,null,null,null], arrs:[true,false], ibarrs:[false,false,false], jump:'↓ IB 주소로 점프 준비 중...', ret:'' },
+  { desc:'<span class="step-number">3</span><strong>CP가 IB 주소로 점프합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">CP는 현재 ring buffer 위치(PC)를 스택에 저장하고, IB가 있는 메모리 주소로 점프합니다. 마치 함수 호출처럼 동작합니다.</span>',
+    cp:{cls:'ib-mode',lbl:'IB 모드 진입',sub:'PC → IB 주소로 점프',pc:'PC: IB[0]'},
+    main:[{c:'done'},{c:'done'},{c:null}], ib:[{c:'ib-active'},{c:null},{c:null},{c:null}], arrs:[true,false], ibarrs:[false,false,false], jump:'↓ CP가 IB 주소로 점프! (ring PC 저장됨)', ret:'' },
+  { desc:'<span class="step-number">4</span><strong>IB 안의 패킷들을 순서대로 실행합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">CP는 IB 내부의 패킷을 Main Ring과 똑같이 처리합니다. DISPATCH_DIRECT 패킷을 만나면 실제 compute shader를 실행시킵니다.</span>',
+    cp:{cls:'ib-mode',lbl:'IB 실행 중',sub:'DISPATCH_DIRECT × 2 처리',pc:'PC: IB[1]~IB[2]'},
+    main:[{c:'done'},{c:'done'},{c:null}], ib:[{c:'done'},{c:'ib-active'},{c:'ib-active'},{c:null}], arrs:[true,false], ibarrs:[true,true,false], jump:'IB 실행 중 ↕', ret:'' },
+  { desc:'<span class="step-number">5</span><strong>IB 끝(NOP/END) → CP가 Main Ring으로 복귀합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">IB의 마지막 패킷을 처리한 후, CP는 저장해 두었던 ring buffer PC로 자동 복귀합니다. 마치 함수 반환(return)처럼요.</span>',
+    cp:{cls:'active',lbl:'Main Ring 복귀',sub:'IT_INDIRECT_BUFFER 다음 패킷으로',pc:'PC: ring[2]'},
+    main:[{c:'done'},{c:'done'},{c:'reading'}], ib:[{c:'done'},{c:'done'},{c:'done'},{c:'done'}], arrs:[true,true], ibarrs:[true,true,true], jump:'', ret:'↑ CP가 Main Ring으로 복귀 (ring PC 복원)' },
+  { desc:'<span class="step-number">6</span><strong>IT_EVENT_WRITE 처리 — 완료</strong><br><span style="color:#9aa6bd;font-size:12px;">CP가 Main Ring의 나머지 패킷(EVENT_WRITE)을 처리합니다. IB에서 실행한 dispatch들이 모두 완료되었음을 fence/semaphore에 알립니다.</span>',
+    cp:{cls:'active',lbl:'EVENT_WRITE 처리',sub:'완료 신호 발생 → fence signal',pc:'PC: ring[2] 완료'},
+    main:[{c:'done'},{c:'done'},{c:'done'}], ib:[{c:'done'},{c:'done'},{c:'done'},{c:'done'}], arrs:[true,true], ibarrs:[true,true,true], jump:'', ret:'' },
+];
+
+let step = 0, autoTimer = null;
+
+function applyStep(s) {
+  document.getElementById('ib-step-desc').innerHTML = s.desc;
+  document.getElementById('ib-counter').textContent = 'Step ' + step + ' / ' + STEPS.length;
+
+  const cp = document.getElementById('ib-cp');
+  cp.className = 'cp-row ' + (s.cp.cls || '');
+  document.getElementById('ib-cp-label').textContent = s.cp.lbl;
+  document.getElementById('ib-cp-sub').textContent = s.cp.sub;
+  document.getElementById('ib-cp-pc').textContent = s.cp.pc;
+
+  // main cells
+  const mIds = ['ib-m0','ib-m1','ib-m2'];
+  const baseMain = ['','ptr-cell',''];
+  s.main.forEach((m, i) => {
+    const el = document.getElementById(mIds[i]);
+    if (!m || m.c === null) { el.className = 'buf-cell ' + baseMain[i]; return; }
+    el.className = 'buf-cell ' + (m.c === 'ptr-active' ? 'ptr-active' : m.c);
+  });
+
+  // ib cells
+  const ibIds = ['ib-ib0','ib-ib1','ib-ib2','ib-ib3'];
+  s.ib.forEach((b, i) => {
+    const el = document.getElementById(ibIds[i]);
+    if (!b || b.c === null) { el.className = 'buf-cell ib-cell'; return; }
+    el.className = 'buf-cell ' + (b.c === 'ib-active' ? 'ib-active' : b.c === 'done' ? 'done' : 'ib-cell');
+  });
+
+  // arrows main
+  ['ib-ma0','ib-ma1'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.className = 'buf-arrow' + (s.arrs[i] ? ' active' : '');
+  });
+  ['ib-iba0','ib-iba1','ib-iba2'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.className = 'buf-arrow' + (s.ibarrs[i] ? ' ib-active' : '');
+  });
+
+  document.getElementById('ib-jump-label').textContent = s.jump || '';
+  document.getElementById('ib-return-label').textContent = s.ret || '';
+}
+
+function resetAll() {
+  stopAuto();
+  step = 0;
+  document.getElementById('ib-step-desc').innerHTML = '<span class="step-number">시작</span><strong>PM4 Indirect Buffer 시뮬레이터</strong><br><span style="color:#9aa6bd;font-size:12px;">"다음 단계"로 Main Ring → IB → 실행 → 복귀 흐름을 따라가세요.</span>';
+  document.getElementById('ib-counter').textContent = 'Step 0';
+  document.getElementById('ib-cp').className = 'cp-row';
+  document.getElementById('ib-cp-label').textContent = '대기 중';
+  document.getElementById('ib-cp-sub').textContent = '—';
+  document.getElementById('ib-cp-pc').textContent = 'PC: —';
+  ['ib-m0','ib-m2'].forEach(id => document.getElementById(id).className = 'buf-cell');
+  document.getElementById('ib-m1').className = 'buf-cell ptr-cell';
+  ['ib-ib0','ib-ib1','ib-ib2','ib-ib3'].forEach(id => document.getElementById(id).className = 'buf-cell ib-cell');
+  ['ib-ma0','ib-ma1'].forEach(id => document.getElementById(id).className = 'buf-arrow');
+  ['ib-iba0','ib-iba1','ib-iba2'].forEach(id => document.getElementById(id).className = 'buf-arrow');
+  document.getElementById('ib-jump-label').textContent = '';
+  document.getElementById('ib-return-label').textContent = '';
+}
+
+function goStep(n) {
+  if (n < 1 || n > STEPS.length) return;
+  step = n;
+  applyStep(STEPS[n-1]);
+}
+
+function stopAuto() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+  document.getElementById('ib-auto').textContent = '▶ 자동 재생';
+}
+
+document.getElementById('ib-next').addEventListener('click', () => { stopAuto(); if (step < STEPS.length) goStep(step + 1); });
+document.getElementById('ib-prev').addEventListener('click', () => { stopAuto(); const t = step - 1; resetAll(); for (let i = 1; i <= t; i++) goStep(i); });
+document.getElementById('ib-reset').addEventListener('click', resetAll);
+document.getElementById('ib-auto').addEventListener('click', () => {
+  if (autoTimer) { stopAuto(); return; }
+  document.getElementById('ib-auto').textContent = '⏸ 일시정지';
+  if (step === 0) goStep(1);
+  autoTimer = setInterval(() => { if (step >= STEPS.length) { stopAuto(); return; } goStep(step + 1); }, 2400);
+});
+})();
+</script>
+</div>

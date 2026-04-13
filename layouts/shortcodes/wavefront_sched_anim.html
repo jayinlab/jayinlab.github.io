@@ -1,0 +1,273 @@
+<div id="wsa-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#wsa-root * { box-sizing: border-box; }
+#wsa-root .wsa-card { background:#0f1624;border:1px solid #2a3142;border-radius:12px;padding:14px 16px;margin-bottom:12px; }
+#wsa-root .wsa-title { font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#6b7fa3;margin-bottom:10px; }
+
+/* wavefront slots */
+#wsa-root .wf-grid { display:flex;flex-direction:column;gap:6px; }
+#wsa-root .wf-row { display:flex;align-items:center;gap:8px; }
+#wsa-root .wf-slot {
+  flex:1; border:1px solid #2a3142; border-radius:8px; padding:8px 10px;
+  background:#141a26; min-height:52px;
+  transition:background .35s, border-color .35s, box-shadow .35s;
+}
+#wsa-root .wf-slot.running { background:rgba(126,224,198,.12);border-color:#7ee0c6;box-shadow:0 0 10px rgba(126,224,198,.2); }
+#wsa-root .wf-slot.stalled { background:rgba(255,200,80,.1);border-color:#ffc850; }
+#wsa-root .wf-slot.waiting { background:rgba(100,150,255,.08);border-color:#6496ff; }
+#wsa-root .wf-slot.done    { background:rgba(126,224,198,.06);border-color:#4a7060; }
+#wsa-root .wf-slot.empty   { background:#0d111c;border-color:#1e2535;opacity:.5; }
+#wsa-root .wf-name { font-weight:700;font-size:12px;margin-bottom:3px; }
+#wsa-root .wf-status { font-size:11px; }
+#wsa-root .wf-pc { font-family:ui-monospace,monospace;font-size:10px;color:#6b7fa3;margin-top:2px; }
+
+/* arrow indicator */
+#wsa-root .exec-arrow {
+  font-size:18px; color:#3a4560; transition:color .3s; width:22px; text-align:center;
+}
+#wsa-root .exec-arrow.active { color:#7ee0c6; }
+
+/* issue unit */
+#wsa-root .issue-box {
+  border:1px solid #2a3142;border-radius:8px;padding:8px 12px;
+  background:#141a26;display:flex;align-items:center;gap:10px;margin-bottom:8px;
+  transition:border-color .3s;
+}
+#wsa-root .issue-box.issuing { border-color:#7ee0c6; }
+
+/* memory request */
+#wsa-root .mem-req {
+  border:1px solid #2a3142;border-radius:8px;padding:8px 12px;background:#141a26;
+  font-size:12px;transition:background .3s,border-color .3s;
+}
+#wsa-root .mem-req.pending { background:rgba(255,200,80,.1);border-color:#ffc850; }
+#wsa-root .mem-req.done    { background:rgba(126,224,198,.1);border-color:#7ee0c6; }
+
+/* cycle counter */
+#wsa-root .cycle-bar {
+  display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;
+}
+#wsa-root .cycle-dot {
+  width:14px;height:14px;border-radius:3px;background:#1e2840;border:1px solid #2a3142;
+  transition:background .2s;
+}
+#wsa-root .cycle-dot.used { background:#7ee0c6; }
+#wsa-root .cycle-dot.wasted { background:#ff9090; }
+
+/* step box */
+#wsa-root .step-box { background:rgba(138,180,255,.07);border:1px solid #2a3142;border-left:3px solid #8ab4ff;border-radius:8px;padding:10px 14px;min-height:52px;line-height:1.6; }
+#wsa-root .step-number { display:inline-block;background:#8ab4ff;color:#0b0d12;font-weight:700;font-size:11px;border-radius:999px;padding:1px 7px;margin-right:6px; }
+
+/* controls */
+#wsa-root .ctrl-row { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center; }
+#wsa-root button { background:#141a26;border:1px solid #2a3142;border-radius:8px;color:#e6ebf5;padding:6px 14px;cursor:pointer;font-size:12px;transition:background .2s,border-color .2s; }
+#wsa-root button:hover { background:#1e2840;border-color:#8ab4ff; }
+#wsa-root button.primary { background:rgba(138,180,255,.15);border-color:#8ab4ff;color:#8ab4ff;font-weight:600; }
+#wsa-root .step-counter { color:#6b7fa3;font-size:12px;margin-left:auto; }
+
+/* tab */
+#wsa-root .tab-row { display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap; }
+#wsa-root .tab-btn { padding:5px 12px;border-radius:999px;font-size:12px;background:#141a26;border:1px solid #2a3142;color:#9aa6bd;cursor:pointer;transition:background .2s,border-color .2s,color .2s; }
+#wsa-root .tab-btn.active { background:rgba(138,180,255,.15);border-color:#8ab4ff;color:#8ab4ff;font-weight:600; }
+</style>
+
+<!-- tabs -->
+<div class="tab-row">
+  <button class="tab-btn active" data-sc="0">시나리오 1: Without Latency Hiding</button>
+  <button class="tab-btn" data-sc="1">시나리오 2: With Latency Hiding (4 wavefronts)</button>
+</div>
+
+<!-- controls -->
+<div class="ctrl-row">
+  <button id="wsa-prev">← 이전</button>
+  <button id="wsa-next" class="primary">다음 단계 →</button>
+  <button id="wsa-auto">▶ 자동 재생</button>
+  <button id="wsa-reset">↺ 처음</button>
+  <span class="step-counter" id="wsa-counter">Step 0</span>
+</div>
+
+<!-- step desc -->
+<div class="step-box" id="wsa-step-desc">
+  <span class="step-number">시작</span>
+  <strong>Wavefront 스케줄링 시뮬레이터</strong><br>
+  <span style="color:#9aa6bd;font-size:12px;">시나리오를 선택하고 "다음 단계"로 탐색하세요.</span>
+</div>
+
+<!-- CU Wavefront Slots -->
+<div class="wsa-card">
+  <div class="wsa-title">Compute Unit (CU) — Wavefront 슬롯</div>
+  <div class="wf-grid" id="wsa-wf-grid">
+    <!-- 4 slots -->
+    <div class="wf-row">
+      <div class="exec-arrow" id="wsa-arr-0">▶</div>
+      <div class="wf-slot" id="wsa-wf-0">
+        <div class="wf-name" id="wsa-wfn-0">WF #0</div>
+        <div class="wf-status" id="wsa-wfs-0" style="color:#3a4560;">idle</div>
+        <div class="wf-pc" id="wsa-wfp-0"></div>
+      </div>
+    </div>
+    <div class="wf-row">
+      <div class="exec-arrow" id="wsa-arr-1">▶</div>
+      <div class="wf-slot" id="wsa-wf-1">
+        <div class="wf-name" id="wsa-wfn-1">WF #1</div>
+        <div class="wf-status" id="wsa-wfs-1" style="color:#3a4560;">idle</div>
+        <div class="wf-pc" id="wsa-wfp-1"></div>
+      </div>
+    </div>
+    <div class="wf-row">
+      <div class="exec-arrow" id="wsa-arr-2">▶</div>
+      <div class="wf-slot" id="wsa-wf-2">
+        <div class="wf-name" id="wsa-wfn-2">WF #2</div>
+        <div class="wf-status" id="wsa-wfs-2" style="color:#3a4560;">idle</div>
+        <div class="wf-pc" id="wsa-wfp-2"></div>
+      </div>
+    </div>
+    <div class="wf-row">
+      <div class="exec-arrow" id="wsa-arr-3">▶</div>
+      <div class="wf-slot" id="wsa-wf-3">
+        <div class="wf-name" id="wsa-wfn-3">WF #3</div>
+        <div class="wf-status" id="wsa-wfs-3" style="color:#3a4560;">idle</div>
+        <div class="wf-pc" id="wsa-wfp-3"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Issue unit + memory -->
+<div class="wsa-card">
+  <div class="wsa-title">Issue Unit & Memory</div>
+  <div class="issue-box" id="wsa-issue">
+    <span style="font-size:18px;">⚙️</span>
+    <div>
+      <div style="font-weight:600;">Issue Unit</div>
+      <div style="font-size:11px;color:#6b7fa3;" id="wsa-issue-lbl">대기 중</div>
+    </div>
+  </div>
+  <div class="mem-req" id="wsa-mem">메모리 요청: 없음</div>
+</div>
+
+<!-- Cycle efficiency -->
+<div class="wsa-card">
+  <div class="wsa-title">CU 실행 효율 (사이클 활용)</div>
+  <div style="font-size:11px;color:#6b7fa3;margin-bottom:6px;">
+    <span style="color:#7ee0c6;font-weight:600;">■</span> 연산 실행
+    <span style="color:#ff9090;font-weight:600;margin-left:10px;">■</span> 대기(낭비)
+  </div>
+  <div class="cycle-bar" id="wsa-cycles"></div>
+  <div style="margin-top:6px;font-size:11px;" id="wsa-eff-label"></div>
+</div>
+
+<script>
+(function(){
+
+const SCENES = [
+  // scene 0: wavefront 1개, 메모리 stall 시 그냥 대기
+  [
+    { desc:'<span class="step-number">1</span><strong>WF #0 하나만 CU에 있습니다</strong><br><span style="color:#9aa6bd;font-size:12px;">wavefront가 1개뿐입니다. 연산을 실행하다 메모리 접근이 필요하면... 아무것도 교체할 수 없습니다.</span>', wfs:[{cls:'running',s:'ALU 연산 중',p:'PC: add.f32, mul.f32...'},{cls:'empty',s:'empty'},{cls:'empty',s:'empty'},{cls:'empty',s:'empty'}], active:0, issue:'WF #0 실행 중', mem:'메모리 요청: 없음', cycles:[1,1,1] },
+    { desc:'<span class="step-number">2</span><strong>WF #0이 global memory 읽기를 요청합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">커널이 <code>in[get_global_id(0)]</code>을 읽으려 합니다. VRAM 요청이 발생했습니다. 응답까지 ~400–800 cycles 걸립니다.</span>', wfs:[{cls:'stalled',s:'VRAM 대기 중 (stall)',p:'PC: load.f32 → 대기'},{cls:'empty',s:'empty'},{cls:'empty',s:'empty'},{cls:'empty',s:'empty'}], active:-1, issue:'대기 중...', mem:'메모리 요청: VRAM load.f32 → 응답 대기 (~600 cycles)', cycles:[1,1,1,'w','w','w','w','w','w','w','w','w'] },
+    { desc:'<span class="step-number">3</span><strong>~600 cycles 동안 CU가 완전히 유휴 상태입니다</strong><br><span style="color:#9aa6bd;font-size:12px;">다른 wavefront가 없으므로 교체할 수 없습니다. Issue Unit은 아무것도 할 수 없이 기다립니다. 이것이 <strong>latency가 그대로 손실</strong>되는 상황입니다.</span>', wfs:[{cls:'stalled',s:'VRAM 대기 중...',p:'PC: 멈춤'},{cls:'empty',s:'empty'},{cls:'empty',s:'empty'},{cls:'empty',s:'empty'}], active:-1, issue:'idle (낭비 중)', mem:'메모리 요청: 응답 대기 중...', cycles:[1,1,1,'w','w','w','w','w','w','w','w','w','w','w','w'] },
+    { desc:'<span class="step-number">4</span><strong>데이터 도착 → WF #0 재개</strong><br><span style="color:#9aa6bd;font-size:12px;">VRAM에서 데이터가 도착했습니다. WF #0이 재개됩니다. 하지만 그 사이 수백 cycles가 낭비되었습니다.</span>', wfs:[{cls:'running',s:'재개 — ALU 연산 중',p:'PC: mul.f32, add.f32...'},{cls:'empty',s:'empty'},{cls:'empty',s:'empty'},{cls:'empty',s:'empty'}], active:0, issue:'WF #0 재개', mem:'메모리 요청: 완료 ✓', cycles:[1,1,1,'w','w','w','w','w','w','w','w','w','w','w','w',1,1,1], eff:'효율: 6 / 18 cycles ≈ 33% 😰 (낭비: 12 cycles)' },
+  ],
+  // scene 1: wavefront 4개, latency hiding
+  [
+    { desc:'<span class="step-number">1</span><strong>CU에 4개의 wavefront가 채워져 있습니다</strong><br><span style="color:#9aa6bd;font-size:12px;">같은 커널의 다른 work-group에서 나온 wavefront들입니다. Issue Unit은 준비된 wavefront를 순서대로 실행합니다.</span>', wfs:[{cls:'running',s:'ALU 연산 중',p:'PC: add.f32...'},{cls:'waiting',s:'준비 완료',p:'PC: mul.f32...'},{cls:'waiting',s:'준비 완료',p:'PC: add.f32...'},{cls:'waiting',s:'준비 완료',p:'PC: fma.f32...'}], active:0, issue:'WF #0 실행 중', mem:'메모리 요청: 없음', cycles:[1] },
+    { desc:'<span class="step-number">2</span><strong>WF #0이 VRAM load 요청 → stall</strong><br><span style="color:#9aa6bd;font-size:12px;">WF #0이 메모리를 요청하며 stall됩니다. 하지만 이번엔 다릅니다 — WF #1, #2, #3이 기다리고 있습니다.</span>', wfs:[{cls:'stalled',s:'VRAM 대기 (stall)',p:'PC: load → 대기'},{cls:'waiting',s:'준비 완료 ← 다음!',p:'PC: mul.f32...'},{cls:'waiting',s:'준비 완료',p:'PC: add.f32...'},{cls:'waiting',s:'준비 완료',p:'PC: fma.f32...'}], active:-1, issue:'WF #0 stall → WF #1로 전환!', mem:'메모리 요청: WF #0 VRAM load 발생', cycles:[1,1] },
+    { desc:'<span class="step-number">3</span><strong>Issue Unit이 즉시 WF #1로 전환합니다</strong><br><span style="color:#9aa6bd;font-size:12px;">0 cycles 오버헤드로 전환됩니다. GPU는 wavefront 전환 비용이 거의 없습니다 — 각 wavefront는 자신의 레지스터를 항상 갖고 있기 때문입니다.</span>', wfs:[{cls:'stalled',s:'VRAM 대기 중',p:'PC: 멈춤'},{cls:'running',s:'ALU 연산 중 ← 실행!',p:'PC: mul.f32...'},{cls:'waiting',s:'준비 완료',p:'PC: add.f32...'},{cls:'waiting',s:'준비 완료',p:'PC: fma.f32...'}], active:1, issue:'WF #1 실행 중 (즉시 전환)', mem:'메모리 요청: WF #0 응답 대기...', cycles:[1,1,1,1,1] },
+    { desc:'<span class="step-number">4</span><strong>WF #1 → WF #2 → WF #3 순서로 실행됩니다</strong><br><span style="color:#9aa6bd;font-size:12px;">WF #0이 VRAM 응답을 기다리는 동안, 나머지 wavefront들이 계속 연산합니다. CU가 쉬지 않습니다.</span>', wfs:[{cls:'stalled',s:'VRAM 대기 중',p:'PC: 멈춤'},{cls:'done',s:'완료 → 다음 대기',p:'PC: 완료'},{cls:'running',s:'ALU 연산 중',p:'PC: add.f32...'},{cls:'waiting',s:'준비 완료',p:'PC: fma.f32...'}], active:2, issue:'WF #2 실행 중', mem:'메모리 요청: WF #0 응답 대기...', cycles:[1,1,1,1,1,1,1,1] },
+    { desc:'<span class="step-number">5</span><strong>WF #0 데이터 도착 — WF #0 다시 준비됨</strong><br><span style="color:#9aa6bd;font-size:12px;">VRAM 응답이 왔습니다. WF #0이 "준비 완료" 상태가 됩니다. 현재 WF #3 실행이 끝나면 WF #0이 다시 스케줄됩니다.</span>', wfs:[{cls:'waiting',s:'데이터 도착 → 준비!',p:'PC: 재개 대기'},{cls:'done',s:'완료',p:'—'},{cls:'done',s:'완료',p:'—'},{cls:'running',s:'ALU 연산 중',p:'PC: fma.f32...'}], active:3, issue:'WF #3 실행 중', mem:'메모리 요청: WF #0 완료 ✓ — 재개 준비됨', cycles:[1,1,1,1,1,1,1,1,1,1,1,1] },
+    { desc:'<span class="step-number">6</span><strong>WF #0 재개 — CU는 단 한 cycle도 낭비하지 않았습니다</strong><br><span style="color:#9aa6bd;font-size:12px;">메모리 latency가 ~600 cycles였지만, CU는 다른 wavefront로 숨겨버렸습니다. 이것이 <strong>latency hiding</strong>입니다. GPU가 메모리 latency에도 빠른 이유입니다.</span>', wfs:[{cls:'running',s:'재개 — ALU 연산 중',p:'PC: mul.f32...'},{cls:'done',s:'완료',p:'—'},{cls:'done',s:'완료',p:'—'},{cls:'done',s:'완료',p:'—'}], active:0, issue:'WF #0 재개', mem:'메모리 요청: 없음', cycles:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], eff:'효율: 18 / 18 cycles ≈ 100% 🎉 (latency hiding 성공!)' },
+  ],
+];
+
+let scene = 0, step = 0, autoTimer = null;
+const getSteps = () => SCENES[scene];
+
+function buildCycles(cs) {
+  const container = document.getElementById('wsa-cycles');
+  container.innerHTML = '';
+  if (!cs) return;
+  cs.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'cycle-dot' + (c === 1 ? ' used' : c === 'w' ? ' wasted' : '');
+    container.appendChild(d);
+  });
+}
+
+function applyStep(s) {
+  document.getElementById('wsa-step-desc').innerHTML = s.desc;
+  document.getElementById('wsa-counter').textContent = 'Step ' + step + ' / ' + getSteps().length;
+
+  // wavefronts
+  s.wfs.forEach((w, i) => {
+    document.getElementById('wsa-wf-' + i).className = 'wf-slot ' + w.cls;
+    document.getElementById('wsa-wfs-' + i).textContent = w.s;
+    document.getElementById('wsa-wfs-' + i).style.color = w.cls === 'running' ? '#7ee0c6' : w.cls === 'stalled' ? '#ffc850' : w.cls === 'done' ? '#5a8a78' : '#6b7fa3';
+    document.getElementById('wsa-wfp-' + i).textContent = w.p || '';
+    document.getElementById('wsa-arr-' + i).className = 'exec-arrow' + (s.active === i ? ' active' : '');
+  });
+
+  // issue
+  document.getElementById('wsa-issue').className = 'issue-box' + (s.active >= 0 ? ' issuing' : '');
+  document.getElementById('wsa-issue-lbl').textContent = s.issue || '대기 중';
+
+  // mem
+  const memEl = document.getElementById('wsa-mem');
+  memEl.className = 'mem-req' + (s.mem && s.mem.includes('대기') ? ' pending' : s.mem && s.mem.includes('완료') ? ' done' : '');
+  memEl.textContent = s.mem || '없음';
+
+  buildCycles(s.cycles);
+  document.getElementById('wsa-eff-label').textContent = s.eff || '';
+}
+
+function resetAll() {
+  stopAuto();
+  step = 0;
+  document.getElementById('wsa-step-desc').innerHTML = '<span class="step-number">시작</span><strong>Wavefront 스케줄링 시뮬레이터</strong><br><span style="color:#9aa6bd;font-size:12px;">시나리오를 선택하고 "다음 단계"로 탐색하세요.</span>';
+  document.getElementById('wsa-counter').textContent = 'Step 0';
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('wsa-wf-' + i).className = 'wf-slot';
+    document.getElementById('wsa-wfs-' + i).textContent = 'idle'; document.getElementById('wsa-wfs-' + i).style.color = '#3a4560';
+    document.getElementById('wsa-wfp-' + i).textContent = '';
+    document.getElementById('wsa-arr-' + i).className = 'exec-arrow';
+  }
+  document.getElementById('wsa-issue').className = 'issue-box';
+  document.getElementById('wsa-issue-lbl').textContent = '대기 중';
+  document.getElementById('wsa-mem').className = 'mem-req';
+  document.getElementById('wsa-mem').textContent = '메모리 요청: 없음';
+  document.getElementById('wsa-cycles').innerHTML = '';
+  document.getElementById('wsa-eff-label').textContent = '';
+}
+
+function goStep(n) {
+  const steps = getSteps();
+  if (n < 1 || n > steps.length) return;
+  step = n;
+  applyStep(steps[n - 1]);
+}
+
+function stopAuto() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+  document.getElementById('wsa-auto').textContent = '▶ 자동 재생';
+}
+
+document.querySelectorAll('#wsa-root .tab-btn').forEach((btn, i) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#wsa-root .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    scene = i;
+    resetAll();
+  });
+});
+
+document.getElementById('wsa-next').addEventListener('click', () => { stopAuto(); if (step < getSteps().length) goStep(step + 1); });
+document.getElementById('wsa-prev').addEventListener('click', () => { stopAuto(); const t = step - 1; resetAll(); for (let i = 1; i <= t; i++) goStep(i); });
+document.getElementById('wsa-reset').addEventListener('click', resetAll);
+document.getElementById('wsa-auto').addEventListener('click', () => {
+  if (autoTimer) { stopAuto(); return; }
+  document.getElementById('wsa-auto').textContent = '⏸ 일시정지';
+  if (step === 0) goStep(1);
+  autoTimer = setInterval(() => { if (step >= getSteps().length) { stopAuto(); return; } goStep(step + 1); }, 2400);
+});
+})();
+</script>
+</div>

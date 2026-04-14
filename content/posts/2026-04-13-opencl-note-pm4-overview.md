@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["pm4", "gpu", "amd"]
 difficulty: "intermediate"
-layer: "UMD"
+layer: "PM4"
 ---
 
 "OpenCL enqueue → Vulkan dispatch → 그다음은?"  

@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "gpu", "memory", "performance"]
 difficulty: "intermediate"
+layer: "HW"
 ---
 
 GPU에서 `__global` 메모리는 느리다.  

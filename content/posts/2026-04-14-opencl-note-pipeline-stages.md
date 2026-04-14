@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "barrier", "synchronization"]
 difficulty: "intermediate"
+layer: "VK"
 ---
 
 `vkCmdPipelineBarrier`를 쓸 때 항상 마주치는 `VK_PIPELINE_STAGE_*` 마스크.  

@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "sync", "fence", "gpu"]
 difficulty: "intermediate"
+layer: "VK"
 ---
 
 `clFinish(queue)` — "큐의 모든 명령이 끝날 때까지 기다려라." 한 줄짜리 API지만, 내부에서는 Vulkan Fence, PM4 EVENT_WRITE, OS 대기 기본 요소들이 연쇄적으로 동작한다.

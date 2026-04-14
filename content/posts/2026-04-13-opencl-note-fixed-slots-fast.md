@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "descriptor", "performance"]
 difficulty: "intermediate"
+layer: "VK"
 ---
 
 "왜 set/binding 같은 고정 슬롯 계약이 성능에 유리한가?"  

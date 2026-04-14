@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "execution", "lifecycle"]
 difficulty: "beginner"
+layer: "CL"
 ---
 
 OpenCL 코드를 처음 읽으면 API 호출 순서가 곧 실행 순서처럼 보인다.  

@@ -7,6 +7,7 @@ type: "bullet-note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4", "quiz"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 매일 퀴즈에서 막힌 문제를 다시 꺼내보는 문제 창고 문서.

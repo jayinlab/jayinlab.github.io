@@ -8,6 +8,7 @@ series: "opencl-deep-dive"
 tags: ["vulkan", "barrier", "sync", "gpu", "animation"]
 difficulty: "intermediate"
 animation: true
+layer: "VK"
 ---
 
 Shader A가 버퍼에 쓰고, Shader B가 그 버퍼를 읽는다. 문제없어 보인다. 하지만 **barrier 없이는 Shader B가 A의 결과를 읽는다는 보장이 없다**. GPU는 파이프라인을 최대한 채우기 위해 순서를 바꿀 수 있기 때문이다.

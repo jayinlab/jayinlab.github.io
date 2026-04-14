@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "tools", "setup"]
 difficulty: "beginner"
+layer: "CL"
 ---
 
 이 노트는 시리즈 전체를 따라가는 동안 **옆에 두고 쓰는 실습 기준서**다.  

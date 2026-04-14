@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["angle", "opencl", "vulkan"]
 difficulty: "advanced"
+layer: "VK"
 ---
 
 여기서부터는 "이론"이 아니라 **근거 기반 추적**이다.  

@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 "전체 스택을 한 번에 기억하고 싶다"면 이 치트시트 하나면 된다.  

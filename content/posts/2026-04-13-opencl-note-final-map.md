@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 기초~중급을 모두 마쳤다면 이 한 장으로 전체 그림이 머릿속에 있어야 한다.  

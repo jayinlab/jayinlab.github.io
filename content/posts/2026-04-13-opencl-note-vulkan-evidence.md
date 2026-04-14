@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "pipeline", "descriptor"]
 difficulty: "advanced"
+layer: "VK"
 ---
 
 [체인 표 초안](/opencl-note-angle-chain-table/)에서 "후보"로 표시한 Vulkan 객체 생성 지점.  

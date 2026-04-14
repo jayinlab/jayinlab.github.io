@@ -7,6 +7,7 @@ type: "wiki"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4", "roadmap"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 이 문서는 앞으로 어떤 순서로, 어떤 산출물을 만들어가는지 보여주는 **학습 지도**다.  

@@ -7,6 +7,7 @@ type: "wrong-note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4", "descriptor"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 이번 오답노트는 최근 퀴즈에서 틀린 2개 개념을 짧게 고정하기 위한 문서다.

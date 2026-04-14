@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "execution", "timeline"]
 difficulty: "intermediate"
+layer: "VK"
 ---
 
 OpenCL → clspv/SPIR-V → Vulkan 실행 흐름을 **"계약 생성"**과 **"실물 바인딩"** 두 단계로 나눠 10줄로 요약한다.

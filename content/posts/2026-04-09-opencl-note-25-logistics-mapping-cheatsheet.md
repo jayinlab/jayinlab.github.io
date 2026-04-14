@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 이 문서는 OpenCL → clspv/SPIR-V → Vulkan → driver backend → PM4 흐름을

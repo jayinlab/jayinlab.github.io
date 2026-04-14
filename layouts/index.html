@@ -9,6 +9,7 @@
         </span>
         <span class="post-badges">
           {{ if .Params.animation }}<span class="anim-badge" title="Animation 포함">▶</span>{{ end }}
+          {{ with .Params.layer }}<span class="layer-badge layer-{{ . | lower }}">{{ . }}</span>{{ end }}
           {{ with .Params.difficulty }}<span class="diff-badge diff-{{ . }}">{{ index $abbr . | default . }}</span>{{ end }}
         </span>
         <span class="meta post-date">{{ .Date.Format "2006-01-02" }}</span>

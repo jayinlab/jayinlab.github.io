@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "pipeline", "descriptor"]
 difficulty: "beginner"
+layer: "VK"
 ---
 
 "pipeline이 왜 pipeline이고, descriptor set이 왜 descriptor set인가?"  

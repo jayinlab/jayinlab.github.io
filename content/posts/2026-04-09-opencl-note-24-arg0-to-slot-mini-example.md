@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "descriptor", "opencl"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 이 글은 OpenCL 커널 인자 하나(특히 arg0)가 어떻게 Vulkan descriptor 슬롯(set/binding) 관점으로 매핑되는지 직관적으로 설명한다.

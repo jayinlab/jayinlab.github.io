@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "execution", "lifecycle"]
 difficulty: "beginner"
+layer: "CL"
 ---
 
 이번 노트의 목표는 **OpenCL API 호출 순서**와 **실제 내부 작업 시점**을 분리해서 이해하는 것이다.

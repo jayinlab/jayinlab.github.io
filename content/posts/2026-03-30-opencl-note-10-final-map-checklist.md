@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 이번 노트는 지금까지 학습한 전체를 한 장으로 묶는 최종 정리다.

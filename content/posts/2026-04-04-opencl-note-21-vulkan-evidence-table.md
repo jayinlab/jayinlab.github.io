@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "pipeline", "descriptor"]
 difficulty: "advanced"
+layer: "VK"
 ---
 
 이번 노트는 D3(근거 표 작성)의 시작점이다.

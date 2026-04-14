@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "memory", "barrier", "spirv"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 `vector_add`는 독립 연산이었다. 이제 **workgroup 내 협력 연산**을 다룬다.  

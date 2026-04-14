@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "gpu"]
 difficulty: "beginner"
+layer: "CL"
 ---
 
 이 글은 어려운 용어를 잠시 내려놓고,

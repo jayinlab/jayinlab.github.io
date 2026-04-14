@@ -8,6 +8,7 @@ series: "opencl-deep-dive"
 tags: ["gpu", "occupancy", "wavefront", "performance", "animation", "amd"]
 difficulty: "intermediate"
 animation: true
+layer: "HW"
 ---
 
 같은 커널이라도 레지스터 사용량을 줄이면 더 빠르게 실행될 수 있다. 왜일까?

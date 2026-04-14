@@ -7,6 +7,7 @@ type: "wrong-note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4", "descriptor"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 틀린 개념을 남겨두면 이후 추적에서 계속 헷갈린다.  

@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["clspv", "spirv", "opencl"]
 difficulty: "beginner"
+layer: "CL"
 ---
 
 이번 노트는 네가 요청한 방식 그대로:

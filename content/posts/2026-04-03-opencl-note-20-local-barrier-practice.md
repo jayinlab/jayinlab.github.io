@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "memory", "barrier", "spirv"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 이번 노트는 심화 D2의 실습 노트다.

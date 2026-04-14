@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "descriptor", "opencl"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 "OpenCL 인자가 어떻게 Vulkan 슬롯이 되는가"를 saxpy 커널 하나로 구체화한다.

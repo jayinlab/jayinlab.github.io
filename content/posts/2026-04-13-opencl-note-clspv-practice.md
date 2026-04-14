@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["clspv", "spirv", "opencl"]
 difficulty: "beginner"
+layer: "CL"
 ---
 
 이론은 충분하다. 이제 실제로 OpenCL C 커널 하나를 clspv로 변환하고,  

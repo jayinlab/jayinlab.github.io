@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "tools"]
 difficulty: "beginner"
+layer: "CL"
 ---
 
 이 노트는 `~/opencl_study` 실습 키트를 어떻게 쓰는지 정리한다.

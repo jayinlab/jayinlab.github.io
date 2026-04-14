@@ -8,6 +8,7 @@ series: "opencl-deep-dive"
 tags: ["vulkan", "pipeline", "descriptor", "performance"]
 difficulty: "intermediate"
 animation: true
+layer: "VK"
 ---
 
 "왜 layout이 필요할까? pipeline 10개, descriptor set 3개라면 정말 호환 제약이 생길까?"  

@@ -7,6 +7,7 @@ type: "wrong-note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "barrier"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 퀴즈에서 **완전히 맞지 못한 항목(오답 + 부분정답)**을 한 번에 복습한다.  

@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "clspv", "spirv"]
 difficulty: "beginner"
+layer: "CL"
 ---
 
 이번 노트 목표는 아래 4가지를 명확히 분리하는 것이다.

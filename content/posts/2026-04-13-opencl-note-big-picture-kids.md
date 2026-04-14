@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "gpu"]
 difficulty: "beginner"
+layer: "CL"
 ---
 
 어려운 용어를 잠시 내려놓고, "GPU가 일하는 큰 그림"을 박스 배송 시스템 비유로 먼저 이해한다.  

@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "pipeline", "descriptor"]
 difficulty: "beginner"
+layer: "VK"
 ---
 
 이번 노트는 용어 암기가 아니라, **이름의 배경**을 이해해서 오래 기억하는 목적이다.

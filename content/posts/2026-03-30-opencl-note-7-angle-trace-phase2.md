@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["angle", "spirv", "vulkan", "pipeline"]
 difficulty: "intermediate"
+layer: "VK"
 ---
 
 이번 노트 목표:

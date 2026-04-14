@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "pipeline", "descriptor", "mermaid"]
 difficulty: "intermediate"
+layer: "VK"
 ---
 
 이번 노트는 네 질문에 정확히 맞춘 "그림 중심" 설명이다.

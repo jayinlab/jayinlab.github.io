@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 좋아, 여기서부터는 "심화 라운드"다.

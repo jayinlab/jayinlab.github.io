@@ -8,6 +8,7 @@ series: "opencl-deep-dive"
 tags: ["angle", "opencl", "vulkan"]
 difficulty: "intermediate"
 animation: true
+layer: "VK"
 ---
 
 ANGLE을 추적할 때 가장 먼저 해야 하는 일은 **지도를 나누는 것**이다.  

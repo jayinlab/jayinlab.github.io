@@ -3,6 +3,7 @@ title: "OpenCL 정답노트 (누적 위키)"
 date: 2026-04-09
 slug: "opencl-correct-notes"
 draft: false
+difficulty: "intermediate"
 ---
 
 > 목적: 지금까지 퀴즈에서 맞춘 개념을 **위키처럼 누적/갱신**하는 기준 문서

@@ -5,6 +5,7 @@ slug: "post-index"
 draft: false
 type: "wiki"
 tags: ["index", "roadmap"]
+difficulty: "beginner"
 ---
 
 이 페이지는 블로그의 모든 포스트가 무엇을 다루는지 한눈에 볼 수 있는 색인이다.

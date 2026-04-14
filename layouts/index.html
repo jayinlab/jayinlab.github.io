@@ -3,7 +3,10 @@
   <ul class="post-list">
     {{ range sort (where .Site.RegularPages "Section" "posts") "Date" "desc" }}
       <li>
-        <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+        <span class="post-title-group">
+          {{ with .Params.difficulty }}<span class="diff-badge diff-{{ . }}">{{ . }}</span>{{ end }}
+          <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+        </span>
         <span class="meta">{{ .Date.Format "2006-01-02" }}</span>
       </li>
     {{ end }}

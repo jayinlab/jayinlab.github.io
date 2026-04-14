@@ -3,6 +3,7 @@ title: "OpenCL/Vulkan/PM4 Daily Facts (누적 위키)"
 date: 2026-04-11
 slug: "opencl-daily-facts"
 draft: false
+difficulty: "intermediate"
 ---
 
 매일 13:00 KST 팩트 브리프를 날짜 분리 없이 누적 저장하는 위키 문서.

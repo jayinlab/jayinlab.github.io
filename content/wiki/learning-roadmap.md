@@ -5,6 +5,7 @@ slug: "learning-roadmap"
 draft: false
 type: "wiki"
 tags: ["opencl", "vulkan", "pm4", "gpu", "roadmap"]
+difficulty: "intermediate"
 ---
 
 이 페이지는 공부해야 할 모든 주제를 빠뜨리지 않도록 추적하는 마스터 맵이다.

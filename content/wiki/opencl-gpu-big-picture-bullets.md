@@ -3,6 +3,7 @@ title: "OpenCL/GPU 큰 그림 정리 (Bullet Wiki)"
 date: 2026-04-09
 slug: "opencl-gpu-big-picture-bullets"
 draft: false
+difficulty: "beginner"
 ---
 
 이 문서는 대화에서 다룬 개념을 한 번에 연결해 보는 개인 위키 요약본이다.

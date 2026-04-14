@@ -103,10 +103,16 @@
       display: block;
     }
 
+    .post-badges {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      order: -1;           /* desktop: 제목 왼쪽에 배치 */
+      flex-shrink: 0;
+    }
+
     .diff-badge {
       display: inline-block;
-      flex-shrink: 0;
-      order: -1;           /* desktop: 제목 왼쪽 */
       font-size: .72rem;
       font-weight: 700;
       letter-spacing: .04em;
@@ -118,6 +124,19 @@
     .diff-beginner     { background: rgba(74,222,128,.15);  color: #4ade80; border: 1px solid rgba(74,222,128,.35); }
     .diff-intermediate { background: rgba(251,191,36,.13);  color: #fbbf24; border: 1px solid rgba(251,191,36,.35); }
     .diff-advanced     { background: rgba(248,113,113,.13); color: #f87171; border: 1px solid rgba(248,113,113,.35); }
+
+    .anim-badge {
+      display: inline-block;
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 999px;
+      line-height: 1.6;
+      background: rgba(167,139,250,.13);
+      color: #a78bfa;
+      border: 1px solid rgba(167,139,250,.35);
+      letter-spacing: 0;
+    }
 
     .post-date {
       order: 1;
@@ -145,7 +164,7 @@
         word-break: keep-all;
         overflow-wrap: break-word;
       }
-      .diff-badge {
+      .post-badges {
         grid-area: badge;
         align-self: end;
         justify-self: end;

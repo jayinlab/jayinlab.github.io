@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["pm4", "vulkan", "gpu", "amd", "animation", "command-buffer", "ring-buffer"]
 difficulty: "intermediate"
+animation: true
 ---
 
 GPU에 "이 계산 실행해"라고 말하면, 실제로 어떤 일이 일어날까?

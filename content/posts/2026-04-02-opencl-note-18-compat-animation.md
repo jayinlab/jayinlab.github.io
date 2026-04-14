@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "pipeline", "descriptor", "animation"]
 difficulty: "intermediate"
+animation: true
 ---
 
 이번 버전은 JS 표준형 v2다.

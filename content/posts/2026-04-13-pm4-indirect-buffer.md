@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["pm4", "gpu", "amd", "animation", "command-buffer"]
 difficulty: "advanced"
+animation: true
 ---
 
 PM4 시리즈 2탄. [[pm4-packet]] 기초를 이해했다면, 이제 한 단계 더 들어간다.

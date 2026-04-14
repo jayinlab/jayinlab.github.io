@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["gpu", "memory", "opencl", "vulkan", "performance", "animation"]
 difficulty: "intermediate"
+animation: true
 ---
 
 GPU가 빠른 이유의 절반은 **어디에 데이터를 두느냐**에 달려 있다.

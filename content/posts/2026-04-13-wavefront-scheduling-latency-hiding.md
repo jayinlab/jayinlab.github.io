@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["gpu", "wavefront", "execution", "performance", "animation", "amd"]
 difficulty: "intermediate"
+animation: true
 ---
 
 VRAM 접근은 400~800 cycle이 걸린다. CPU였다면 그 시간 동안 그냥 기다린다. GPU는 다르다. 기다리는 동안 **다른 wavefront를 실행한다**. 이것이 latency hiding이고, GPU가 메모리 latency에도 빠른 이유다.

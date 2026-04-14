@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "descriptor", "pipeline"]
 difficulty: "beginner"
+animation: true
 ---
 
 Vulkan 용어들은 이름이 직관적이지 않다. 처음 접하면 비슷해 보여서 헷갈린다.  

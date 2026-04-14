@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["spirv", "vulkan", "descriptor"]
 difficulty: "beginner"
-layer: "CL"
+layer: "COMP"
 ---
 
 앞 노트에서 만든 대응표를 Vulkan API와 연결한다.  

@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "clspv", "spirv", "cache"]
 difficulty: "beginner"
-layer: "CL"
+layer: "COMP"
 ---
 
 "처음 실행할 때 왜 느리지?" — 이 현상의 원인은 여러 단계가 섞여 있다.  

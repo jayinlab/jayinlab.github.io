@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["spirv", "opencl", "clspv"]
 difficulty: "beginner"
-layer: "CL"
+layer: "COMP"
 ---
 
 SPIR-V를 "완전히 이해"하려고 하면 막힌다.  

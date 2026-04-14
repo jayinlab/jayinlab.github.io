@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["spirv", "opencl", "clspv"]
 difficulty: "beginner"
-layer: "CL"
+layer: "COMP"
 ---
 
 이번 노트 목표:

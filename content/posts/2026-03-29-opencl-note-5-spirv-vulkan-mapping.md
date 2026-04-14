@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["spirv", "vulkan", "descriptor"]
 difficulty: "intermediate"
-layer: "CL"
+layer: "COMP"
 ---
 
 이번 노트 목표:

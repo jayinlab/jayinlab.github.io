@@ -88,42 +88,25 @@
       align-items: baseline;
     }
 
+    /* ── post list item (desktop: flex, badge order:-1 앞에 표시) ── */
     .post-list li a { font-weight: 600; }
 
     .post-title-group {
-      display: flex;
-      align-items: baseline;
-      gap: 7px;
+      flex: 1;
       min-width: 0;
+      order: 0;
     }
     .post-title-group a {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-    }
-
-    @media (max-width: 600px) {
-      .post-list li {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-      }
-      .post-title-group {
-        width: 100%;
-      }
-      .post-title-group a {
-        white-space: normal;
-        word-break: break-word;
-      }
-      .post-list li > .meta {
-        align-self: flex-end;
-        font-size: 0.8rem;
-      }
+      display: block;
     }
 
     .diff-badge {
       display: inline-block;
       flex-shrink: 0;
+      order: -1;           /* desktop: 제목 왼쪽 */
       font-size: .72rem;
       font-weight: 700;
       letter-spacing: .04em;
@@ -135,6 +118,45 @@
     .diff-beginner     { background: rgba(74,222,128,.15);  color: #4ade80; border: 1px solid rgba(74,222,128,.35); }
     .diff-intermediate { background: rgba(251,191,36,.13);  color: #fbbf24; border: 1px solid rgba(251,191,36,.35); }
     .diff-advanced     { background: rgba(248,113,113,.13); color: #f87171; border: 1px solid rgba(248,113,113,.35); }
+
+    .post-date {
+      order: 1;
+      flex-shrink: 0;
+    }
+
+    /* ── mobile: grid — 제목이 왼쪽 크게, 배지+날짜는 오른쪽 스택 ── */
+    @media (max-width: 600px) {
+      .post-list li {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+          "title badge"
+          "title date";
+        gap: 2px 10px;
+        align-items: start;
+      }
+      .post-title-group {
+        grid-area: title;
+        align-self: center;
+      }
+      .post-title-group a {
+        white-space: normal;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+      }
+      .diff-badge {
+        grid-area: badge;
+        align-self: end;
+        justify-self: end;
+      }
+      .post-date {
+        grid-area: date;
+        align-self: start;
+        justify-self: end;
+        font-size: 0.78rem;
+      }
+    }
 
     /* mobile-safe tables */
     table {

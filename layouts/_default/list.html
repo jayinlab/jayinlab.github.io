@@ -2,13 +2,14 @@
   <h2>{{ .Title }}</h2>
   {{ .Content }}
   <ul class="post-list">
+    {{ $abbr := dict "beginner" "BEG" "intermediate" "MID" "advanced" "ADV" }}
     {{ range .Pages }}
       <li>
         <span class="post-title-group">
-          {{ with .Params.difficulty }}<span class="diff-badge diff-{{ . }}">{{ . }}</span>{{ end }}
           <a href="{{ .RelPermalink }}">{{ .Title }}</a>
         </span>
-        <span class="meta">{{ .Date.Format "2006-01-02" }}</span>
+        {{ with .Params.difficulty }}<span class="diff-badge diff-{{ . }}">{{ index $abbr . | default . }}</span>{{ end }}
+        <span class="meta post-date">{{ .Date.Format "2006-01-02" }}</span>
       </li>
     {{ end }}
   </ul>

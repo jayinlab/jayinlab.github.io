@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["angle", "spirv", "vulkan", "pipeline"]
 difficulty: "intermediate"
-layer: "VK"
+layer: "ANGLE"
 ---
 
 1차 추적에서 compile/submit chain 지도를 만들었다.  

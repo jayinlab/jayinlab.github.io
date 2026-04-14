@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["angle", "opencl", "clspv"]
 difficulty: "intermediate"
-layer: "VK"
+layer: "ANGLE"
 ---
 
 ANGLE 코드를 처음 추적할 때는 **깊이보다 지형**이 먼저다.  

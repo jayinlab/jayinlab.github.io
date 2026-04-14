@@ -8,7 +8,7 @@ series: "opencl-deep-dive"
 tags: ["angle", "vulkan", "animation"]
 difficulty: "intermediate"
 animation: true
-layer: "VK"
+layer: "ANGLE"
 ---
 
 이번 버전은 JS 표준형 v2다.

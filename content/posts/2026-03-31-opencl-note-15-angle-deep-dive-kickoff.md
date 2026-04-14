@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["angle", "opencl", "vulkan"]
 difficulty: "advanced"
-layer: "VK"
+layer: "ANGLE"
 ---
 
 좋아, 여기서부터는 심화 라운드다.

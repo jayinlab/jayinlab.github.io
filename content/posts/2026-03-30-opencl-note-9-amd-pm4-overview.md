@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["pm4", "gpu", "amd"]
 difficulty: "intermediate"
-layer: "KMD"
+layer: "UMD"
 ---
 
 이번 노트 목표:

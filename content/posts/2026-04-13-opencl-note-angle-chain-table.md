@@ -8,7 +8,7 @@ series: "opencl-deep-dive"
 tags: ["angle", "vulkan", "pipeline"]
 difficulty: "advanced"
 animation: true
-layer: "VK"
+layer: "ANGLE"
 ---
 
 [심화 킥오프](/opencl-note-angle-kickoff/)에서 정의한 산출물 형식대로  

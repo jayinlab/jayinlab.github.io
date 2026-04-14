@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "angle", "performance"]
 difficulty: "intermediate"
-layer: "KMD"
+layer: "UMD"
 ---
 
 "SPIR-V가 있는데 왜 첫 실행이 느리지?" — 이 현상은 여러 단계가 합쳐진 결과다.  

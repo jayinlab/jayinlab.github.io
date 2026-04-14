@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["angle", "opencl", "clspv"]
 difficulty: "intermediate"
-layer: "VK"
+layer: "ANGLE"
 ---
 
 이번 노트 목표:

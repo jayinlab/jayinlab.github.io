@@ -59,6 +59,8 @@ difficulty: "beginner"
 | [Arg0→슬롯 미니 예제](/opencl-note-arg0-to-slot/) | saxpy 커널 인자 → 슬롯 매핑 구체화 | — |
 | [물류센터 비유 치트시트](/opencl-note-logistics-cheatsheet/) | OpenCL→clspv→Vulkan→PM4 전체 비유 | — |
 | [초등학생 큰 그림](/opencl-note-big-picture-kids/) | GPU를 배송센터로 보는 9단계 비유 | — |
+| [Memory Coalescing](/opencl-note-memory-coalescing/) | global memory 접근 패턴 — coalesced vs strided | — |
+| [Pipeline Stage 정리](/opencl-note-pipeline-stages/) | barrier srcStage/dstStage/accessMask 의미 | — |
 
 ### GPU 하드웨어 심층
 

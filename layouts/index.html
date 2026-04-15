@@ -4,7 +4,7 @@
   <p class="post-count">총 {{ len $posts }}개 포스트</p>
   <ul class="post-list">
     {{ $abbr := dict "beginner" "BEG" "intermediate" "MID" "advanced" "ADV" }}
-    {{ range sort $posts "Lastmod" "desc" }}
+    {{ range $posts.ByLastmod.Reverse }}
       <li>
         <span class="post-title-group">
           <a href="{{ .RelPermalink }}">{{ .Title }}</a>

@@ -1,0 +1,900 @@
+{{- $id := printf "bpfull-%d" now.UnixNano -}}
+<style>
+.bpfull-wrap{max-width:720px;margin:2rem auto;font-family:'Segoe UI',system-ui,sans-serif;}
+.bpfull-hdr{background:#141e2e;border-radius:8px 8px 0 0;padding:7px 14px;display:flex;align-items:center;gap:8px;}
+.bpfull-snum{font-size:11px;color:#8ab4ff;font-weight:bold;min-width:54px;}
+.bpfull-stitle{font-size:12px;color:#c8d0de;}
+canvas.bpfull-cv{display:block;width:100%;background:#0f1624;}
+.bpfull-foot{background:#141e2e;border-radius:0 0 8px 8px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.bpfull-concept{font-size:11px;color:#7ee0c6;flex:1;}
+.bpfull-nav{display:flex;align-items:center;gap:7px;}
+.bpfull-btn{background:#1a2535;border:1px solid #2a3a55;color:#8ab4ff;padding:4px 11px;border-radius:5px;cursor:pointer;font-size:12px;}
+.bpfull-btn:hover:not(:disabled){background:#253550;}
+.bpfull-btn:disabled{opacity:.4;cursor:default;}
+.bpfull-dots{display:flex;gap:5px;align-items:center;}
+.bpfull-dot{width:7px;height:7px;border-radius:50%;background:#2a3a55;cursor:pointer;transition:background .2s,transform .2s;}
+.bpfull-dot.active{background:#8ab4ff;transform:scale(1.3);}
+</style>
+
+<div id="{{ $id }}" class="bpfull-wrap">
+  <div class="bpfull-hdr">
+    <span class="bpfull-snum"></span>
+    <span class="bpfull-stitle"></span>
+  </div>
+  <canvas class="bpfull-cv"></canvas>
+  <div class="bpfull-foot">
+    <div class="bpfull-concept"></div>
+    <div class="bpfull-nav">
+      <button class="bpfull-btn bpfull-prev">◀ 이전</button>
+      <div class="bpfull-dots"></div>
+      <button class="bpfull-btn bpfull-next">다음 ▶</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var el=document.getElementById('{{ $id }}');
+if(!el)return;
+var cv=el.querySelector('.bpfull-cv');
+var g=cv.getContext('2d');
+var snEl=el.querySelector('.bpfull-snum');
+var stEl=el.querySelector('.bpfull-stitle');
+var coEl=el.querySelector('.bpfull-concept');
+var prevB=el.querySelector('.bpfull-prev');
+var nextB=el.querySelector('.bpfull-next');
+var dotsEl=el.querySelector('.bpfull-dots');
+
+var W=700,H=390;
+var dpr=Math.min(window.devicePixelRatio||1,2);
+cv.width=W*dpr;cv.height=H*dpr;
+cv.style.width=W+'px';cv.style.height=H+'px';
+g.scale(dpr,dpr);
+
+var P={
+  bg:'#0f1624',bg2:'#141e2e',bg3:'#1c2840',bg4:'#253550',
+  blue:'#8ab4ff',blD:'#4a72cc',
+  green:'#7ee0c6',grD:'#3a9a78',
+  orange:'#f4a261',orD:'#b06020',
+  pink:'#e76f51',
+  yellow:'#ffd166',ylD:'#aa8820',
+  purple:'#b39ddb',
+  red:'#ff6b6b',
+  txt:'#e8eaed',muted:'#8b9ab8',dim:'#3a4a6a',
+  trA:'#5a8eef',trAd:'#2a4aaa',
+  trB:'#2aaa90',trBd:'#1a6a58',
+};
+
+function cl(v,lo,hi){lo=lo===undefined?0:lo;hi=hi===undefined?1:hi;return Math.max(lo,Math.min(hi,v));}
+function lp(a,b,t){return a+(b-a)*cl(t);}
+function wn(t,s,e){return cl((t-s)/(e-s));}
+function eO(t){t=cl(t);return 1-Math.pow(1-t,3);}
+function eIO(t){t=cl(t);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+function eBounce(t){t=cl(t);var n=7.5625,d=2.75;if(t<1/d)return n*t*t;if(t<2/d)return n*(t-=1.5/d)*t+.75;if(t<2.5/d)return n*(t-=2.25/d)*t+.9375;return n*(t-=2.625/d)*t+.984375;}
+
+function rr(x,y,w,h,r,fill,stroke,lw){
+  r=r||4;lw=lw||1.5;
+  g.beginPath();
+  g.moveTo(x+r,y);g.lineTo(x+w-r,y);g.arcTo(x+w,y,x+w,y+r,r);
+  g.lineTo(x+w,y+h-r);g.arcTo(x+w,y+h,x+w-r,y+h,r);
+  g.lineTo(x+r,y+h);g.arcTo(x,y+h,x,y+h-r,r);
+  g.lineTo(x,y+r);g.arcTo(x,y,x+r,y,r);
+  g.closePath();
+  if(fill){g.fillStyle=fill;g.fill();}
+  if(stroke){g.strokeStyle=stroke;g.lineWidth=lw;g.stroke();}
+}
+
+function tx(s,x,y,opts){
+  opts=opts||{};
+  g.save();
+  if(opts.a!==undefined)g.globalAlpha*=cl(opts.a);
+  g.fillStyle=opts.c||P.txt;
+  g.font=(opts.w||'normal')+' '+(opts.sz||13)+"px 'Segoe UI',system-ui,sans-serif";
+  g.textAlign=opts.al||'center';
+  g.textBaseline=opts.ba||'middle';
+  g.fillText(s,x,y);
+  g.restore();
+}
+
+function arw(x1,y1,x2,y2,col,lw){
+  col=col||P.blue;lw=lw||2;
+  var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1;
+  var ux=dx/len,uy=dy/len,hl=9,hw=5;
+  g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=lw;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-ux*hl,y2-uy*hl);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);
+  g.lineTo(x2-ux*hl-uy*hw,y2-uy*hl+ux*hw);
+  g.lineTo(x2-ux*hl+uy*hw,y2-uy*hl-ux*hw);
+  g.closePath();g.fill();g.restore();
+}
+
+// Resource box
+function drawBox(x,y,w,h,label,sub,col,a){
+  a=a===undefined?1:a;
+  g.save();g.globalAlpha*=cl(a);
+  rr(x,y,w,h,5,col+'2a',col);
+  tx(label,x+w/2,y+h/2-8,{sz:10,w:'bold',c:col});
+  tx(sub,x+w/2,y+h/2+9,{sz:9,c:P.muted});
+  g.restore();
+}
+
+// Truck (body left + cab right, wheels below)
+function drawTruck(x,y,label,col,colD,slots,a){
+  a=a===undefined?1:a;
+  var BW=230,BH=108,CW=48,CH=62;
+  g.save();g.globalAlpha*=cl(a);
+  // Body
+  rr(x,y,BW,BH,8,colD+'50',col,2);
+  // Cab
+  rr(x+BW-2,y+BH-CH,CW,CH,6,colD+'70',col,1.5);
+  // Cab window
+  rr(x+BW+4,y+BH-CH+6,CW-10,24,3,col+'40',col+'80',1);
+  // Label (truck name)
+  tx(label,x+BW/2-24,y+14,{sz:11,w:'bold',c:col});
+  // Slots
+  for(var i=0;i<3;i++){
+    var sx=x+8+i*73,sy=y+30,sw=63,sh=44;
+    var sf=slots&&slots[i];
+    var sc=sf?sf.col:null;
+    rr(sx,sy,sw,sh,4,sc?sc+'30':P.bg,sc||P.dim,1.5);
+    if(sc){
+      tx(sf.label,sx+sw/2,sy+sh/2-6,{sz:9,w:'bold',c:sc});
+      tx('칸 '+i,sx+sw/2,sy+sh/2+8,{sz:8,c:P.muted});
+    } else {
+      tx('칸 '+i,sx+sw/2,sy+sh/2-5,{sz:9,c:P.dim});
+      tx('(빈)',sx+sw/2,sy+sh/2+8,{sz:8,c:P.dim});
+    }
+  }
+  // Wheels
+  for(var wi=0;wi<2;wi++){
+    var wx=x+45+wi*110;
+    g.fillStyle=P.bg2;g.strokeStyle=col+'88';g.lineWidth=2;
+    g.beginPath();g.arc(wx,y+BH+1,13,0,Math.PI*2);g.fill();g.stroke();
+    g.beginPath();g.arc(wx,y+BH+1,5,0,Math.PI*2);
+    g.fillStyle=col+'55';g.fill();
+  }
+  g.restore();
+}
+
+// Stick foreman
+function drawForeman(x,y,a){
+  a=a===undefined?1:a;
+  g.save();g.globalAlpha*=cl(a);
+  g.strokeStyle=P.yellow;g.fillStyle=P.yellow;g.lineWidth=2.5;
+  g.beginPath();g.arc(x,y,11,0,Math.PI*2);g.fill();
+  g.beginPath();g.moveTo(x,y+11);g.lineTo(x,y+40);g.stroke();
+  g.beginPath();g.moveTo(x-16,y+22);g.lineTo(x+16,y+22);g.stroke();
+  g.beginPath();g.moveTo(x,y+40);g.lineTo(x-11,y+60);g.moveTo(x,y+40);g.lineTo(x+11,y+60);g.stroke();
+  g.fillStyle=P.orange;
+  rr(x-13,y-22,26,6,1,P.orange);
+  rr(x-9,y-29,18,9,1,P.orange);
+  g.restore();
+}
+
+// Speech bubble (tail on left side)
+function drawBubble(bx,by,w,h,lines,col,a,scale){
+  col=col||P.yellow;a=a===undefined?1:a;scale=scale||1;
+  var cx=bx+w/2,cy=by+h/2;
+  g.save();g.globalAlpha*=cl(a);
+  g.translate(cx,cy);g.scale(scale,scale);g.translate(-w/2,-h/2);
+  rr(0,0,w,h,8,col+'25',col,1.5);
+  // Tail
+  g.fillStyle=col+'25';g.strokeStyle=col;g.lineWidth=1.5;
+  g.beginPath();g.moveTo(-14,h*0.55);g.lineTo(-4,h*0.55-10);g.lineTo(-4,h*0.55+10);g.closePath();
+  g.fill();g.stroke();
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i];
+    var isSmall=line.charAt(0)==='→'||line.charAt(0)==='(';
+    tx(line,w/2,h/2+(i-(lines.length-1)/2)*17,{sz:isSmall?10:12,c:isSmall?P.muted:P.txt});
+  }
+  g.restore();
+}
+
+// Paper (unfolds top-to-bottom)
+function drawPaper(x,y,w,h,lines,col,prog,a){
+  col=col||'#ffffff';prog=prog===undefined?1:prog;a=a===undefined?1:a;
+  var dh=h*eO(prog);
+  g.save();g.globalAlpha*=cl(a);
+  g.beginPath();g.rect(x,y,w,dh);g.clip();
+  rr(x,y,w,h,6,col+'18',col+'cc',1.5);
+  for(var i=0;i<lines.length;i++){
+    var ly=y+18+i*17;
+    if(ly<y+dh-4){
+      tx(lines[i],x+10,ly,{sz:i===0?12:11,w:i===0?'bold':'normal',c:i===0?P.txt:P.muted,al:'left'});
+    }
+  }
+  g.restore();
+}
+
+// PM4 packet
+function drawPacket(x,y,label,col,a){
+  col=col||P.purple;a=a===undefined?1:a;
+  g.save();g.globalAlpha*=cl(a);
+  rr(x-34,y-12,68,24,4,col+'25',col,1.5);
+  tx(label,x,y,{sz:9,w:'bold',c:col});
+  g.restore();
+}
+
+// ─── Scene metadata ───
+var SCENES=[
+  {title:'①  배송센터에 오신 것을 환영합니다!',     concept:'배송센터 = GPU (고속 병렬 처리 공장)',                    dur:4500},
+  {title:'②  박스들이 도착했습니다',                 concept:'박스 = GPU 리소스 — VkBuffer, VkImage …',              dur:4000},
+  {title:'③  트럭과 칸 (Descriptor Set & binding)', concept:'트럭 = Descriptor Set  /  칸 번호 = binding index',      dur:4000},
+  {title:'④  설계 종이 — 트럭 규격서 (DSL)',        concept:'설계 종이 = Descriptor Set Layout + Pipeline Layout',    dur:4500},
+  {title:'⑤  오늘 작업 종이 — 박스 배정표',         concept:'오늘 작업 종이 = vkUpdateDescriptorSets',               dur:4500},
+  {title:'⑥  박스가 슬롯으로 날아듭니다!',           concept:'슬롯 채우기 = vkCmdBindDescriptorSets',                 dur:5000},
+  {title:'⑦  작업반장의 세 마디',                   concept:'작업반장 = CPU (host)  /  vkCmd* 호출 순서',            dur:6500},
+  {title:'⑧  트럭 출발 — GPU로!',                   concept:'출발! = vkCmdDispatch → GPU 실행 시작',                 dur:5000},
+  {title:'⑨  이런! 규격이 안 맞아요',               concept:'pipeline create 성공 ≠ dispatch 성공 — 실물이 맞아야 함',dur:4500},
+  {title:'⑩  신호실 — PM4 패킷으로 번역',           concept:'신호실 = 드라이버 → PM4 패킷 → GPU 하드웨어',           dur:4500},
+  {title:'⑪  전체 비유 ↔ 실제 개념 매핑',           concept:'모든 조각이 하나의 그림으로!',                           dur:5500},
+];
+
+SCENES.forEach(function(_,i){
+  var d=document.createElement('span');
+  d.className='bpfull-dot'+(i===0?' active':'');
+  d.addEventListener('click',function(){jump(i);});
+  dotsEl.appendChild(d);
+});
+
+var cur=0,scT=0,lastTs=null;
+
+function jump(i){cur=cl(i,0,SCENES.length-1);scT=0;lastTs=null;refresh();}
+function refresh(){
+  var s=SCENES[cur];
+  snEl.textContent='장면 '+(cur+1)+'/'+SCENES.length;
+  stEl.textContent=s.title;
+  coEl.textContent=s.concept;
+  prevB.disabled=cur===0;
+  nextB.disabled=cur===SCENES.length-1;
+  dotsEl.querySelectorAll('.bpfull-dot').forEach(function(d,i){d.classList.toggle('active',i===cur);});
+}
+prevB.addEventListener('click',function(){jump(cur-1);});
+nextB.addEventListener('click',function(){jump(cur+1);});
+
+var DRAWS=[s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11];
+
+function loop(ts){
+  if(!lastTs)lastTs=ts;
+  var dt=ts-lastTs;lastTs=ts;
+  scT=Math.min(1,scT+dt/SCENES[cur].dur);
+  g.fillStyle=P.bg;g.fillRect(0,0,W,H);
+  DRAWS[cur](scT);
+  requestAnimationFrame(loop);
+}
+refresh();
+requestAnimationFrame(loop);
+
+// ══════════════════════════════════════════════
+// SCENE 1 — 배송센터 소개
+// ══════════════════════════════════════════════
+function s1(t){
+  var bT=eO(wn(t,0,0.5));
+  // Ground
+  g.fillStyle=P.bg3;g.fillRect(60,286,580,6);
+  // Building grows up
+  var bx=215,by=55,bw=270,bh=228;
+  if(bT>0){
+    var dh=bh*bT;
+    rr(bx,by+bh-dh,bw,dh,8,P.bg3,P.blue,2);
+    // Windows
+    if(bT>0.45){
+      var wa=eO(wn(bT,0.45,0.75));
+      g.save();g.globalAlpha*=wa*0.35;g.fillStyle=P.blue;
+      for(var r=0;r<2;r++)for(var c=0;c<3;c++){
+        g.fillRect(bx+18+c*82,by+bh-dh+24+r*68,54,40);
+      }
+      g.restore();
+    }
+    // Door
+    if(bT>0.6){
+      var da=eO(wn(bT,0.6,0.9));
+      g.save();g.globalAlpha*=da;
+      rr(bx+98,by+bh-72,74,72,4,P.bg2,P.blue+'88',1.5);
+      g.fillStyle=P.yellow;g.beginPath();g.arc(bx+158,by+bh-36,4,0,Math.PI*2);g.fill();
+      g.restore();
+    }
+  }
+  // Roof
+  if(bT>0.5){
+    var ra=eO(wn(bT,0.5,0.82));
+    g.save();g.globalAlpha*=ra;
+    g.fillStyle=P.orange;g.beginPath();
+    g.moveTo(350,28);g.lineTo(bx-20,by);g.lineTo(bx+bw+20,by);g.closePath();g.fill();
+    g.strokeStyle=P.orD;g.lineWidth=1.5;g.stroke();
+    // Flag
+    g.strokeStyle=P.muted;g.lineWidth=1.5;
+    g.beginPath();g.moveTo(350,28);g.lineTo(350,6);g.stroke();
+    g.fillStyle=P.blue;g.beginPath();g.moveTo(350,6);g.lineTo(370,12);g.lineTo(350,18);g.closePath();g.fill();
+    g.restore();
+  }
+  // Sign
+  if(bT>0.55){
+    var sa=eO(wn(bT,0.55,0.9));
+    tx('배송센터',bx+bw/2,by+bh/2-12,{sz:26,w:'bold',c:P.txt,a:sa});
+    tx('(= GPU)',bx+bw/2,by+bh/2+20,{sz:15,c:P.blue,a:sa});
+  }
+  // Workers
+  if(bT>0.72){
+    var wfa=eO(wn(bT,0.72,1));
+    drawForeman(155,218,wfa*0.65);
+    drawForeman(548,218,wfa*0.65);
+  }
+  // Labels
+  if(t>0.6){
+    var la=eO(wn(t,0.6,0.85));
+    g.save();g.globalAlpha*=la;
+    rr(20,108,140,30,5,P.bg4,P.blue+'66',1);
+    tx('병렬 처리 공장',90,123,{sz:10,c:P.blue});
+    arw(160,123,bx-4,by+bh/2,P.blue,1.5);
+    rr(540,108,140,30,5,P.bg4,P.green+'66',1);
+    tx('수천 개 동시 작업',610,123,{sz:10,c:P.green});
+    arw(540,123,bx+bw+4,by+bh/2,P.green,1.5);
+    g.restore();
+  }
+  // Tagline
+  if(t>0.82){
+    var ta=eO(wn(t,0.82,1));
+    tx('"생각은 미리, 실행은 초고속으로"',350,lp(360,335,ta),{sz:12,c:P.muted,a:ta});
+  }
+}
+
+// ══════════════════════════════════════════════
+// SCENE 2 — 박스들 등장
+// ══════════════════════════════════════════════
+var RBOXES=[
+  {label:'x_buffer',sub:'VkBuffer',col:P.blue},
+  {label:'y_buffer',sub:'VkBuffer',col:P.green},
+  {label:'output',  sub:'VkBuffer',col:P.orange},
+  {label:'texture', sub:'VkImage', col:P.pink},
+];
+var BOXFX=[60,192,324,456];
+var BOXFY=140;
+var BOXW=110,BOXH=64;
+
+function s2(t){
+  // Title area
+  tx('GPU가 다루는 "박스" (리소스) 종류들',350,30,{sz:13,c:P.muted});
+  for(var i=0;i<4;i++){
+    var b=RBOXES[i];
+    var slide=eO(wn(t,i*0.12,i*0.12+0.28));
+    var bx=lp(-BOXW-10,BOXFX[i],slide);
+    drawBox(bx,BOXFY,BOXW,BOXH,b.label,b.sub,b.col,slide);
+    // Labels below
+    if(slide>0.7){
+      var la=eO(wn(slide,0.7,1));
+      tx(b.sub,BOXFX[i]+BOXW/2,BOXFY+BOXH+16,{sz:10,c:b.col,a:la});
+    }
+  }
+  // Arrow showing "into GPU"
+  if(t>0.72){
+    var aa=eO(wn(t,0.72,0.92));
+    g.save();g.globalAlpha*=aa;
+    // GPU building (small, right side)
+    rr(568,100,110,100,6,P.bg3,P.blue,1.5);
+    tx('GPU',623,150,{sz:18,w:'bold',c:P.blue});
+    for(var bi=0;bi<4;bi++){
+      arw(BOXFX[bi]+BOXW,BOXFY+BOXH/2,568,150,RBOXES[bi].col,1.5);
+    }
+    g.restore();
+  }
+  // Concept bar (bottom)
+  if(t>0.88){
+    var ca=eO(wn(t,0.88,1));
+    rr(80,318,540,38,6,P.bg3,P.blue+'55',1);
+    tx('📦 박스 = GPU가 다루는 실제 데이터 덩어리 (버퍼, 이미지)',350,337,{sz:11,c:P.muted,a:ca});
+  }
+}
+
+// ══════════════════════════════════════════════
+// SCENE 3 — 트럭과 칸
+// ══════════════════════════════════════════════
+function s3(t){
+  tx('트럭 = Descriptor Set  /  칸 = binding',350,28,{sz:13,c:P.muted});
+  // Truck A slides in from left
+  var tAx=lp(-280,30,eO(wn(t,0,0.35)));
+  drawTruck(tAx,80,'트럭 A (set=0)',P.trA,P.trAd,null,eO(wn(t,0,0.35)));
+  // Truck B slides in from right
+  var tBx=lp(W+20,400,eO(wn(t,0.15,0.5)));
+  drawTruck(tBx,80,'트럭 B (set=1)',P.trB,P.trBd,null,eO(wn(t,0.15,0.5)));
+  // Labels appear
+  if(t>0.5){
+    var la=eO(wn(t,0.5,0.72));
+    tx('트럭 번호 = set index',145,215,{sz:11,c:P.trA,a:la});
+    tx('트럭 번호 = set index',515,215,{sz:11,c:P.trB,a:la});
+    // Slot zoom explanation
+    g.save();g.globalAlpha*=la;
+    rr(210,250,280,80,8,P.bg3,P.muted+'44',1);
+    tx('[ 칸 0 ]  [ 칸 1 ]  [ 칸 2 ]',350,275,{sz:13,c:P.txt});
+    tx('칸 번호 = binding index',350,298,{sz:11,c:P.muted});
+    tx('칸 규격 = descriptor type (어떤 박스를 넣을 수 있는지)',350,318,{sz:10,c:P.dim+'cc'});
+    g.restore();
+  }
+  // Additional labels for truck parts
+  if(t>0.7){
+    var pa=eO(wn(t,0.7,0.9));
+    // Arrows pointing to slots
+    g.save();g.globalAlpha*=pa;
+    arw(350,248,145,115,P.muted,1.5);
+    tx('3개의 슬롯',350,240,{sz:10,c:P.muted});
+    g.restore();
+  }
+}
+
+// ══════════════════════════════════════════════
+// SCENE 4 — 설계 종이 (DSL)
+// ══════════════════════════════════════════════
+function s4(t){
+  // Small truck A on left
+  var ta=eO(wn(t,0,0.2));
+  g.save();g.globalAlpha*=ta;g.translate(30,180);g.scale(0.65,0.65);
+  drawTruck(0,0,'트럭 A',P.trA,P.trAd,null,1);
+  g.restore();
+  tx('트럭 A',108,180,{sz:10,c:P.trA,a:ta});
+
+  // Design paper unfolds
+  var pp=wn(t,0.15,0.65);
+  var pa=eO(wn(t,0.15,0.4));
+  drawPaper(220,40,330,240,[
+    '📄 설계 종이 (Descriptor Set Layout)',
+    '',
+    '트럭 A 규격:',
+    '  칸 0: StorageBuffer  (read-only 버퍼)',
+    '  칸 1: StorageBuffer  (read-only 버퍼)',
+    '  칸 2: StorageBuffer  (write 버퍼)',
+    '',
+    '+ PushConstant: float a  (스칼라 상수)',
+    '',
+    '→  PipelineLayout = DSL + PushConstant',
+  ],'#e0eaff',pp,pa);
+
+  // Arrow from paper to truck
+  if(t>0.65){
+    var aa=eO(wn(t,0.65,0.85));
+    g.save();g.globalAlpha*=aa;
+    arw(220,160,175,200,P.blue,1.5);
+    tx('이 규격에 맞는\n박스만 넣을 수 있음',148,250,{sz:10,c:P.muted});
+    g.restore();
+  }
+  // "Once approved, stays fixed" note
+  if(t>0.8){
+    var na=eO(wn(t,0.8,1));
+    rr(220,295,330,55,6,P.bg3,P.orange+'55',1);
+    tx('설계 종이 승인 (pipeline create)',385,313,{sz:11,c:P.orange,a:na});
+    tx('→ 이후 규격 변경 불가, 재생성해야 함',385,332,{sz:10,c:P.muted,a:na});
+  }
+}
+
+// ══════════════════════════════════════════════
+// SCENE 5 — 오늘 작업 종이 (vkUpdateDescriptorSets)
+// ══════════════════════════════════════════════
+function s5(t){
+  // Design paper (faded, left)
+  var da=eO(wn(t,0,0.25))*0.35;
+  drawPaper(25,70,180,160,[
+    '📄 설계 종이',
+    '(DSL 규격)','','칸0: StorageBuffer','칸1: StorageBuffer','칸2: StorageBuffer',
+  ],'#e0eaff',1,da);
+  tx('(규격은 고정)',115,242,{sz:9,c:P.dim,a:da});
+
+  // Today work paper unfolds (yellow)
+  var pp=wn(t,0.2,0.72);
+  var pa=eO(wn(t,0.2,0.45));
+  drawPaper(220,50,330,220,[
+    '📋 오늘 작업 종이 (descriptor write)',
+    '',
+    '  칸 0  ←  x_buffer  (VkBuffer)',
+    '  칸 1  ←  y_buffer  (VkBuffer)',
+    '  칸 2  ←  output    (VkBuffer)',
+    '',
+    '  push constant ←  a = 2.0f',
+    '',
+    '→  vkUpdateDescriptorSets() 호출',
+  ],'#fff4cc',pp,pa);
+
+  // Small truck showing the result
+  if(t>0.72){
+    var ta=eO(wn(t,0.72,0.92));
+    g.save();g.globalAlpha*=ta;g.translate(600,160);g.scale(0.55,0.55);
+    drawTruck(0,0,'트럭 A',P.trA,P.trAd,{
+      0:{col:P.blue,label:'x_buf'},
+      1:{col:P.green,label:'y_buf'},
+      2:{col:P.orange,label:'output'},
+    },1);
+    g.restore();
+    arw(550,160,605,185,P.blue,1.5);
+    tx('작업 종이대로 채워진 트럭',628,290,{sz:10,c:P.muted,a:ta});
+    g.restore();
+  }
+  // Key note
+  if(t>0.88){
+    var na=eO(wn(t,0.88,1));
+    rr(220,282,330,42,6,P.bg3,P.green+'55',1);
+    tx('같은 트럭(DSL)으로 내일은 다른 박스를 넣을 수 있다',385,303,{sz:10,c:P.green,a:na});
+  }
+}
+
+// ══════════════════════════════════════════════
+// SCENE 6 — 박스가 슬롯으로 날아듭니다!
+// ══════════════════════════════════════════════
+var SLOT_BOXES=[
+  {label:'x_buffer',sub:'VkBuffer',col:P.blue},
+  {label:'y_buffer',sub:'VkBuffer',col:P.green},
+  {label:'output',  sub:'VkBuffer',col:P.orange},
+];
+var SLOT_START=[[55,70],[55,175],[55,270]];
+// Truck at (270, 130), slots at binding 0/1/2
+// Slot centers inside truck: (270+8+0*73+63/2, 130+30+44/2) = (310, 174)
+var SLOT_END=[[310,174],[383,174],[456,174]];
+
+function s6(t){
+  // Empty truck (destination)
+  var trFills={};
+  var BOX_DUR=[[0.08,0.32],[0.28,0.52],[0.48,0.72]];
+  for(var i=0;i<3;i++){
+    if(t>=BOX_DUR[i][1])trFills[i]=SLOT_BOXES[i];
+  }
+  drawTruck(270,130,'트럭 A (set=0)',P.trA,P.trAd,trFills,1);
+  tx('← dispatch 전 binding 완료',392,260,{sz:10,c:P.muted});
+
+  // Flying boxes
+  for(var bi=0;bi<3;bi++){
+    var bx2=RBOXES[bi];
+    var bwin=BOX_DUR[bi];
+    var bp=wn(t,bwin[0],bwin[1]);
+    var arrived=t>=bwin[1];
+    if(!arrived && bp>=0){
+      var bfx=lp(SLOT_START[bi][0],SLOT_END[bi][0]-30,eIO(bp));
+      var bfy=lp(SLOT_START[bi][1],SLOT_END[bi][1]-18,eIO(bp));
+      // Arc trajectory (arc up then down)
+      var arcY=bfy-Math.sin(bp*Math.PI)*40;
+      drawBox(bfx,arcY,BOXW,BOXH,SLOT_BOXES[bi].label,SLOT_BOXES[bi].sub,SLOT_BOXES[bi].col,1);
+      // Trail dots
+      g.save();g.globalAlpha*=0.3;
+      for(var step=0;step<5;step++){
+        var tp=Math.max(0,bp-step*0.06);
+        var tx2=lp(SLOT_START[bi][0],SLOT_END[bi][0]-30,eIO(tp));
+        var ty2=lp(SLOT_START[bi][1],SLOT_END[bi][1]-18,eIO(tp))-Math.sin(tp*Math.PI)*40;
+        g.fillStyle=SLOT_BOXES[bi].col;
+        g.beginPath();g.arc(tx2+30,ty2+18,3-step*0.4,0,Math.PI*2);g.fill();
+      }
+      g.restore();
+    } else if(!arrived){
+      // Waiting on left
+      drawBox(SLOT_START[bi][0],SLOT_START[bi][1],BOXW,BOXH,SLOT_BOXES[bi].label,SLOT_BOXES[bi].sub,SLOT_BOXES[bi].col,1);
+    }
+    // Slot glow effect when just arrived
+    if(arrived && t<bwin[1]+0.08){
+      var gt=wn(t,bwin[1],bwin[1]+0.08);
+      var glow=Math.sin(gt*Math.PI);
+      g.save();
+      var sx=270+8+bi*73,sy=130+30;
+      g.shadowColor=SLOT_BOXES[bi].col;
+      g.shadowBlur=14*glow;
+      rr(sx,sy,63,44,4,SLOT_BOXES[bi].col+(Math.round(glow*100).toString(16).padStart(2,'0')));
+      g.restore();
+    }
+  }
+  // Final message
+  if(t>0.8){
+    var fa=eO(wn(t,0.8,1));
+    rr(270,280,360,42,6,P.bg3,P.green+'55',1);
+    tx('✓ 3개 슬롯 모두 채워짐 → 준비 완료!',450,301,{sz:11,c:P.green,a:fa});
+  }
+}
+
+// ══════════════════════════════════════════════
+// SCENE 7 — 작업반장의 세 마디
+// ══════════════════════════════════════════════
+function s7(t){
+  // Loaded truck on right
+  drawTruck(420,80,'트럭 A',P.trA,P.trAd,{
+    0:{col:P.blue,label:'x_buf'},
+    1:{col:P.green,label:'y_buf'},
+    2:{col:P.orange,label:'out'},
+  },1);
+  // Foreman
+  drawForeman(90,195,1);
+  tx('작업반장',90,268,{sz:11,c:P.yellow});
+  tx('(= CPU)',90,282,{sz:10,c:P.muted});
+
+  // Bubble 1
+  if(t>0.06){
+    var b1a=eO(wn(t,0.06,0.2));
+    var b1s=eBounce(wn(t,0.06,0.2));
+    drawBubble(140,50,320,58,['① 이 작업 라인 돌린다!','→ vkCmdBindPipeline()'],P.blue,b1a,b1s);
+    if(t>0.2){
+      g.save();g.globalAlpha*=eO(wn(t,0.2,0.35));
+      g.strokeStyle=P.blue+'66';g.lineWidth=1;g.setLineDash([4,4]);
+      arw(420,115,460,115,P.blue,1.5);
+      tx('파이프라인 선택 ✓',390,142,{sz:10,c:P.blue});
+      g.setLineDash([]);g.restore();
+    }
+  }
+  // Bubble 2
+  if(t>0.3){
+    var b2a=eO(wn(t,0.3,0.45));
+    var b2s=eBounce(wn(t,0.3,0.45));
+    drawBubble(140,130,320,58,['② 트럭 칸에 오늘 박스 넣어!','→ vkCmdBindDescriptorSets()'],P.green,b2a,b2s);
+    if(t>0.48){
+      g.save();g.globalAlpha*=eO(wn(t,0.48,0.62));
+      // Glow on truck slots
+      rr(428,110,228,44,4,null,P.green+'88',2);
+      tx('디스크립터 세트 바인딩 ✓',534,168,{sz:10,c:P.green});
+      g.restore();
+    }
+  }
+  // Bubble 3
+  if(t>0.58){
+    var b3a=eO(wn(t,0.58,0.72));
+    var b3s=eBounce(wn(t,0.58,0.72));
+    drawBubble(140,210,320,58,['③ 시작!  출발!','→ vkCmdDispatch(n/64, 1, 1)'],P.yellow,b3a,b3s);
+  }
+  // Truck shakes after "시작!"
+  if(t>0.75){
+    var shk=Math.sin(t*180)*eO(wn(t,0.75,0.88))*4;
+    g.save();g.translate(shk,0);
+    // Redraw truck with shake
+    drawTruck(420,80,'트럭 A',P.trA,P.trAd,{
+      0:{col:P.blue,label:'x_buf'},
+      1:{col:P.green,label:'y_buf'},
+      2:{col:P.orange,label:'out'},
+    },1);
+    g.restore();
+    if(t>0.88){
+      var ga=eO(wn(t,0.88,1));
+      // Dust puffs
+      for(var d=0;d<3;d++){
+        g.save();g.globalAlpha*=ga*(0.6-d*0.15);
+        g.fillStyle=P.muted;
+        g.beginPath();g.arc(425-d*10,220+d*5,5+d*3,0,Math.PI*2);g.fill();
+        g.restore();
+      }
+    }
+  }
+  // Order number reminder
+  if(t>0.88){
+    var oa=eO(wn(t,0.88,1));
+    rr(140,285,320,48,6,P.bg3,P.yellow+'44',1);
+    tx('순서 중요: ①→②→③ 지켜야 유효',300,309,{sz:11,c:P.yellow,a:oa});
+  }
+}
+
+// ══════════════════════════════════════════════
+// SCENE 8 — 트럭 출발 (Dispatch → GPU)
+// ══════════════════════════════════════════════
+function s8(t){
+  // Road
+  g.fillStyle=P.bg3;g.fillRect(0,240,W,18);
+  for(var i=0;i<12;i++){
+    g.fillStyle=P.yellow+'66';
+    g.fillRect(i*62+((t*80)%62),247,30,4);
+  }
+  // GPU building (right, fixed)
+  rr(570,120,120,120,8,P.bg3,P.blue,2);
+  tx('GPU',630,170,{sz:22,w:'bold',c:P.blue});
+  tx('⚡',630,200,{sz:16,c:P.yellow});
+  // Command Buffer arch in center
+  if(t>0.1){
+    var ga=eO(wn(t,0.1,0.3));
+    g.save();g.globalAlpha*=ga;
+    // Arch posts
+    rr(310,170,8,88,3,P.bg3,P.purple,2);
+    rr(390,170,8,88,3,P.bg3,P.purple,2);
+    // Arch top
+    g.strokeStyle=P.purple;g.lineWidth=2;
+    g.beginPath();g.arc(353,170,43,Math.PI,0);g.stroke();
+    tx('Command',353,195,{sz:9,w:'bold',c:P.purple});
+    tx('Buffer',353,208,{sz:9,w:'bold',c:P.purple});
+    g.restore();
+  }
+  // Truck A moves right
+  var tAoff=lp(-280,W+50,eIO(wn(t,0,0.85)));
+  var tAx=lp(-270,560,eIO(wn(t,0.05,0.82)));
+  var trA_a=t<0.82?1:eO(1-wn(t,0.82,0.9));
+  if(tAx<660)drawTruck(tAx,160,''+'트럭 A',P.trA,P.trAd,{
+    0:{col:P.blue,label:'x_buf'},
+    1:{col:P.green,label:'y_buf'},
+    2:{col:P.orange,label:'out'},
+  },trA_a);
+  // Dust behind truck A
+  if(t>0.05 && tAx>-100 && tAx<W){
+    for(var ds=0;ds<4;ds++){
+      g.save();g.globalAlpha*=eIO(wn(t,0.05,0.82))*(0.5-ds*0.1);
+      g.fillStyle=P.muted;
+      g.beginPath();g.arc(tAx-12-ds*8,238,4+ds*2,0,Math.PI*2);g.fill();
+      g.restore();
+    }
+  }
+  // Speed lines
+  if(t>0.3 && t<0.85){
+    g.save();g.globalAlpha*=0.25;g.strokeStyle=P.blue;g.lineWidth=1;
+    for(var sl=0;sl<5;sl++){
+      g.beginPath();g.moveTo(tAx-30-sl*18,165+sl*22);g.lineTo(tAx-60-sl*18,165+sl*22);g.stroke();
+    }
+    g.restore();
+  }
+  // GPU lights up
+  if(t>0.78){
+    var gla=eO(wn(t,0.78,0.95));
+    g.save();g.globalAlpha*=gla;
+    g.shadowColor=P.blue;g.shadowBlur=20;
+    rr(570,120,120,120,8,null,P.blue,3);
+    g.restore();
+    tx('처리 시작!',630,228,{sz:11,c:P.green,a:gla});
+  }
+  // "vkCmdDispatch" label
+  if(t>0.15){
+    var la=eO(wn(t,0.15,0.4));
+    tx('vkCmdDispatch(n/64, 1, 1)',350,290,{sz:12,c:P.yellow,a:la});
+    tx('커맨드 버퍼에 기록 → 제출 → GPU 실행',350,310,{sz:10,c:P.muted,a:la});
+  }
+}
+
+// ══════════════════════════════════════════════
+// SCENE 9 — 규격 불일치 (mismatch error)
+// ══════════════════════════════════════════════
+function s9(t){
+  // Intro
+  tx('설계도 승인이 되어도, 실물이 맞지 않으면 실패합니다',350,28,{sz:12,c:P.muted});
+  // Truck with EMPTY slots
+  drawTruck(300,70,'트럭 A (set=0)',P.trA,P.trAd,null,1);
+  tx('← 칸 0은 StorageBuffer 규격',480,175,{sz:10,c:P.trA});
+  // DSL paper (faded)
+  g.save();g.globalAlpha*=0.4;
+  drawPaper(30,100,160,130,[
+    '📄 설계 종이','','칸 0: StorageBuffer','칸 1: StorageBuffer','칸 2: StorageBuffer',
+  ],'#e0eaff',1,1);
+  tx('승인됨 ✓',110,242,{sz:10,c:P.green});
+  g.restore();
+  // Wrong box (circle shape trying to enter square slot)
+  if(t>0.15){
+    var ba=eO(wn(t,0.15,0.4));
+    // "Sampler" box (wrong type)
+    var bx=lp(180,300,eO(wn(t,0.15,0.4)));
+    var bStuck=t>0.42;
+    var finalBx=bStuck?lp(300,290,Math.sin(wn(t,0.42,0.52)*Math.PI)*8):bx;
+    g.save();g.globalAlpha*=ba;
+    // Draw circular/wrong shape box
+    g.fillStyle=P.red+'30';g.strokeStyle=P.red;g.lineWidth=2;
+    g.beginPath();g.arc(finalBx+30,110+28,28,0,Math.PI*2);g.fill();g.stroke();
+    tx('sampler',finalBx+30,110+20,{sz:9,w:'bold',c:P.red});
+    tx('VkSampler',finalBx+30,110+34,{sz:8,c:P.muted});
+    tx('(원형)',finalBx+30,110+48,{sz:8,c:P.red});
+    g.restore();
+    // Collision X
+    if(bStuck){
+      var xa=eO(wn(t,0.42,0.55));
+      g.save();g.globalAlpha*=xa;
+      g.strokeStyle=P.red;g.lineWidth=4;
+      g.beginPath();g.moveTo(308,95);g.lineTo(328,115);g.stroke();
+      g.beginPath();g.moveTo(328,95);g.lineTo(308,115);g.stroke();
+      g.restore();
+    }
+  }
+  // Error message
+  if(t>0.5){
+    var ea=eO(wn(t,0.5,0.68));
+    rr(100,215,500,60,8,P.red+'20',P.red,2);
+    g.save();g.globalAlpha*=ea;
+    tx('❌  Validation Error: descriptor type mismatch',350,234,{sz:12,w:'bold',c:P.red});
+    tx('칸 0은 StorageBuffer인데, Sampler를 넣으려 했음',350,252,{sz:10,c:P.muted});
+    g.restore();
+  }
+  // Key insight
+  if(t>0.75){
+    var ka=eO(wn(t,0.75,0.95));
+    rr(100,290,500,56,8,P.bg3,P.orange+'55',1);
+    tx('설계도(pipeline) 생성 성공  ≠  dispatch 안전',350,308,{sz:11,c:P.orange,a:ka});
+    tx('실물(descriptor)이 규격(DSL)에 맞아야 비로소 안전',350,328,{sz:10,c:P.muted,a:ka});
+  }
+}
+
+// ══════════════════════════════════════════════
+// SCENE 10 — 신호실 (PM4 패킷)
+// ══════════════════════════════════════════════
+function s10(t){
+  tx('신호실: 드라이버가 명령을 PM4 패킷으로 번역합니다',350,28,{sz:12,c:P.muted});
+  // Driver box (left)
+  rr(30,80,200,140,8,P.bg3,P.orange,2);
+  tx('드라이버',130,132,{sz:14,w:'bold',c:P.orange});
+  tx('(ANGLE / Mesa)',130,152,{sz:10,c:P.muted});
+  tx('vkCmdDispatch 수신',130,175,{sz:9,c:P.muted});
+  // GPU hardware (right)
+  rr(470,80,200,140,8,P.bg3,P.blue,2);
+  tx('GPU 하드웨어',570,140,{sz:14,w:'bold',c:P.blue});
+  tx('(CP / Command Processor)',570,160,{sz:9,c:P.muted});
+  // PM4 packets flying across
+  var PKTS=[
+    {label:'IT_SET_COMPUTE_ROOT_AND_SHADER',col:P.purple, t0:0.12},
+    {label:'IT_SET_SH_REG (buffers)',        col:P.green,  t0:0.28},
+    {label:'IT_DISPATCH_DIRECT',             col:P.yellow, t0:0.44},
+    {label:'IT_EVENT_WRITE (fence)',         col:P.orange, t0:0.60},
+  ];
+  for(var pi=0;pi<PKTS.length;pi++){
+    var pk=PKTS[pi];
+    var pp=wn(t,pk.t0,pk.t0+0.35);
+    if(pp>0){
+      var pkx=lp(230,470,eIO(pp));
+      var pky=100+pi*34;
+      drawPacket(pkx,pky,pk.label,pk.col,eO(pp)*Math.min(1,(1-pp)*5+0.2));
+      // Glow when arriving at GPU
+      if(pp>0.85){
+        g.save();g.globalAlpha*=eO(wn(pp,0.85,1))*0.6;
+        g.shadowColor=pk.col;g.shadowBlur=12;
+        rr(470,80,200,140,8,null,pk.col,2);
+        g.restore();
+      }
+    }
+  }
+  // Ringbuffer label
+  if(t>0.4){
+    var ra=eO(wn(t,0.4,0.6));
+    rr(235,240,230,35,5,P.bg3,P.muted+'44',1);
+    tx('→ Ring Buffer를 통해 전달',350,257,{sz:10,c:P.muted,a:ra});
+  }
+  // Final note
+  if(t>0.75){
+    var na=eO(wn(t,0.75,0.95));
+    rr(80,295,540,52,8,P.bg3,P.blue+'44',1);
+    tx('CPU 기록 시점 (vkCmd*)  ≠  GPU 실행 시점',350,313,{sz:11,c:P.blue,a:na});
+    tx('패킷이 큐에 쌓이고 → GPU 스케줄러가 순서대로 실행',350,332,{sz:10,c:P.muted,a:na});
+  }
+}
+
+// ══════════════════════════════════════════════
+// SCENE 11 — 전체 매핑 테이블
+// ══════════════════════════════════════════════
+var MAP_ROWS=[
+  ['📦  박스',                'VkBuffer / VkImage (리소스)'],
+  ['🚚  트럭',                'Descriptor Set'],
+  ['🔢  트럭 번호',           'set index (set=0, set=1…)'],
+  ['📂  칸 번호',             'binding index (binding=0, 1, 2…)'],
+  ['📐  칸 규격',             'descriptor type / count'],
+  ['📄  설계 종이',           'Descriptor Set Layout + Pipeline Layout'],
+  ['📋  오늘 작업 종이',      'vkUpdateDescriptorSets'],
+  ['👷  작업반장',            'CPU (host) / vkCmd* 호출'],
+  ['⬆️  출발!',              'vkCmdDispatch'],
+  ['📡  신호실 지시',         '드라이버 → PM4 패킷 → GPU CP'],
+];
+
+function s11(t){
+  tx('비유  ↔  실제 Vulkan 개념',350,24,{sz:14,w:'bold',c:P.txt});
+  // Header
+  rr(30,40,310,28,4,P.bg4,P.blue+'55',1);
+  rr(348,40,322,28,4,P.bg4,P.green+'55',1);
+  tx('배송센터 비유',185,54,{sz:11,w:'bold',c:P.blue});
+  tx('실제 GPU / Vulkan 개념',509,54,{sz:11,w:'bold',c:P.green});
+  // Rows
+  var rowH=28,startY=74;
+  for(var ri=0;ri<MAP_ROWS.length;ri++){
+    var row=MAP_ROWS[ri];
+    var ra=eO(wn(t,ri*0.08,ri*0.08+0.18));
+    if(ra<=0)continue;
+    var ry=startY+ri*rowH;
+    var isHigh=ri===MAP_ROWS.length-1||(t>0.85&&ri<3);
+    var rowBg=isHigh?P.bg4:P.bg3;
+    rr(30,ry,310,rowH-3,3,rowBg,P.dim,0.8);
+    rr(348,ry,322,rowH-3,3,rowBg,P.dim,0.8);
+    tx(row[0],185,ry+12,{sz:11,c:P.orange,a:ra,al:'center'});
+    tx(row[1],509,ry+12,{sz:11,c:P.txt,a:ra,al:'center'});
+    // Connecting arrow
+    if(ra>0.8){
+      g.save();g.globalAlpha*=ra;
+      arw(342,ry+12,350,ry+12,P.muted,1);
+      g.restore();
+    }
+  }
+  // Final glow on whole table
+  if(t>0.88){
+    var ga=eO(wn(t,0.88,1))*0.3;
+    g.save();g.globalAlpha*=ga;
+    rr(28,38,644,MAP_ROWS.length*rowH+42,6,null,P.blue,2);
+    g.restore();
+    tx('✓ 이 비유로 Vulkan descriptor 구조 전체가 설명됩니다',350,372,{sz:11,c:P.green,a:eO(wn(t,0.9,1))});
+  }
+}
+
+})();
+</script>

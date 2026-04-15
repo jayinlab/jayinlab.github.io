@@ -1,0 +1,274 @@
+<div id="bpa-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#bpa-root * { box-sizing:border-box; }
+#bpa-root .bpa-card { background:#0f1624; border:1px solid #2a3142; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+#bpa-root .bpa-title { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6b7fa3; margin-bottom:10px; }
+#bpa-root .step-box { background:rgba(138,180,255,.07); border:1px solid #2a3142; border-left:3px solid #8ab4ff; border-radius:8px; padding:10px 14px; min-height:54px; line-height:1.7; margin-bottom:12px; }
+#bpa-root .step-num { display:inline-block; background:#8ab4ff; color:#0b0d12; font-weight:700; font-size:11px; border-radius:999px; padding:1px 7px; margin-right:6px; }
+#bpa-root .ctrl-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+#bpa-root button { background:#141a26; border:1px solid #2a3142; border-radius:8px; color:#e6ebf5; padding:6px 14px; cursor:pointer; font-size:12px; transition:background .2s,border-color .2s; }
+#bpa-root button:hover { background:#1e2840; border-color:#8ab4ff; }
+#bpa-root button.primary { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#bpa-root .step-counter { color:#6b7fa3; font-size:12px; margin-left:auto; }
+#bpa-root .scene { border:1px solid #2a3142; border-radius:10px; background:#141a26; padding:14px; overflow:hidden; }
+#bpa-root .analogy-grid { display:flex; gap:10px; flex-wrap:wrap; }
+#bpa-root .a-box { flex:1; min-width:160px; border:1px solid; border-radius:8px; padding:10px 12px; transition:all .3s; }
+#bpa-root .a-box.dim { opacity:0.25; border-color:#2a3142; background:#0a0e1a; }
+#bpa-root .a-box.active { opacity:1; }
+#bpa-root .a-box-title { font-size:12px; font-weight:700; margin-bottom:4px; }
+#bpa-root .a-box-sub { font-size:11px; color:#9aa6bd; }
+#bpa-root .a-arrow { display:flex; align-items:center; justify-content:center; color:#4f648f; font-size:18px; flex:0 0 20px; }
+#bpa-root .mapping-table { width:100%; border-collapse:collapse; font-size:11px; }
+#bpa-root .mapping-table th { background:#0a0e1a; color:#6b7fa3; padding:5px 8px; text-align:left; border:1px solid #2a3142; }
+#bpa-root .mapping-table td { padding:5px 8px; border:1px solid #2a3142; color:#9aa6bd; }
+#bpa-root .mapping-table tr.hl td { background:rgba(138,180,255,.08); color:#e6ebf5; }
+#bpa-root .badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:600; }
+</style>
+
+<div class="bpa-card">
+  <div class="bpa-title">GPU 큰 그림 — 배송센터 비유 단계별 전개</div>
+  <div class="ctrl-row">
+    <button id="bpa-prev">← 이전</button>
+    <button id="bpa-next" class="primary">다음 →</button>
+    <button id="bpa-auto">▶ 자동 재생</button>
+    <button id="bpa-reset">↺ 처음</button>
+    <span class="step-counter" id="bpa-counter">Step 0 / 9</span>
+  </div>
+  <div class="step-box" id="bpa-desc">
+    <span class="step-num">시작</span><strong>"다음"을 눌러 GPU 큰 그림을 배송센터 비유로 이해하세요.</strong>
+  </div>
+  <div class="scene" id="bpa-scene"></div>
+</div>
+
+<script>
+(function(){
+  // Each step: what to show in the scene
+  const STEPS = [
+    {
+      desc: '<span class="step-num">1</span><strong>박스 = 실제 데이터 (VkBuffer / VkImage)</strong><br><span style="color:#9aa6bd;font-size:12px;">GPU가 처리할 데이터(버퍼, 이미지 등)를 박스로 비유합니다. 이 박스들을 정해진 트럭-칸 규칙에 따라 배치해야 GPU가 제대로 찾을 수 있습니다.</span>',
+      type: 'boxes'
+    },
+    {
+      desc: '<span class="step-num">2</span><strong>트럭 = Descriptor Set</strong><br><span style="color:#9aa6bd;font-size:12px;">박스를 실어 나르는 트럭이 Descriptor Set입니다. 한 트럭에는 여러 칸(binding)이 있고, 각 칸에 어떤 박스를 실을지는 미리 정한 규칙에 따릅니다.</span>',
+      type: 'truck'
+    },
+    {
+      desc: '<span class="step-num">3</span><strong>트럭 번호(set) + 칸 번호(binding)</strong><br><span style="color:#9aa6bd;font-size:12px;">트럭마다 번호(set index)가 있고, 칸마다 번호(binding index)가 있습니다. GPU는 이 번호 조합으로 데이터를 즉시 찾습니다 — 마트 바코드처럼.</span>',
+      type: 'numbering'
+    },
+    {
+      desc: '<span class="step-num">4</span><strong>설계 종이 = Descriptor Set Layout + Pipeline Layout</strong><br><span style="color:#9aa6bd;font-size:12px;">"칸 규격서" — 어떤 트럭에 몇 번 칸, 어떤 타입의 박스를 넣을지 미리 정한 규칙입니다. 이 규칙은 실행 전에 확정됩니다(Pipeline Create).</span>',
+      type: 'layout'
+    },
+    {
+      desc: '<span class="step-num">5</span><strong>오늘 작업 종이 = Descriptor Write (실제 버퍼 연결)</strong><br><span style="color:#9aa6bd;font-size:12px;">설계 종이(Layout)는 규칙이고, 오늘 작업 종이(Descriptor Write)는 "오늘은 b0에 x_buffer를 넣어"라는 실제 바인딩입니다. 매 실행마다 바뀔 수 있습니다.</span>',
+      type: 'write'
+    },
+    {
+      desc: '<span class="step-num">6</span><strong>작업반장의 3마디 = Bind Pipeline → Bind DS → Dispatch</strong><br><span style="color:#9aa6bd;font-size:12px;">실행 직전 드라이버가 순서대로: ① Pipeline 선택(vkCmdBindPipeline), ② 트럭 배치(vkCmdBindDescriptorSets), ③ 시작(vkCmdDispatch). 이 순서가 틀리면 실패합니다.</span>',
+      type: 'dispatch'
+    },
+    {
+      desc: '<span class="step-num">7</span><strong>아래층 신호실 = 드라이버 backend + PM4 패킷</strong><br><span style="color:#9aa6bd;font-size:12px;">위층의 "트럭/칸/박스" 이야기는 모두 드라이버가 짧고 딱딱한 PM4 명령어(패킷)로 변환합니다. GPU CP(Command Processor)가 이 패킷을 해석해 실제로 일합니다.</span>',
+      type: 'pm4'
+    },
+    {
+      desc: '<span class="step-num">8</span><strong>주의: 설계도 승인 ≠ 실물 호환 보장</strong><br><span style="color:#9aa6bd;font-size:12px;">Pipeline Create 성공이 곧 Dispatch 성공을 의미하지 않습니다. "칸에 넣을 박스 타입이 규격서와 맞는지"는 실제 Dispatch 시점에 확인됩니다.</span>',
+      type: 'mismatch'
+    },
+    {
+      desc: '<span class="step-num">9</span><strong>전체 매핑표 — 비유 ↔ 실제 개념</strong><br><span style="color:#9aa6bd;font-size:12px;">지금까지 배운 비유와 실제 Vulkan/OpenCL 개념의 전체 대응표입니다.</span>',
+      type: 'table'
+    },
+  ];
+
+  let step = 0, autoTimer = null;
+  const total = STEPS.length;
+
+  const MAPPING = [
+    ['박스', 'VkBuffer / VkImage (실제 리소스)'],
+    ['트럭', 'Descriptor Set'],
+    ['트럭 번호', 'set index'],
+    ['칸 번호', 'binding index'],
+    ['칸 규격', 'descriptor type / count'],
+    ['설계 종이', 'Descriptor Set Layout + Pipeline Layout'],
+    ['오늘 작업 종이', 'Descriptor Write (vkUpdateDescriptorSets)'],
+    ['작업반장 3마디', 'BindPipeline → BindDescriptorSets → Dispatch'],
+    ['신호실 지시', '드라이버 backend + PM4 패킷'],
+  ];
+
+  function renderScene(s) {
+    const scene = document.getElementById('bpa-scene');
+    switch (s.type) {
+      case 'boxes':
+        scene.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding:10px 0;">
+          ${['📦 x_buffer\n(float[])', '📦 y_buffer\n(float[])', '📦 out_buffer\n(float[])', '📦 scalar a\n(float)'].map((b,i) => {
+            const lines = b.split('\n');
+            return `<div style="background:rgba(138,180,255,.1);border:1px solid #8ab4ff;border-radius:8px;padding:14px 18px;text-align:center;">
+              <div style="font-size:22px;margin-bottom:4px;">${lines[0].split(' ')[0]}</div>
+              <div style="font-size:11px;color:#8ab4ff;font-weight:600;">${lines[0].split(' ').slice(1).join(' ')}</div>
+              <div style="font-size:10px;color:#6b7fa3;">${lines[1]}</div>
+            </div>`;
+          }).join('')}
+        </div><p style="text-align:center;font-size:11px;color:#6b7fa3;margin-top:8px;">GPU가 처리할 데이터 = 박스들</p>`;
+        break;
+      case 'truck':
+        scene.innerHTML = `<div style="border:2px solid #8ab4ff;border-radius:10px;padding:12px;background:rgba(138,180,255,.06);">
+          <div style="font-size:12px;font-weight:700;color:#8ab4ff;margin-bottom:8px;">🚛 트럭 #0 (Descriptor Set, set=0)</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            ${['칸 0\n(binding 0)', '칸 1\n(binding 1)', '칸 2\n(binding 2)'].map((c,i) => {
+              const lines = c.split('\n');
+              return `<div style="flex:1;min-width:80px;border:1px dashed #4f648f;border-radius:6px;padding:10px 8px;text-align:center;background:#0f1624;">
+                <div style="font-size:18px;">📦?</div>
+                <div style="font-size:10px;color:#6b7fa3;margin-top:4px;">${lines[0]}</div>
+                <div style="font-size:10px;color:#4f648f;">${lines[1]}</div>
+              </div>`;
+            }).join('')}
+            <div style="flex:1;min-width:80px;border:1px dashed #ffa060;border-radius:6px;padding:10px 8px;text-align:center;background:#0f1624;">
+              <div style="font-size:18px;">🔑</div>
+              <div style="font-size:10px;color:#ffa060;margin-top:4px;">PushConst</div>
+              <div style="font-size:10px;color:#4f648f;">scalar a</div>
+            </div>
+          </div>
+        </div>`;
+        break;
+      case 'numbering':
+        scene.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:180px;border:2px solid #8ab4ff;border-radius:10px;padding:12px;background:rgba(138,180,255,.05);">
+            <div style="font-size:11px;font-weight:700;color:#8ab4ff;margin-bottom:8px;">set=0 (트럭 0번)</div>
+            ${[['b0','x_buffer'],['b1','y_buffer'],['b2','out_buffer']].map(([b,name]) =>
+              `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+                <span style="background:rgba(138,180,255,.2);color:#8ab4ff;padding:2px 8px;border-radius:4px;font-family:monospace;font-size:11px;font-weight:700;">${b}</span>
+                <span style="font-size:11px;color:#9aa6bd;">←</span>
+                <span style="font-size:11px;color:#e6ebf5;">${name}</span>
+              </div>`).join('')}
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;color:#6b7fa3;font-size:20px;">→</div>
+          <div style="flex:1;min-width:180px;border:1px solid #2a3142;border-radius:10px;padding:12px;background:#141a26;">
+            <div style="font-size:11px;color:#6b7fa3;margin-bottom:8px;">GPU 접근 방식</div>
+            <code style="font-size:11px;color:#7ee0c6;display:block;line-height:1.7;">set=0, binding=0 → x<br>set=0, binding=1 → y<br>set=0, binding=2 → out</code>
+            <div style="font-size:10px;color:#4f648f;margin-top:6px;">매 접근마다 번호로 즉시 찾음</div>
+          </div>
+        </div>`;
+        break;
+      case 'layout':
+        scene.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:160px;border:1px solid #ffc850;border-radius:8px;padding:12px;background:rgba(255,200,80,.05);">
+            <div style="font-size:11px;font-weight:700;color:#ffc850;margin-bottom:8px;">📋 설계 종이 (Layout)</div>
+            <div style="font-size:11px;color:#9aa6bd;line-height:1.8;">b0 규격: STORAGE_BUFFER<br>b1 규격: STORAGE_BUFFER<br>b2 규격: STORAGE_BUFFER<br>PushConst: size=4</div>
+            <div style="margin-top:8px;font-size:10px;color:#6b7fa3;">→ vkCreateDescriptorSetLayout<br>→ vkCreatePipelineLayout</div>
+          </div>
+          <div style="display:flex;align-items:center;color:#6b7fa3;font-size:18px;">→</div>
+          <div style="flex:1;min-width:160px;border:1px solid #2a3142;border-radius:8px;padding:12px;background:#141a26;">
+            <div style="font-size:11px;font-weight:700;color:#6b7fa3;margin-bottom:8px;">승인됨 ✓ (Pipeline Create)</div>
+            <div style="font-size:11px;color:#6b7fa3;line-height:1.8;">규격 확정<br>재사용 가능<br>실물 아직 없음</div>
+          </div>
+        </div>`;
+        break;
+      case 'write':
+        scene.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:160px;border:1px solid #ffc850;border-radius:8px;padding:12px;background:rgba(255,200,80,.05);">
+            <div style="font-size:11px;font-weight:700;color:#ffc850;margin-bottom:8px;">📋 설계 (규칙, 고정)</div>
+            <div style="font-size:11px;color:#9aa6bd;">b0 → STORAGE_BUFFER<br>b1 → STORAGE_BUFFER<br>b2 → STORAGE_BUFFER</div>
+          </div>
+          <div style="display:flex;align-items:center;color:#7ee0c6;font-size:18px;">+</div>
+          <div style="flex:1;min-width:160px;border:1px solid #7ee0c6;border-radius:8px;padding:12px;background:rgba(126,224,198,.05);">
+            <div style="font-size:11px;font-weight:700;color:#7ee0c6;margin-bottom:8px;">📝 오늘 작업 (실물 연결)</div>
+            <div style="font-size:11px;color:#9aa6bd;line-height:1.8;">b0 ← x_buffer<br>b1 ← y_buffer<br>b2 ← out_buffer</div>
+            <div style="font-size:10px;color:#6b7fa3;margin-top:6px;">vkUpdateDescriptorSets</div>
+          </div>
+        </div>`;
+        break;
+      case 'dispatch':
+        scene.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;">
+          ${[
+            { n:'①', cmd:'vkCmdBindPipeline()', note:'작업 라인 선택 — "이 커널을 돌린다"', color:'#8ab4ff' },
+            { n:'②', cmd:'vkCmdBindDescriptorSets()', note:'트럭 배치 — "이 DS를 쓴다"', color:'#7ee0c6' },
+            { n:'③', cmd:'vkCmdPushConstants()', note:'스칼라 전달 — "a 값은 2.0f"', color:'#ffa060' },
+            { n:'④', cmd:'vkCmdDispatch(N/64, 1, 1)', note:'시작! — GPU가 실제로 일한다', color:'#ffc850' },
+          ].map(r => `<div style="display:flex;align-items:center;gap:10px;border:1px solid ${r.color}33;border-radius:6px;padding:8px 12px;background:rgba(${r.color === '#8ab4ff' ? '138,180,255' : r.color === '#7ee0c6' ? '126,224,198' : r.color === '#ffa060' ? '255,160,96' : '255,200,80'},.06);">
+            <span style="font-weight:700;color:${r.color};font-size:14px;">${r.n}</span>
+            <code style="flex:1;font-size:11px;color:${r.color};">${r.cmd}</code>
+            <span style="font-size:11px;color:#9aa6bd;">${r.note}</span>
+          </div>`).join('')}
+        </div>`;
+        break;
+      case 'pm4':
+        scene.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <div style="flex:1;min-width:150px;text-align:center;padding:12px;">
+            <div style="font-size:11px;color:#9aa6bd;margin-bottom:6px;">Vulkan API (인간 언어)</div>
+            <div style="border:1px solid #2a3142;border-radius:8px;background:#141a26;padding:10px;font-size:11px;line-height:1.8;color:#e6ebf5;">vkCmdDispatch(…)<br>vkCmdPipelineBarrier(…)<br>vkQueueSubmit(…)</div>
+          </div>
+          <div style="display:flex;align-items:center;font-size:24px;color:#4f648f;">↓</div>
+          <div style="flex:1;min-width:150px;text-align:center;padding:12px;">
+            <div style="font-size:11px;color:#9aa6bd;margin-bottom:6px;">PM4 패킷 (기계 언어)</div>
+            <div style="border:1px solid #ff9090;border-radius:8px;background:rgba(255,144,144,.05);padding:10px;font-family:monospace;font-size:11px;line-height:1.8;color:#ff9090;">IT_DISPATCH_DIRECT<br>IT_EVENT_WRITE<br>IT_SURFACE_SYNC</div>
+          </div>
+          <div style="display:flex;align-items:center;font-size:24px;color:#4f648f;">→</div>
+          <div style="flex:1;min-width:120px;text-align:center;padding:12px;">
+            <div style="font-size:11px;color:#9aa6bd;margin-bottom:6px;">GPU CP 처리</div>
+            <div style="font-size:26px;">⚙️</div>
+            <div style="font-size:11px;color:#7ee0c6;margin-top:4px;">실제 연산</div>
+          </div>
+        </div>`;
+        break;
+      case 'mismatch':
+        scene.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:160px;border:1px solid #7ee0c6;border-radius:8px;padding:12px;background:rgba(126,224,198,.05);">
+            <div style="font-size:11px;font-weight:700;color:#7ee0c6;margin-bottom:8px;">설계도 승인 ✓</div>
+            <div style="font-size:11px;color:#9aa6bd;">Pipeline Create 성공<br>Layout 확정됨</div>
+          </div>
+          <div style="display:flex;align-items:center;font-size:18px;color:#4f648f;">+</div>
+          <div style="flex:1;min-width:160px;border:1px solid #ff6464;border-radius:8px;padding:12px;background:rgba(255,100,100,.06);">
+            <div style="font-size:11px;font-weight:700;color:#ff9090;margin-bottom:8px;">실물 타입 불일치 ✗</div>
+            <div style="font-size:11px;color:#9aa6bd;">b0에 UNIFORM_BUFFER를<br>STORAGE_BUFFER 칸에 넣으려 함</div>
+          </div>
+          <div style="display:flex;align-items:center;font-size:18px;color:#4f648f;">=</div>
+          <div style="flex:1;min-width:160px;border:1px solid #ffc850;border-radius:8px;padding:12px;background:rgba(255,200,80,.06);">
+            <div style="font-size:11px;font-weight:700;color:#ffc850;margin-bottom:8px;">Dispatch 시점 실패</div>
+            <div style="font-size:11px;color:#9aa6bd;">Validation Layer 경고<br>또는 undefined behavior</div>
+          </div>
+        </div>`;
+        break;
+      case 'table':
+        const rows = MAPPING.map((r, i) =>
+          `<tr class="${i % 2 === 0 ? '' : 'hl'}"><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+        scene.innerHTML = `<table class="mapping-table">
+          <thead><tr><th>배송센터 비유</th><th>실제 GPU / Vulkan 개념</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+        break;
+    }
+  }
+
+  function render() {
+    document.getElementById('bpa-counter').textContent = 'Step ' + step + ' / ' + total;
+    if (step === 0) {
+      document.getElementById('bpa-desc').innerHTML = '<span class="step-num">시작</span><strong>"다음"을 눌러 GPU 큰 그림을 배송센터 비유로 이해하세요.</strong>';
+      document.getElementById('bpa-scene').innerHTML = '<div style="text-align:center;padding:20px;color:#4f648f;">위 버튼을 눌러 시작하세요</div>';
+      return;
+    }
+    const s = STEPS[step - 1];
+    document.getElementById('bpa-desc').innerHTML = s.desc;
+    renderScene(s);
+  }
+
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('bpa-auto').textContent = '▶ 자동 재생';
+  }
+
+  document.getElementById('bpa-next').addEventListener('click', () => { stopAuto(); if (step < total) { step++; render(); } });
+  document.getElementById('bpa-prev').addEventListener('click', () => { stopAuto(); if (step > 0) { step--; render(); } });
+  document.getElementById('bpa-reset').addEventListener('click', () => { stopAuto(); step = 0; render(); });
+  document.getElementById('bpa-auto').addEventListener('click', () => {
+    if (autoTimer) { stopAuto(); return; }
+    document.getElementById('bpa-auto').textContent = '⏸ 일시정지';
+    if (step === 0) { step = 1; render(); }
+    autoTimer = setInterval(() => { if (step >= total) { stopAuto(); return; } step++; render(); }, 2800);
+  });
+
+  render();
+})();
+</script>
+</div>

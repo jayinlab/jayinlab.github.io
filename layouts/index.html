@@ -1,8 +1,10 @@
 {{ define "main" }}
+  {{ $posts := where .Site.RegularPages "Section" "posts" }}
   <h2>Posts</h2>
+  <p class="post-count">총 {{ len $posts }}개 포스트</p>
   <ul class="post-list">
     {{ $abbr := dict "beginner" "BEG" "intermediate" "MID" "advanced" "ADV" }}
-    {{ range sort (where .Site.RegularPages "Section" "posts") "Date" "desc" }}
+    {{ range sort $posts "Date" "desc" }}
       <li>
         <span class="post-title-group">
           <a href="{{ .RelPermalink }}">{{ .Title }}</a>

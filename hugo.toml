@@ -2,7 +2,9 @@ baseURL = 'https://jayinlab.github.io/'
 languageCode = 'ko-kr'
 title = 'jayinlab'
 
-disableKinds = ['taxonomy', 'term']
+[taxonomies]
+  tag = 'tags'
+  series = 'series'
 
 [permalinks]
   posts = '/:slug/'

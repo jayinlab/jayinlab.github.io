@@ -30,6 +30,8 @@ __kernel void saxpy(
 
 ---
 
+{{< arg_slot_anim >}}
+
 ## 인자 → 슬롯 매핑 과정
 
 ```mermaid

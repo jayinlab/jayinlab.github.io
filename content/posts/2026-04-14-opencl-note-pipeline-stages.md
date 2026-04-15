@@ -16,6 +16,8 @@ compute 중심으로 자주 쓰는 stage만 정리한다.
 
 ---
 
+{{< pipeline_stages_anim >}}
+
 ## 1. Pipeline stage란
 
 GPU는 명령을 파이프라인 단계로 나눠 처리한다.  

@@ -1,0 +1,366 @@
+<div id="rla-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#rla-root * { box-sizing:border-box; }
+#rla-root .rla-card { background:#0f1624; border:1px solid #2a3142; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+#rla-root .rla-title { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6b7fa3; margin-bottom:10px; }
+#rla-root .step-box { background:rgba(138,180,255,.07); border:1px solid #2a3142; border-left:3px solid #8ab4ff; border-radius:8px; padding:10px 14px; min-height:54px; line-height:1.7; margin-bottom:12px; }
+#rla-root .step-num { display:inline-block; background:#8ab4ff; color:#0b0d12; font-weight:700; font-size:11px; border-radius:999px; padding:1px 7px; margin-right:6px; }
+#rla-root .ctrl-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+#rla-root button { background:#141a26; border:1px solid #2a3142; border-radius:8px; color:#e6ebf5; padding:6px 14px; cursor:pointer; font-size:12px; transition:background .2s,border-color .2s; }
+#rla-root button:hover { background:#1e2840; border-color:#8ab4ff; }
+#rla-root button.primary { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#rla-root .step-counter { color:#6b7fa3; font-size:12px; margin-left:auto; }
+#rla-root canvas { border-radius:8px; border:1px solid #2a3142; width:100%; }
+#rla-root .slider-row { display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap; }
+#rla-root input[type=range] { flex:1; min-width:120px; accent-color:#8ab4ff; }
+#rla-root .slider-label { font-size:11px; color:#9aa6bd; white-space:nowrap; }
+#rla-root .slider-val { font-family:ui-monospace,monospace; font-size:12px; color:#8ab4ff; min-width:90px; }
+#rla-root .legend-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:8px; }
+#rla-root .legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:#9aa6bd; }
+#rla-root .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+</style>
+
+<div class="rla-card">
+  <div class="rla-title">Roofline 모델 인터랙티브 차트</div>
+  <div class="ctrl-row">
+    <button id="rla-prev">← 이전</button>
+    <button id="rla-next" class="primary">다음 →</button>
+    <button id="rla-auto">▶ 자동 재생</button>
+    <button id="rla-reset">↺ 처음</button>
+    <span class="step-counter" id="rla-counter">Step 0 / 6</span>
+  </div>
+  <div class="step-box" id="rla-desc">
+    <span class="step-num">시작</span><strong>"다음"을 눌러 Roofline 차트를 단계별로 완성하세요.</strong>
+  </div>
+  <canvas id="rla-canvas" height="300"></canvas>
+  <div class="slider-row" id="rla-slider-wrap" style="display:none;">
+    <span class="slider-label">내 커널 AI:</span>
+    <input type="range" id="rla-ai-slider" min="-2" max="2" step="0.05" value="-0.3">
+    <span class="slider-val" id="rla-ai-val">0.5 FLOP/B</span>
+    <span class="slider-label" id="rla-bound-label" style="padding:3px 8px;border-radius:4px;font-weight:600;"></span>
+  </div>
+  <div class="legend-row" id="rla-legend" style="display:none;">
+    <div class="legend-item"><div class="legend-dot" style="background:#ff9090;"></div>Memory roof (BW × AI)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8ab4ff;"></div>Compute roof (Peak FLOPs)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#7ee0c6;"></div>saxpy (memory-bound)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ffc850;"></div>matmul (compute-bound)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e678ff;"></div>내 커널 (슬라이더)</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // GPU params (representative values)
+  const PEAK_BW_GBS = 500;    // GB/s (e.g. RX 6700 XT)
+  const PEAK_GFLOPS = 13200;  // GFLOP/s
+
+  // Canvas log-scale helpers
+  // X: AI from 0.01 to 200 FLOP/B (log scale)
+  // Y: Performance from 0 to PEAK_GFLOPS * 1.15
+  const X_MIN_LOG = -2;   // log10(0.01)
+  const X_MAX_LOG = 2.3;  // log10(200)
+  const Y_MAX = PEAK_GFLOPS * 1.2;
+
+  let canvas, ctx, W, H, PAD;
+  const STEPS_VISIBLE = [false,false,false,false,false,false,false]; // axes, memroof, comproof, ridge, kernels, mykernel
+
+  function init() {
+    canvas = document.getElementById('rla-canvas');
+    ctx = canvas.getContext('2d');
+    resize();
+  }
+
+  function resize() {
+    W = canvas.offsetWidth;
+    if (W < 10) W = 400;
+    canvas.width = W * devicePixelRatio;
+    canvas.height = 300 * devicePixelRatio;
+    canvas.style.height = '300px';
+    H = 300;
+    PAD = { top:20, right:20, bottom:40, left:65 };
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    draw();
+  }
+
+  function xToCanvas(logAI) {
+    return PAD.left + (logAI - X_MIN_LOG) / (X_MAX_LOG - X_MIN_LOG) * (W - PAD.left - PAD.right);
+  }
+  function yToCanvas(gflops) {
+    return PAD.top + (1 - gflops / Y_MAX) * (H - PAD.top - PAD.bottom);
+  }
+  function canvasToLogAI(cx) {
+    return X_MIN_LOG + (cx - PAD.left) / (W - PAD.left - PAD.right) * (X_MAX_LOG - X_MIN_LOG);
+  }
+
+  function attainable(logAI) {
+    const ai = Math.pow(10, logAI);
+    return Math.min(PEAK_GFLOPS, PEAK_BW_GBS * ai);
+  }
+
+  function draw() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, W, H);
+
+    const plotW = W - PAD.left - PAD.right;
+    const plotH = H - PAD.top - PAD.bottom;
+
+    // Background
+    ctx.fillStyle = '#0f1624';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = '#1e2840';
+    ctx.lineWidth = 1;
+    // horizontal
+    for (let g = 0; g <= 5; g++) {
+      const gflops = PEAK_GFLOPS * g / 5;
+      const y = yToCanvas(gflops);
+      ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
+    }
+    // vertical (log scale)
+    for (let lx = X_MIN_LOG; lx <= X_MAX_LOG; lx += 1) {
+      const x = xToCanvas(lx);
+      ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, H - PAD.bottom); ctx.stroke();
+    }
+
+    // Axes
+    ctx.strokeStyle = '#4f648f';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, PAD.top);
+    ctx.lineTo(PAD.left, H - PAD.bottom);
+    ctx.lineTo(W - PAD.right, H - PAD.bottom);
+    ctx.stroke();
+
+    // Axis labels
+    ctx.fillStyle = '#6b7fa3';
+    ctx.font = '10px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    // X axis
+    const xLabels = [{v:-2,t:'0.01'},{v:-1,t:'0.1'},{v:0,t:'1'},{v:1,t:'10'},{v:2,t:'100'}];
+    xLabels.forEach(l => {
+      const x = xToCanvas(l.v);
+      ctx.fillText(l.t, x, H - PAD.bottom + 14);
+    });
+    ctx.fillText('Arithmetic Intensity (FLOP/Byte)  →', PAD.left + plotW/2, H - 4);
+
+    // Y axis
+    ctx.textAlign = 'right';
+    for (let g = 0; g <= 5; g++) {
+      const gflops = PEAK_GFLOPS * g / 5;
+      const y = yToCanvas(gflops);
+      ctx.fillText((gflops/1000).toFixed(0) + 'T', PAD.left - 6, y + 3);
+    }
+    ctx.save();
+    ctx.translate(12, PAD.top + plotH/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.textAlign = 'center';
+    ctx.fillText('Performance (GFLOP/s)  ↑', 0, 0);
+    ctx.restore();
+
+    if (!STEPS_VISIBLE[0]) return;
+
+    // Memory roof region (shaded)
+    if (STEPS_VISIBLE[1]) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(xToCanvas(X_MIN_LOG), yToCanvas(0));
+      for (let lx = X_MIN_LOG; lx <= X_MAX_LOG; lx += 0.05) {
+        ctx.lineTo(xToCanvas(lx), yToCanvas(attainable(lx)));
+      }
+      ctx.lineTo(xToCanvas(X_MAX_LOG), yToCanvas(0));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,144,144,0.04)';
+      ctx.fill();
+      // Memory roof line
+      ctx.beginPath();
+      ctx.strokeStyle = '#ff9090';
+      ctx.lineWidth = 2;
+      for (let lx = X_MIN_LOG; lx <= X_MAX_LOG; lx += 0.05) {
+        const perf = PEAK_BW_GBS * Math.pow(10, lx);
+        if (perf <= PEAK_GFLOPS) {
+          lx === X_MIN_LOG ? ctx.moveTo(xToCanvas(lx), yToCanvas(perf)) : ctx.lineTo(xToCanvas(lx), yToCanvas(perf));
+        }
+      }
+      ctx.stroke();
+      // Label
+      ctx.fillStyle = '#ff9090';
+      ctx.font = 'bold 11px -apple-system,sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Memory BW Roof', xToCanvas(X_MIN_LOG) + 4, yToCanvas(PEAK_BW_GBS * Math.pow(10, X_MIN_LOG)) - 4);
+      ctx.restore();
+    }
+
+    // Compute roof
+    if (STEPS_VISIBLE[2]) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = '#8ab4ff';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6,3]);
+      ctx.moveTo(PAD.left, yToCanvas(PEAK_GFLOPS));
+      ctx.lineTo(W - PAD.right, yToCanvas(PEAK_GFLOPS));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#8ab4ff';
+      ctx.font = 'bold 11px -apple-system,sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('Compute Roof  ' + (PEAK_GFLOPS/1000).toFixed(1) + ' TFLOP/s', W - PAD.right - 4, yToCanvas(PEAK_GFLOPS) - 5);
+      ctx.restore();
+    }
+
+    // Ridge point
+    if (STEPS_VISIBLE[3]) {
+      // Ridge = BW * AI = Peak → AI = Peak/BW
+      const ridgeAI = PEAK_GFLOPS / PEAK_BW_GBS;
+      const ridgeLogAI = Math.log10(ridgeAI);
+      const rx = xToCanvas(ridgeLogAI);
+      const ry = yToCanvas(PEAK_GFLOPS);
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = '#ffc850';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4,3]);
+      ctx.moveTo(rx, ry);
+      ctx.lineTo(rx, H - PAD.bottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(rx, ry, 5, 0, Math.PI*2);
+      ctx.fillStyle = '#ffc850';
+      ctx.fill();
+      ctx.fillStyle = '#ffc850';
+      ctx.font = '10px -apple-system,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Ridge (' + ridgeAI.toFixed(0) + ' FLOP/B)', rx, ry - 12);
+      ctx.restore();
+    }
+
+    // Kernel points
+    if (STEPS_VISIBLE[4]) {
+      // saxpy: low AI ~0.17 FLOP/B (2 flops, ~12 bytes per element)
+      const saxpyAI = Math.log10(0.17);
+      const saxpyPerf = Math.min(PEAK_GFLOPS, PEAK_BW_GBS * 0.17) * 0.7;
+      drawKernelPoint(saxpyAI, saxpyPerf, '#7ee0c6', 'saxpy\n(mem-bound)');
+
+      // matmul N=1024: AI ~170 FLOP/B
+      const matmulAI = Math.log10(170);
+      const matmulPerf = PEAK_GFLOPS * 0.65;
+      drawKernelPoint(matmulAI, matmulPerf, '#ffc850', 'matmul\n(comp-bound)');
+
+      // naive stencil: mid AI ~1
+      const stencilAI = Math.log10(1.0);
+      const stencilPerf = Math.min(PEAK_GFLOPS, PEAK_BW_GBS * 1.0) * 0.5;
+      drawKernelPoint(stencilAI, stencilPerf, '#a0b8ff', 'stencil');
+    }
+
+    // My kernel (slider)
+    if (STEPS_VISIBLE[5]) {
+      const slider = document.getElementById('rla-ai-slider');
+      const logAI = parseFloat(slider.value);
+      const ai = Math.pow(10, logAI);
+      const perf = attainable(logAI) * 0.6;
+      drawKernelPoint(logAI, perf, '#e678ff', '내 커널');
+
+      // Bound label
+      const boundEl = document.getElementById('rla-bound-label');
+      const isMemBound = PEAK_BW_GBS * ai < PEAK_GFLOPS;
+      if (isMemBound) {
+        boundEl.textContent = 'Memory-bound';
+        boundEl.style.background = 'rgba(255,100,100,.12)';
+        boundEl.style.color = '#ff9090';
+        boundEl.style.border = '1px solid #ff6464';
+      } else {
+        boundEl.textContent = 'Compute-bound';
+        boundEl.style.background = 'rgba(138,180,255,.15)';
+        boundEl.style.color = '#8ab4ff';
+        boundEl.style.border = '1px solid #8ab4ff';
+      }
+      document.getElementById('rla-ai-val').textContent = ai.toFixed(2) + ' FLOP/B';
+    }
+  }
+
+  function drawKernelPoint(logAI, perf, color, label) {
+    const x = xToCanvas(logAI);
+    const y = yToCanvas(perf);
+    // vertical line to roof
+    const roofY = yToCanvas(attainable(logAI));
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = color + '55';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,2]);
+    ctx.moveTo(x, roofY); ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI*2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = '#0f1624';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = 'bold 10px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    const lines = label.split('\n');
+    lines.forEach((ln, i) => ctx.fillText(ln, x, y - 12 - (lines.length - 1 - i) * 12));
+    ctx.restore();
+  }
+
+  const STEPS = [
+    { show:[true,false,false,false,false,false], desc:'<span class="step-num">1</span><strong>축 설명 — X: Arithmetic Intensity (AI), Y: Performance</strong><br><span style="color:#9aa6bd;font-size:12px;">X축은 AI = FLOPs/Byte (로그 스케일). Y축은 커널 성능 GFLOP/s. 점이 오른쪽 위일수록 좋습니다.</span>' },
+    { show:[true,true,false,false,false,false], desc:'<span class="step-num">2</span><strong>Memory BW Roof — 메모리 대역폭 한계선</strong><br><span style="color:#9aa6bd;font-size:12px;">성능 ≤ Peak BW × AI. AI가 낮을수록 메모리가 병목이 됩니다. 이 선 아래에 있는 커널은 "memory-bound"입니다.</span>' },
+    { show:[true,true,true,false,false,false], desc:'<span class="step-num">3</span><strong>Compute Roof — 연산 처리량 한계선</strong><br><span style="color:#9aa6bd;font-size:12px;">성능 ≤ Peak FLOPs. AI가 충분히 크면 여기에 막힙니다. 이 수평선 근처에 있는 커널은 "compute-bound"입니다.</span>' },
+    { show:[true,true,true,true,false,false], desc:'<span class="step-num">4</span><strong>Ridge Point — 두 roof의 교점</strong><br><span style="color:#9aa6bd;font-size:12px;">Ridge = Peak FLOPs / Peak BW. 이 AI 이하면 memory-bound, 이상이면 compute-bound. 이 점이 "이상적 AI 경계"입니다.</span>' },
+    { show:[true,true,true,true,true,false], desc:'<span class="step-num">5</span><strong>실제 커널 점들 — saxpy vs matmul</strong><br><span style="color:#9aa6bd;font-size:12px;">saxpy(AI≈0.17): 2 FLOPs, ~12 bytes → memory-bound. matmul N=1024(AI≈170): 고 FLOPs → compute-bound. 같은 GPU에서도 커널마다 위치가 다릅니다.</span>' },
+    { show:[true,true,true,true,true,true], desc:'<span class="step-num">6</span><strong>슬라이더로 "내 커널" 위치 확인</strong><br><span style="color:#9aa6bd;font-size:12px;">아래 슬라이더로 AI를 바꿔보세요. 커널 점이 memory roof 아래면 → 메모리 최적화(coalescing, LDS)가 먼저. Compute roof 근처면 → 연산 최적화(vectorization, ILP).</span>' },
+  ];
+
+  let step = 0, autoTimer = null;
+  const total = STEPS.length;
+
+  function render() {
+    document.getElementById('rla-counter').textContent = 'Step ' + step + ' / ' + total;
+    if (step === 0) {
+      document.getElementById('rla-desc').innerHTML = '<span class="step-num">시작</span><strong>"다음"을 눌러 Roofline 차트를 단계별로 완성하세요.</strong>';
+      STEPS_VISIBLE.fill(false);
+      document.getElementById('rla-slider-wrap').style.display = 'none';
+      document.getElementById('rla-legend').style.display = 'none';
+    } else {
+      const s = STEPS[step - 1];
+      document.getElementById('rla-desc').innerHTML = s.desc;
+      s.show.forEach((v, i) => { STEPS_VISIBLE[i] = v; });
+      document.getElementById('rla-slider-wrap').style.display = STEPS_VISIBLE[5] ? '' : 'none';
+      document.getElementById('rla-legend').style.display = step >= 5 ? '' : 'none';
+    }
+    draw();
+  }
+
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('rla-auto').textContent = '▶ 자동 재생';
+  }
+
+  document.getElementById('rla-next').addEventListener('click', () => { stopAuto(); if (step < total) { step++; render(); } });
+  document.getElementById('rla-prev').addEventListener('click', () => { stopAuto(); if (step > 0) { step--; render(); } });
+  document.getElementById('rla-reset').addEventListener('click', () => { stopAuto(); step = 0; render(); });
+  document.getElementById('rla-auto').addEventListener('click', () => {
+    if (autoTimer) { stopAuto(); return; }
+    document.getElementById('rla-auto').textContent = '⏸ 일시정지';
+    if (step === 0) { step = 1; render(); }
+    autoTimer = setInterval(() => { if (step >= total) { stopAuto(); return; } step++; render(); }, 2500);
+  });
+
+  document.getElementById('rla-ai-slider').addEventListener('input', draw);
+
+  window.addEventListener('resize', () => {
+    ctx.setTransform(1,0,0,1,0,0);
+    resize();
+  });
+
+  // Init after layout settles
+  setTimeout(() => { init(); render(); }, 50);
+})();
+</script>
+</div>

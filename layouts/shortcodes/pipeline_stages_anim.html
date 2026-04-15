@@ -1,0 +1,225 @@
+<div id="psa-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#psa-root * { box-sizing:border-box; }
+#psa-root .psa-card { background:#0f1624; border:1px solid #2a3142; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+#psa-root .psa-title { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6b7fa3; margin-bottom:10px; }
+#psa-root .step-box { background:rgba(138,180,255,.07); border:1px solid #2a3142; border-left:3px solid #8ab4ff; border-radius:8px; padding:10px 14px; min-height:54px; line-height:1.7; margin-bottom:12px; }
+#psa-root .step-num { display:inline-block; background:#8ab4ff; color:#0b0d12; font-weight:700; font-size:11px; border-radius:999px; padding:1px 7px; margin-right:6px; }
+#psa-root .ctrl-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+#psa-root button { background:#141a26; border:1px solid #2a3142; border-radius:8px; color:#e6ebf5; padding:6px 14px; cursor:pointer; font-size:12px; transition:background .2s,border-color .2s; }
+#psa-root button:hover { background:#1e2840; border-color:#8ab4ff; }
+#psa-root button.primary { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#psa-root .tab-row { display:flex; gap:6px; margin-bottom:10px; }
+#psa-root .tab-btn { padding:5px 12px; border-radius:999px; font-size:12px; background:#141a26; border:1px solid #2a3142; color:#9aa6bd; cursor:pointer; transition:all .2s; }
+#psa-root .tab-btn.active { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#psa-root .step-counter { color:#6b7fa3; font-size:12px; margin-left:auto; }
+#psa-root .timeline { position:relative; padding:8px 0; }
+#psa-root .tl-row { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+#psa-root .tl-label { width:80px; min-width:80px; font-size:11px; color:#6b7fa3; text-align:right; padding-right:6px; }
+#psa-root .tl-bar { flex:1; position:relative; height:32px; }
+#psa-root .tl-seg { position:absolute; top:0; height:100%; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600; transition:all .4s; overflow:hidden; white-space:nowrap; padding:0 6px; border:1px solid transparent; }
+#psa-root .seg-idle { background:#141a26; border-color:#2a3142; color:#4f648f; }
+#psa-root .seg-work { background:rgba(138,180,255,.18); border-color:#8ab4ff; color:#8ab4ff; }
+#psa-root .seg-done { background:rgba(126,224,198,.15); border-color:#7ee0c6; color:#7ee0c6; }
+#psa-root .seg-hazard { background:rgba(255,100,100,.12); border-color:#ff6464; color:#ff9090; }
+#psa-root .seg-barrier { background:rgba(255,200,80,.15); border-color:#ffc850; color:#ffc850; }
+#psa-root .seg-stall { background:rgba(107,127,163,.1); border-color:#4f648f; color:#4f648f; }
+#psa-root .tl-note { margin-top:6px; padding:6px 10px; border-radius:6px; font-size:11px; border:1px solid; }
+#psa-root .note-good { background:rgba(126,224,198,.08); border-color:#7ee0c6; color:#7ee0c6; }
+#psa-root .note-bad { background:rgba(255,100,100,.08); border-color:#ff6464; color:#ff9090; }
+#psa-root .note-warn { background:rgba(255,200,80,.08); border-color:#ffc850; color:#ffc850; }
+#psa-root .mask-box { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+#psa-root .mask-item { flex:1; min-width:140px; border:1px solid #2a3142; border-radius:8px; padding:8px 10px; background:#141a26; }
+#psa-root .mask-name { font-size:10px; font-weight:700; color:#6b7fa3; margin-bottom:4px; }
+#psa-root .mask-val { font-family:ui-monospace,monospace; font-size:11px; }
+</style>
+
+<div class="psa-card">
+  <div class="psa-title">Pipeline Stage Mask 시각화</div>
+  <div class="tab-row">
+    <button class="tab-btn active" data-scene="0">시나리오 1: Barrier 없이</button>
+    <button class="tab-btn" data-scene="1">시나리오 2: 올바른 Barrier</button>
+    <button class="tab-btn" data-scene="2">시나리오 3: 과도한 Barrier</button>
+  </div>
+  <div class="ctrl-row">
+    <button id="psa-prev">← 이전</button>
+    <button id="psa-next" class="primary">다음 →</button>
+    <button id="psa-auto">▶ 자동 재생</button>
+    <button id="psa-reset">↺ 처음</button>
+    <span class="step-counter" id="psa-counter">Step 0</span>
+  </div>
+  <div class="step-box" id="psa-desc">
+    <span class="step-num">시작</span><strong>시나리오를 선택하고 "다음"을 눌러 Pipeline Barrier 동작을 확인하세요.</strong>
+  </div>
+  <div id="psa-viz"></div>
+</div>
+
+<script>
+(function(){
+  // Timeline: 5 slots (each 20% wide)
+  // Row labels: dispatch A, barrier, dispatch B, note
+
+  const SCENES = [
+    // Scene 0: No barrier — data hazard
+    [
+      {
+        desc: '<span class="step-num">1</span><strong>Dispatch A — global buffer에 쓰기</strong><br><span style="color:#9aa6bd;font-size:12px;">Dispatch A가 out_buffer에 결과를 씁니다. GPU 파이프라인 내부에서는 아직 캐시에 머물러 있을 수 있습니다.</span>',
+        rows: [
+          { label:'Dispatch A', segs:[{w:'40%',l:'0%',cls:'seg-work',t:'COMPUTE_SHADER\n(쓰기)'}] },
+          { label:'Dispatch B', segs:[{w:'100%',l:'0%',cls:'seg-idle',t:'대기'}] },
+        ],
+        note: null
+      },
+      {
+        desc: '<span class="step-num">2</span><strong>Barrier 없이 Dispatch B 즉시 실행</strong><br><span style="color:#9aa6bd;font-size:12px;">Barrier가 없으므로 Dispatch B가 즉시 시작됩니다. Dispatch A의 쓰기가 아직 캐시에서 flush되지 않았다면 Dispatch B는 <strong>stale 데이터를 읽습니다.</strong></span>',
+        rows: [
+          { label:'Dispatch A', segs:[{w:'40%',l:'0%',cls:'seg-done',t:'완료'}] },
+          { label:'Dispatch B', segs:[{w:'60%',l:'0%',cls:'seg-hazard',t:'⚠ COMPUTE_SHADER\n(stale 데이터 읽기?)'}] },
+        ],
+        note: { cls:'note-bad', text:'⚠ 데이터 hazard — Dispatch A의 쓰기가 Dispatch B의 읽기에 보이지 않을 수 있습니다. undefined behavior.' }
+      },
+    ],
+    // Scene 1: Correct barrier
+    [
+      {
+        desc: '<span class="step-num">1</span><strong>Dispatch A 실행</strong><br><span style="color:#9aa6bd;font-size:12px;">Dispatch A가 out_buffer에 결과를 씁니다. srcStageMask=COMPUTE_SHADER, srcAccessMask=SHADER_WRITE.</span>',
+        rows: [
+          { label:'Dispatch A', segs:[{w:'35%',l:'0%',cls:'seg-work',t:'COMPUTE_SHADER'}] },
+          { label:'Barrier', segs:[{w:'100%',l:'0%',cls:'seg-idle',t:''}] },
+          { label:'Dispatch B', segs:[{w:'100%',l:'0%',cls:'seg-idle',t:''}] },
+        ],
+        note: null,
+        mask: { src:'COMPUTE_SHADER\n+ SHADER_WRITE', dst:'COMPUTE_SHADER\n+ SHADER_READ' }
+      },
+      {
+        desc: '<span class="step-num">2</span><strong>Barrier 발동 — cache flush + invalidate</strong><br><span style="color:#9aa6bd;font-size:12px;">vkCmdPipelineBarrier가 실행됩니다. Dispatch A의 COMPUTE_SHADER stage가 끝날 때까지 기다리고, 캐시를 flush/invalidate합니다. Dispatch B의 COMPUTE_SHADER가 여기까지 막힙니다.</span>',
+        rows: [
+          { label:'Dispatch A', segs:[{w:'35%',l:'0%',cls:'seg-done',t:'완료'}] },
+          { label:'Barrier', segs:[{w:'20%',l:'35%',cls:'seg-barrier',t:'flush/inv'}] },
+          { label:'Dispatch B', segs:[{w:'45%',l:'0%',cls:'seg-stall',t:'대기 중...'}] },
+        ],
+        note: { cls:'note-warn', text:'Barrier 처리 중 — GPU가 메모리 일관성을 보장합니다. srcStageMask: COMPUTE_SHADER | dstStageMask: COMPUTE_SHADER' },
+        mask: { src:'COMPUTE_SHADER\n+ SHADER_WRITE', dst:'COMPUTE_SHADER\n+ SHADER_READ' }
+      },
+      {
+        desc: '<span class="step-num">3</span><strong>Dispatch B 안전하게 실행</strong><br><span style="color:#9aa6bd;font-size:12px;">Barrier 완료 후 Dispatch B가 시작됩니다. Dispatch A가 쓴 데이터가 캐시에서 flush되고 Dispatch B의 캐시에서 invalidate되었으므로, VRAM에서 최신 데이터를 읽습니다.</span>',
+        rows: [
+          { label:'Dispatch A', segs:[{w:'35%',l:'0%',cls:'seg-done',t:'완료'}] },
+          { label:'Barrier', segs:[{w:'20%',l:'35%',cls:'seg-done',t:'완료 ✓'}] },
+          { label:'Dispatch B', segs:[{w:'45%',l:'55%',cls:'seg-work',t:'COMPUTE_SHADER\n(올바른 데이터)'}] },
+        ],
+        note: { cls:'note-good', text:'✓ 올바른 실행 — Dispatch B가 Dispatch A의 최신 결과를 안전하게 읽습니다.' },
+        mask: { src:'COMPUTE_SHADER\n+ SHADER_WRITE', dst:'COMPUTE_SHADER\n+ SHADER_READ' }
+      },
+    ],
+    // Scene 2: Overly broad barrier
+    [
+      {
+        desc: '<span class="step-num">1</span><strong>과도한 Barrier — ALL_COMMANDS 사용</strong><br><span style="color:#9aa6bd;font-size:12px;">srcStageMask = ALL_COMMANDS, dstStageMask = ALL_COMMANDS로 설정한 경우입니다. 가장 간단해 보이지만 성능 비용이 큽니다.</span>',
+        rows: [
+          { label:'Dispatch A', segs:[{w:'25%',l:'0%',cls:'seg-work',t:'실행 중'}] },
+          { label:'Barrier', segs:[{w:'100%',l:'0%',cls:'seg-idle',t:''}] },
+          { label:'Dispatch B', segs:[{w:'100%',l:'0%',cls:'seg-idle',t:''}] },
+        ],
+        note: null,
+        mask: { src:'ALL_COMMANDS ⚠', dst:'ALL_COMMANDS ⚠' }
+      },
+      {
+        desc: '<span class="step-num">2</span><strong>GPU 전체 파이프라인 비워짐 (full stall)</strong><br><span style="color:#9aa6bd;font-size:12px;">ALL_COMMANDS barrier는 GPU가 현재 진행 중인 <strong>모든</strong> 명령을 완전히 비울 때까지 기다립니다. 실제 의존 관계는 COMPUTE_SHADER만인데 불필요하게 전체가 멈춥니다.</span>',
+        rows: [
+          { label:'Dispatch A', segs:[{w:'25%',l:'0%',cls:'seg-done',t:'완료'}] },
+          { label:'Barrier', segs:[{w:'50%',l:'25%',cls:'seg-barrier',t:'ALL stall\n(과도하게 넓음)'}] },
+          { label:'Dispatch B', segs:[{w:'25%',l:'0%',cls:'seg-stall',t:'전체 대기 중...'}] },
+        ],
+        note: { cls:'note-bad', text:'⚠ GPU idle 구간 발생 — 프로파일러에서 "GPU idle"로 보입니다. 필요한 stage만 지정하세요.' },
+        mask: { src:'ALL_COMMANDS ⚠', dst:'ALL_COMMANDS ⚠' }
+      },
+      {
+        desc: '<span class="step-num">3</span><strong>권장: 최소 범위 stage만 지정</strong><br><span style="color:#9aa6bd;font-size:12px;">Compute dispatch 간에는 COMPUTE_SHADER만 지정하면 충분합니다. 필요 이상의 stage를 잡으면 GPU에서 동시에 실행할 수 있었던 다른 작업도 모두 막힙니다.</span>',
+        rows: [
+          { label:'나쁜 예', segs:[{w:'60%',l:'20%',cls:'seg-hazard',t:'ALL_COMMANDS stall (넓음)'}] },
+          { label:'좋은 예', segs:[{w:'20%',l:'20%',cls:'seg-barrier',t:'COMPUTE_SHADER\n(최소)'}] },
+        ],
+        note: { cls:'note-good', text:'✓ 최소 범위 원칙: srcStageMask = dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT' },
+        mask: { src:'COMPUTE_SHADER\n(권장)', dst:'COMPUTE_SHADER\n(권장)' }
+      },
+    ],
+  ];
+
+  let scene = 0, step = 0, autoTimer = null;
+  function getSteps() { return SCENES[scene]; }
+
+  function renderViz(s) {
+    const viz = document.getElementById('psa-viz');
+    let html = '<div class="timeline">';
+    s.rows.forEach(row => {
+      html += `<div class="tl-row">
+        <div class="tl-label">${row.label}</div>
+        <div class="tl-bar">`;
+      row.segs.forEach(seg => {
+        const lines = seg.t ? seg.t.split('\n') : [''];
+        html += `<div class="tl-seg ${seg.cls}" style="left:${seg.l};width:${seg.w};">
+          ${lines.map((ln, i) => `<span style="display:block;line-height:${i===0?'1.2':'1.1'};font-size:${i===0?'10':'9'}px;">${ln}</span>`).join('')}
+        </div>`;
+      });
+      html += `</div></div>`;
+    });
+    if (s.note) {
+      html += `<div class="tl-note ${s.note.cls}">${s.note.text}</div>`;
+    }
+    html += '</div>';
+    if (s.mask) {
+      html += `<div class="mask-box">
+        <div class="mask-item">
+          <div class="mask-name">srcStageMask / srcAccessMask</div>
+          <div class="mask-val" style="color:#ff9090;">${s.mask.src.replace('\n','<br>')}</div>
+        </div>
+        <div class="mask-item">
+          <div class="mask-name">dstStageMask / dstAccessMask</div>
+          <div class="mask-val" style="color:#8ab4ff;">${s.mask.dst.replace('\n','<br>')}</div>
+        </div>
+      </div>`;
+    }
+    viz.innerHTML = html;
+  }
+
+  function render() {
+    const steps = getSteps();
+    document.getElementById('psa-counter').textContent = 'Step ' + step + ' / ' + steps.length;
+    if (step === 0) {
+      document.getElementById('psa-desc').innerHTML = '<span class="step-num">시작</span><strong>시나리오를 선택하고 "다음"을 눌러 Pipeline Barrier 동작을 확인하세요.</strong>';
+      document.getElementById('psa-viz').innerHTML = '';
+      return;
+    }
+    const s = steps[step - 1];
+    document.getElementById('psa-desc').innerHTML = s.desc;
+    renderViz(s);
+  }
+
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('psa-auto').textContent = '▶ 자동 재생';
+  }
+
+  document.querySelectorAll('#psa-root .tab-btn').forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#psa-root .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      scene = i; step = 0; stopAuto(); render();
+    });
+  });
+
+  document.getElementById('psa-next').addEventListener('click', () => { stopAuto(); const steps = getSteps(); if (step < steps.length) { step++; render(); } });
+  document.getElementById('psa-prev').addEventListener('click', () => { stopAuto(); if (step > 0) { step--; render(); } });
+  document.getElementById('psa-reset').addEventListener('click', () => { stopAuto(); step = 0; render(); });
+  document.getElementById('psa-auto').addEventListener('click', () => {
+    if (autoTimer) { stopAuto(); return; }
+    document.getElementById('psa-auto').textContent = '⏸ 일시정지';
+    if (step === 0) { step = 1; render(); }
+    autoTimer = setInterval(() => { const steps = getSteps(); if (step >= steps.length) { stopAuto(); return; } step++; render(); }, 2600);
+  });
+
+  render();
+})();
+</script>
+</div>

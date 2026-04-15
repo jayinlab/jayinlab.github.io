@@ -14,6 +14,8 @@ layer: "VK"
 
 ---
 
+{{< clfinish_anim >}}
+
 ## 전체 흐름
 
 ```

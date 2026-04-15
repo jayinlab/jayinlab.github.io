@@ -1,0 +1,173 @@
+<div id="asa-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#asa-root * { box-sizing:border-box; }
+#asa-root .asa-card { background:#0f1624; border:1px solid #2a3142; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+#asa-root .asa-title { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6b7fa3; margin-bottom:10px; }
+#asa-root .step-box { background:rgba(138,180,255,.07); border:1px solid #2a3142; border-left:3px solid #8ab4ff; border-radius:8px; padding:10px 14px; min-height:54px; line-height:1.7; margin-bottom:12px; }
+#asa-root .step-num { display:inline-block; background:#8ab4ff; color:#0b0d12; font-weight:700; font-size:11px; border-radius:999px; padding:1px 7px; margin-right:6px; }
+#asa-root .ctrl-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+#asa-root button { background:#141a26; border:1px solid #2a3142; border-radius:8px; color:#e6ebf5; padding:6px 14px; cursor:pointer; font-size:12px; transition:background .2s,border-color .2s; }
+#asa-root button:hover { background:#1e2840; border-color:#8ab4ff; }
+#asa-root button.primary { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#asa-root .step-counter { color:#6b7fa3; font-size:12px; margin-left:auto; }
+#asa-root .flow-wrap { display:flex; gap:0; overflow-x:auto; }
+#asa-root .col { flex:1; min-width:130px; }
+#asa-root .col-header { text-align:center; font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; padding:6px 4px; border-radius:6px 6px 0 0; margin-bottom:4px; }
+#asa-root .col-cl { background:rgba(138,180,255,.15); color:#8ab4ff; }
+#asa-root .col-spv { background:rgba(255,200,80,.12); color:#ffc850; }
+#asa-root .col-vk { background:rgba(126,224,198,.12); color:#7ee0c6; }
+#asa-root .col-bind { background:rgba(230,120,255,.1); color:#e678ff; }
+#asa-root .arg-row { display:flex; gap:0; align-items:center; margin-bottom:5px; }
+#asa-root .arg-cell { flex:1; border:1px solid #2a3142; background:#141a26; border-radius:6px; padding:6px 8px; font-family:ui-monospace,monospace; font-size:11px; text-align:center; transition:background .3s,border-color .3s,color .3s; min-height:38px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:2px; }
+#asa-root .arg-cell.hl-cl { background:rgba(138,180,255,.18); border-color:#8ab4ff; color:#8ab4ff; }
+#asa-root .arg-cell.hl-spv { background:rgba(255,200,80,.15); border-color:#ffc850; color:#ffc850; }
+#asa-root .arg-cell.hl-vk { background:rgba(126,224,198,.15); border-color:#7ee0c6; color:#7ee0c6; }
+#asa-root .arg-cell.hl-bind { background:rgba(230,120,255,.12); border-color:#e678ff; color:#e678ff; }
+#asa-root .arg-cell.hl-pc { background:rgba(255,144,80,.15); border-color:#ffa060; color:#ffa060; }
+#asa-root .arrow-col { width:18px; min-width:18px; display:flex; flex-direction:column; justify-content:space-around; }
+#asa-root .arrow-col span { color:#4f648f; font-size:14px; text-align:center; line-height:1; margin-bottom:5px; }
+#asa-root .arrow-col span.lit { color:#8ab4ff; }
+#asa-root .sub-note { font-size:9px; color:#6b7fa3; font-family:-apple-system,sans-serif; font-weight:normal; }
+</style>
+
+<div class="asa-card">
+  <div class="asa-title">saxpy: arg → SPIR-V → Vulkan 슬롯 매핑</div>
+  <div class="ctrl-row">
+    <button id="asa-prev">← 이전</button>
+    <button id="asa-next" class="primary">다음 →</button>
+    <button id="asa-auto">▶ 자동 재생</button>
+    <button id="asa-reset">↺ 처음</button>
+    <span class="step-counter" id="asa-counter">Step 0 / 5</span>
+  </div>
+  <div class="step-box" id="asa-desc">
+    <span class="step-num">시작</span><strong>"다음"을 눌러 OpenCL 인자가 Vulkan 슬롯으로 변환되는 과정을 따라가세요.</strong>
+  </div>
+
+  <div class="flow-wrap" id="asa-flow">
+    <!-- rendered by JS -->
+  </div>
+</div>
+
+<script>
+(function(){
+  // Args: [name, type, annotation]
+  const ARGS = [
+    { id:0, name:'x', type:'__global const float*', note:'arg0' },
+    { id:1, name:'y', type:'__global const float*', note:'arg1' },
+    { id:2, name:'out', type:'__global float*', note:'arg2' },
+    { id:3, name:'a', type:'const float', note:'arg3 (scalar)' },
+  ];
+
+  const COLS = [
+    { id:'cl', label:'OpenCL C', cls:'col-cl', cellCls:'hl-cl',
+      cells: ['x\n__global float*', 'y\n__global float*', 'out\n__global float*', 'a\nconst float'] },
+    { id:'spv', label:'SPIR-V (clspv)', cls:'col-spv', cellCls:'hl-spv',
+      cells: ['StorageBuffer\nset=0 binding=0', 'StorageBuffer\nset=0 binding=1', 'StorageBuffer\nset=0 binding=2', 'PushConstant\noffset=0 size=4'] },
+    { id:'vk', label:'Vulkan DSL', cls:'col-vk', cellCls:'hl-vk',
+      cells: ['DSL b0\nSTORAGE_BUFFER', 'DSL b1\nSTORAGE_BUFFER', 'DSL b2\nSTORAGE_BUFFER', 'PushConstantRange\nsize=sizeof(float)'] },
+    { id:'bind', label:'Dispatch 직전', cls:'col-bind', cellCls:'hl-bind',
+      cells: ['b0 ← x_buf', 'b1 ← y_buf', 'b2 ← out_buf', 'vkCmdPushConstants\n&a (float)'] },
+  ];
+
+  const STEPS = [
+    {
+      colVisible: [true, false, false, false],
+      rowHighlight: [false, false, false, false],
+      colHighlight: [-1, -1, -1, -1],
+      desc: '<span class="step-num">1</span><strong>OpenCL 커널 시그니처</strong><br><span style="color:#9aa6bd;font-size:12px;">saxpy 커널의 4개 인자입니다. arg0~2는 <code>__global</code> 포인터(버퍼), arg3는 스칼라 float입니다. clspv가 이 시그니처를 분석해 변환합니다.</span>'
+    },
+    {
+      colVisible: [true, true, false, false],
+      rowHighlight: [false, false, false, false],
+      colHighlight: [0, 1, -1, -1],
+      desc: '<span class="step-num">2</span><strong>clspv → SPIR-V: __global 포인터 → StorageBuffer</strong><br><span style="color:#9aa6bd;font-size:12px;">arg0~2는 <code>OpDecorate ... DescriptorSet 0 Binding N</code>으로 변환됩니다. arg3 스칼라는 <code>PushConstant</code>으로 — descriptor slot을 낭비하지 않는 최적 경로입니다.</span>'
+    },
+    {
+      colVisible: [true, true, true, false],
+      rowHighlight: [false, false, false, false],
+      colHighlight: [0, 1, 2, -1],
+      desc: '<span class="step-num">3</span><strong>Vulkan: VkDescriptorSetLayout 생성</strong><br><span style="color:#9aa6bd;font-size:12px;">SPIR-V reflection 정보(set/binding)를 바탕으로 DSL을 만듭니다. b0~b2는 STORAGE_BUFFER. arg3는 PushConstantRange로 PipelineLayout에 등록됩니다.</span>'
+    },
+    {
+      colVisible: [true, true, true, false],
+      rowHighlight: [true, true, true, true],
+      colHighlight: [-1, -1, -1, -1],
+      desc: '<span class="step-num">4</span><strong>arg3(스칼라 a)가 PushConstant인 이유</strong><br><span style="color:#9aa6bd;font-size:12px;">스칼라 float 하나를 위해 descriptor 슬롯을 쓰는 것은 낭비입니다. PushConstant는 command buffer에 직접 기록되어 오버헤드가 최소입니다. clspv가 자동으로 이 패턴을 선택합니다.</span>'
+    },
+    {
+      colVisible: [true, true, true, true],
+      rowHighlight: [false, false, false, false],
+      colHighlight: [0, 1, 2, 3],
+      desc: '<span class="step-num">5</span><strong>Dispatch 직전: bind + push</strong><br><span style="color:#9aa6bd;font-size:12px;">vkUpdateDescriptorSets로 b0←x, b1←y, b2←out 버퍼를 연결합니다. vkCmdPushConstants로 float a를 command buffer에 기록합니다. 그 후 vkCmdDispatch로 커널 실행.</span>'
+    },
+  ];
+
+  let step = 0, autoTimer = null;
+  const total = STEPS.length;
+
+  function renderFlow(s) {
+    const flow = document.getElementById('asa-flow');
+    let html = '';
+    for (let ci = 0; ci < COLS.length; ci++) {
+      const col = COLS[ci];
+      if (!s.colVisible[ci]) continue;
+      const isHighlightedCol = s.colHighlight.includes(ci);
+      html += `<div class="col">
+        <div class="col-header ${col.cls}">${col.label}</div>`;
+      for (let ri = 0; ri < 4; ri++) {
+        let cls = '';
+        if (isHighlightedCol) {
+          cls = ri === 3 && ci === 1 ? 'hl-pc' : ri === 3 && ci === 2 ? 'hl-pc' : ri === 3 && ci === 3 ? 'hl-pc' : col.cellCls;
+        }
+        const rowHl = s.rowHighlight[ri] && ri === 3;
+        if (rowHl) cls = 'hl-pc';
+        const lines = col.cells[ri].split('\n');
+        html += `<div class="arg-row"><div class="arg-cell ${cls}">`;
+        html += `<span>${lines[0]}</span>`;
+        if (lines[1]) html += `<span class="sub-note">${lines[1]}</span>`;
+        html += `</div></div>`;
+      }
+      html += `</div>`;
+      if (ci < COLS.length - 1 && s.colVisible[ci + 1]) {
+        html += `<div class="arrow-col">
+          <span class="${isHighlightedCol ? 'lit' : ''}">→</span>
+          <span class="${isHighlightedCol ? 'lit' : ''}">→</span>
+          <span class="${isHighlightedCol ? 'lit' : ''}">→</span>
+          <span class="${isHighlightedCol ? 'lit' : ''}">→</span>
+        </div>`;
+      }
+    }
+    flow.innerHTML = html;
+  }
+
+  function render() {
+    document.getElementById('asa-counter').textContent = 'Step ' + step + ' / ' + total;
+    if (step === 0) {
+      document.getElementById('asa-desc').innerHTML = '<span class="step-num">시작</span><strong>"다음"을 눌러 OpenCL 인자가 Vulkan 슬롯으로 변환되는 과정을 따라가세요.</strong>';
+      document.getElementById('asa-flow').innerHTML = '';
+      return;
+    }
+    const s = STEPS[step - 1];
+    document.getElementById('asa-desc').innerHTML = s.desc;
+    renderFlow(s);
+  }
+
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('asa-auto').textContent = '▶ 자동 재생';
+  }
+
+  document.getElementById('asa-next').addEventListener('click', () => { stopAuto(); if (step < total) { step++; render(); } });
+  document.getElementById('asa-prev').addEventListener('click', () => { stopAuto(); if (step > 0) { step--; render(); } });
+  document.getElementById('asa-reset').addEventListener('click', () => { stopAuto(); step = 0; render(); });
+  document.getElementById('asa-auto').addEventListener('click', () => {
+    if (autoTimer) { stopAuto(); return; }
+    document.getElementById('asa-auto').textContent = '⏸ 일시정지';
+    if (step === 0) { step = 1; render(); }
+    autoTimer = setInterval(() => { if (step >= total) { stopAuto(); return; } step++; render(); }, 2600);
+  });
+
+  render();
+})();
+</script>
+</div>

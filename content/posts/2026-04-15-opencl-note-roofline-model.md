@@ -5,20 +5,13 @@ slug: "opencl-note-roofline-model"
 draft: false
 type: "note"
 series: "opencl-deep-dive"
-tags: ["opencl", "vulkan", "performance", "roofline", "bandwidth", "flops", "occupancy", "memory"]
+tags: ["opencl", "performance", "roofline", "bandwidth", "flops", "occupancy", "memory"]
 difficulty: "intermediate"
+layer: "CL"
 ---
 
 GPU 최적화를 할 때 가장 자주 막히는 지점은 "지금 이 커널이 compute bound인지 memory bound인지"를 감으로만 판단하는 순간이다.
 오늘 노트는 그 감을 수치로 바꾸는 **Roofline 모델**의 최소 실전 버전을 정리한다.
-
-## 분류체계 (CL/VK/ANGLE/PM4)
-
-- **CL(OpenCL)**: 직접 관련 (커널 성능 병목 판정)
-- **VK(Vulkan Compute)**: 간접 관련 (동일 compute 병목 분석 프레임 적용 가능)
-- **ANGLE**: 간접 관련 (OpenCL→Vulkan 경로에서 튜닝 우선순위 판단 기준)
-- **PM4/Backend**: 간접 관련 (submit 병목 vs 커널 병목 분리 진단에 도움)
-- **PERF 모델**: 직접 관련 (Roofline, AI, BW/FLOPs)
 
 ## 왜 지금 Roofline인가
 
@@ -42,6 +35,8 @@ P_{attainable} \le \min(\text{Peak FLOPs},\ \text{BW}\times AI)
 - AI가 충분히 높아지면 compute roof에 가까워진다.
 
 ## Roofline 그림으로 보기
+
+{{< roofline_anim >}}
 
 ```mermaid
 flowchart LR

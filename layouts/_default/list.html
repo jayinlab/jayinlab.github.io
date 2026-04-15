@@ -1,9 +1,10 @@
 {{ define "main" }}
   <h2>{{ .Title }}</h2>
   {{ .Content }}
+  <p class="post-count">총 {{ len .Pages }}개 포스트</p>
   <ul class="post-list">
     {{ $abbr := dict "beginner" "BEG" "intermediate" "MID" "advanced" "ADV" }}
-    {{ range .Pages }}
+    {{ range .Pages.ByDate.Reverse }}
       <li>
         <span class="post-title-group">
           <a href="{{ .RelPermalink }}">{{ .Title }}</a>

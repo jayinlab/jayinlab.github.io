@@ -16,6 +16,8 @@ GPU에서 `__global` 메모리는 느리다.
 
 ---
 
+{{< coalescing_anim >}}
+
 ## 1. 왜 접근 패턴이 중요한가
 
 GPU의 global memory (DRAM)는 **cache line 단위**로 데이터를 전송한다.  

@@ -1,0 +1,25 @@
+{{ define "main" }}
+<h2>{{ .Title }}</h2>
+<p style="color:#6b7fa3;font-size:13px;margin-bottom:20px;">
+  {{ if eq .Data.Plural "tags" }}
+    전체 태그 목록 — 태그를 클릭하면 해당 포스트 목록으로 이동합니다.
+  {{ else if eq .Data.Plural "series" }}
+    전체 시리즈 목록 — 시리즈를 클릭하면 해당 포스트 목록으로 이동합니다.
+  {{ else }}
+    전체 목록
+  {{ end }}
+</p>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;">
+  {{ range .Data.Terms.Alphabetical }}
+    <a href="{{ .Page.RelPermalink }}"
+       style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;
+              background:rgba(138,180,255,.08);border:1px solid #2a3142;border-radius:999px;
+              color:#9aa6bd;font-size:12px;text-decoration:none;transition:all .2s;"
+       onmouseover="this.style.borderColor='#8ab4ff';this.style.color='#8ab4ff';"
+       onmouseout="this.style.borderColor='#2a3142';this.style.color='#9aa6bd';">
+      {{ .Page.Title }}
+      <span style="background:#141a26;color:#6b7fa3;font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid #2a3142;">{{ .Count }}</span>
+    </a>
+  {{ end }}
+</div>
+{{ end }}

@@ -1,0 +1,220 @@
+<div id="coa-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#coa-root * { box-sizing:border-box; }
+#coa-root .coa-card { background:#0f1624; border:1px solid #2a3142; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+#coa-root .coa-title { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6b7fa3; margin-bottom:10px; }
+#coa-root .step-box { background:rgba(138,180,255,.07); border:1px solid #2a3142; border-left:3px solid #8ab4ff; border-radius:8px; padding:10px 14px; min-height:54px; line-height:1.7; margin-bottom:12px; }
+#coa-root .step-num { display:inline-block; background:#8ab4ff; color:#0b0d12; font-weight:700; font-size:11px; border-radius:999px; padding:1px 7px; margin-right:6px; }
+#coa-root .ctrl-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+#coa-root button { background:#141a26; border:1px solid #2a3142; border-radius:8px; color:#e6ebf5; padding:6px 14px; cursor:pointer; font-size:12px; transition:background .2s,border-color .2s; }
+#coa-root button:hover { background:#1e2840; border-color:#8ab4ff; }
+#coa-root button.primary { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#coa-root .tab-row { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+#coa-root .tab-btn { padding:5px 12px; border-radius:999px; font-size:12px; background:#141a26; border:1px solid #2a3142; color:#9aa6bd; cursor:pointer; transition:background .2s,border-color .2s,color .2s; }
+#coa-root .tab-btn.active { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#coa-root .step-counter { color:#6b7fa3; font-size:12px; margin-left:auto; }
+#coa-root .scene-wrap { display:flex; gap:12px; flex-wrap:wrap; }
+#coa-root .half { flex:1; min-width:220px; }
+#coa-root .half-title { font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px 6px 0 0; text-align:center; }
+#coa-root .lanes-grid { border:1px solid #2a3142; border-radius:0 0 8px 8px; background:#141a26; padding:8px; }
+#coa-root .lane-row { display:flex; align-items:center; gap:4px; margin-bottom:4px; }
+#coa-root .lane-id { font-family:ui-monospace,monospace; font-size:10px; color:#6b7fa3; min-width:40px; }
+#coa-root .lane-arrow { font-size:12px; color:#4f648f; }
+#coa-root .mem-cell { display:inline-block; padding:2px 7px; border-radius:4px; font-family:ui-monospace,monospace; font-size:10px; font-weight:600; border:1px solid; transition:background .3s,border-color .3s,color .3s; }
+#coa-root .cell-idle { background:#0a0e1a; border-color:#2a3142; color:#4f648f; }
+#coa-root .cell-active { background:rgba(138,180,255,.2); border-color:#8ab4ff; color:#8ab4ff; }
+#coa-root .cell-coalesced { background:rgba(126,224,198,.15); border-color:#7ee0c6; color:#7ee0c6; }
+#coa-root .cell-scattered { background:rgba(255,144,144,.12); border-color:#ff9090; color:#ff9090; }
+#coa-root .txn-box { margin-top:8px; padding:6px 10px; border-radius:6px; font-size:11px; font-weight:600; text-align:center; border:1px solid; }
+#coa-root .txn-good { background:rgba(126,224,198,.12); border-color:#7ee0c6; color:#7ee0c6; }
+#coa-root .txn-bad { background:rgba(255,100,100,.1); border-color:#ff6464; color:#ff9090; }
+#coa-root .txn-neutral { background:#141a26; border-color:#2a3142; color:#6b7fa3; }
+</style>
+
+<div class="coa-card">
+  <div class="coa-title">Memory Coalescing 시뮬레이터</div>
+  <div class="tab-row">
+    <button class="tab-btn active" data-scene="0">시나리오 1: Coalesced</button>
+    <button class="tab-btn" data-scene="1">시나리오 2: Non-coalesced</button>
+    <button class="tab-btn" data-scene="2">시나리오 3: __local 패턴</button>
+  </div>
+  <div class="ctrl-row">
+    <button id="coa-prev">← 이전</button>
+    <button id="coa-next" class="primary">다음 →</button>
+    <button id="coa-auto">▶ 자동 재생</button>
+    <button id="coa-reset">↺ 처음</button>
+    <span class="step-counter" id="coa-counter">Step 0</span>
+  </div>
+  <div class="step-box" id="coa-desc">
+    <span class="step-num">시작</span><strong>시나리오를 선택하고 "다음"을 눌러 접근 패턴을 확인하세요.</strong>
+  </div>
+  <div id="coa-viz"></div>
+</div>
+
+<script>
+(function(){
+  const LANES = 8; // simplified from 64 for visual clarity
+
+  const SCENES = [
+    // Scene 0: Coalesced
+    [
+      {
+        desc: '<span class="step-num">1</span><strong>Coalesced — 8개 lane이 연속 주소 접근</strong><br><span style="color:#9aa6bd;font-size:12px;">lane 0→addr[0], lane 1→addr[1], ..., lane 7→addr[7]. 모든 lane이 연속된 주소에 접근합니다. (실제 wavefront는 64 lanes)</span>',
+        state: 'idle'
+      },
+      {
+        desc: '<span class="step-num">2</span><strong>메모리 요청 발생</strong><br><span style="color:#9aa6bd;font-size:12px;">8개 lane이 동시에 global 메모리에 접근 요청을 보냅니다.</span>',
+        state: 'requesting'
+      },
+      {
+        desc: '<span class="step-num">3</span><strong>트랜잭션 1회로 처리 완료</strong><br><span style="color:#9aa6bd;font-size:12px;">연속 주소이므로 메모리 컨트롤러가 하나의 캐시 라인(32~128 bytes)으로 묶어서 처리합니다. 트랜잭션 1번 = 전체 wavefront 완료.</span>',
+        state: 'coalesced',
+        txn: '트랜잭션 1회 ✓ — 최적'
+      },
+    ],
+    // Scene 1: Non-coalesced (stride)
+    [
+      {
+        desc: '<span class="step-num">1</span><strong>Non-coalesced — 64칸 stride 접근</strong><br><span style="color:#9aa6bd;font-size:12px;">lane 0→addr[0], lane 1→addr[64], lane 2→addr[128], ... 주소 사이 간격이 너무 큽니다.</span>',
+        state: 'idle',
+        stride: true
+      },
+      {
+        desc: '<span class="step-num">2</span><strong>메모리 요청 발생</strong><br><span style="color:#9aa6bd;font-size:12px;">8개 lane이 각각 흩어진 주소에 접근을 요청합니다. 메모리 컨트롤러 입장에서 이 주소들은 서로 다른 캐시 라인에 있습니다.</span>',
+        state: 'requesting',
+        stride: true
+      },
+      {
+        desc: '<span class="step-num">3</span><strong>트랜잭션 8회 필요 (실제 wavefront는 64회)</strong><br><span style="color:#9aa6bd;font-size:12px;">각 lane의 주소가 별도 캐시 라인에 있으므로, 각각 독립된 트랜잭션이 필요합니다. lane 수만큼 트랜잭션이 발생합니다 — 수십 배 느림.</span>',
+        state: 'scattered',
+        stride: true,
+        txn: '트랜잭션 8회 ✗ — 최악 (wavefront 64 lanes → 64회)'
+      },
+    ],
+    // Scene 2: __local pattern
+    [
+      {
+        desc: '<span class="step-num">1</span><strong>__local 버퍼 패턴 — 먼저 coalesced 로드</strong><br><span style="color:#9aa6bd;font-size:12px;">non-coalesced global 접근이 불가피할 때의 해결책입니다. 먼저 global에서 __local(LDS)로 coalesced하게 데이터를 가져옵니다.</span>',
+        state: 'idle',
+        local: 'step1'
+      },
+      {
+        desc: '<span class="step-num">2</span><strong>Global → __local coalesced 로드 완료</strong><br><span style="color:#9aa6bd;font-size:12px;"><code>tile[local_id] = global_data[global_id]</code> — lane i가 addr[i]에 접근하므로 coalesced입니다. barrier(CLK_LOCAL_MEM_FENCE) 로 로드 완료를 보장합니다.</span>',
+        state: 'coalesced',
+        local: 'step2'
+      },
+      {
+        desc: '<span class="step-num">3</span><strong>__local에서 자유롭게 읽기</strong><br><span style="color:#9aa6bd;font-size:12px;"><code>float val = tile[some_other_index]</code> — LDS는 latency가 ~2–4 cycles로 매우 빠릅니다. 어떤 접근 패턴이든 global 대비 수십 배 빠릅니다.</span>',
+        state: 'local_read',
+        local: 'step3',
+        txn: '__local 자유 접근 ✓ — 수십 배 빠름 (SRAM)'
+      },
+    ],
+  ];
+
+  let scene = 0, step = 0, autoTimer = null;
+
+  function getSteps() { return SCENES[scene]; }
+
+  function renderViz(s) {
+    const isStride = s.stride;
+    const localPhase = s.local;
+    const st = s.state;
+    const viz = document.getElementById('coa-viz');
+
+    if (localPhase) {
+      // Local memory pattern: single panel showing both global and local
+      let rows = '';
+      for (let i = 0; i < LANES; i++) {
+        const globalAddr = isStride ? i * 64 : i;
+        const gCls = st === 'idle' ? 'cell-idle' : st === 'requesting' ? 'cell-active' : st === 'coalesced' ? 'cell-coalesced' : 'cell-active';
+        const lCls = localPhase === 'step1' ? 'cell-idle' : localPhase === 'step2' ? 'cell-coalesced' : 'cell-coalesced';
+        const lReadCls = localPhase === 'step3' ? 'cell-active' : lCls;
+        rows += `<div class="lane-row">
+          <span class="lane-id">lane ${i}</span>
+          <span class="lane-arrow">→</span>
+          <span class="mem-cell ${st === 'idle' ? 'cell-idle' : 'cell-coalesced'}">global[${i}]</span>
+          <span class="lane-arrow" style="color:#7ee0c6">→</span>
+          <span class="mem-cell ${localPhase === 'step1' ? 'cell-idle' : 'cell-coalesced'}">tile[${i}]</span>
+          ${localPhase === 'step3' ? '<span class="lane-arrow" style="color:#8ab4ff">→ 자유 접근 ✓</span>' : ''}
+        </div>`;
+      }
+      viz.innerHTML = `<div class="lanes-grid">
+        <div style="display:flex;gap:8px;margin-bottom:6px;font-size:10px;color:#6b7fa3;">
+          <span style="min-width:40px"></span>
+          <span style="min-width:36px"></span>
+          <span style="min-width:90px;text-align:center;">Global Memory</span>
+          <span style="min-width:36px"></span>
+          <span style="min-width:80px;text-align:center;">__local (LDS)</span>
+        </div>
+        ${rows}
+        ${s.txn ? `<div class="txn-box txn-good" style="margin-top:8px;">${s.txn}</div>` : ''}
+      </div>`;
+      return;
+    }
+
+    // Two-column: Coalesced vs Non-coalesced for scenes 0 and 1
+    let rows = '';
+    for (let i = 0; i < LANES; i++) {
+      const addr = isStride ? i * 64 : i;
+      let cellCls;
+      if (st === 'idle') cellCls = 'cell-idle';
+      else if (st === 'requesting') cellCls = 'cell-active';
+      else if (st === 'coalesced') cellCls = 'cell-coalesced';
+      else cellCls = 'cell-scattered';
+      rows += `<div class="lane-row">
+        <span class="lane-id">lane ${i}</span>
+        <span class="lane-arrow">→</span>
+        <span class="mem-cell ${cellCls}">addr[${addr}]</span>
+      </div>`;
+    }
+
+    const isCoalesced = scene === 0;
+    const hdrCls = isCoalesced ? 'background:rgba(126,224,198,.15);color:#7ee0c6;' : 'background:rgba(255,100,100,.1);color:#ff9090;';
+    const hdrText = isCoalesced ? '✅ Coalesced (연속 주소)' : '❌ Non-coalesced (stride=64)';
+    viz.innerHTML = `<div>
+      <div class="half-title" style="${hdrCls}">${hdrText}</div>
+      <div class="lanes-grid">${rows}${s.txn ? `<div class="txn-box ${isCoalesced ? 'txn-good' : 'txn-bad'}">${s.txn}</div>` : ''}</div>
+    </div>`;
+  }
+
+  function render() {
+    const steps = getSteps();
+    document.getElementById('coa-counter').textContent = 'Step ' + step + ' / ' + steps.length;
+    if (step === 0) {
+      document.getElementById('coa-desc').innerHTML = '<span class="step-num">시작</span><strong>시나리오를 선택하고 "다음"을 눌러 접근 패턴을 확인하세요.</strong>';
+      document.getElementById('coa-viz').innerHTML = '';
+      return;
+    }
+    const s = steps[step - 1];
+    document.getElementById('coa-desc').innerHTML = s.desc;
+    renderViz(s);
+  }
+
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('coa-auto').textContent = '▶ 자동 재생';
+  }
+
+  document.querySelectorAll('#coa-root .tab-btn').forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#coa-root .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      scene = i; step = 0; stopAuto(); render();
+    });
+  });
+
+  document.getElementById('coa-next').addEventListener('click', () => { stopAuto(); const steps = getSteps(); if (step < steps.length) { step++; render(); } });
+  document.getElementById('coa-prev').addEventListener('click', () => { stopAuto(); if (step > 0) { step--; render(); } });
+  document.getElementById('coa-reset').addEventListener('click', () => { stopAuto(); step = 0; render(); });
+  document.getElementById('coa-auto').addEventListener('click', () => {
+    if (autoTimer) { stopAuto(); return; }
+    document.getElementById('coa-auto').textContent = '⏸ 일시정지';
+    if (step === 0) { step = 1; render(); }
+    autoTimer = setInterval(() => { const steps = getSteps(); if (step >= steps.length) { stopAuto(); return; } step++; render(); }, 2500);
+  });
+
+  render();
+})();
+</script>
+</div>

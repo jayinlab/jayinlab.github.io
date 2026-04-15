@@ -1,0 +1,188 @@
+<div id="cfa-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#cfa-root * { box-sizing:border-box; }
+#cfa-root .cfa-card { background:#0f1624; border:1px solid #2a3142; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+#cfa-root .cfa-title { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6b7fa3; margin-bottom:10px; }
+#cfa-root .step-box { background:rgba(138,180,255,.07); border:1px solid #2a3142; border-left:3px solid #8ab4ff; border-radius:8px; padding:10px 14px; min-height:52px; line-height:1.7; margin-bottom:12px; }
+#cfa-root .step-num { display:inline-block; background:#8ab4ff; color:#0b0d12; font-weight:700; font-size:11px; border-radius:999px; padding:1px 7px; margin-right:6px; }
+#cfa-root .ctrl-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+#cfa-root button { background:#141a26; border:1px solid #2a3142; border-radius:8px; color:#e6ebf5; padding:6px 14px; cursor:pointer; font-size:12px; transition:background .2s,border-color .2s; }
+#cfa-root button:hover { background:#1e2840; border-color:#8ab4ff; }
+#cfa-root button.primary { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#cfa-root .step-counter { color:#6b7fa3; font-size:12px; margin-left:auto; }
+#cfa-root .lanes { display:flex; flex-direction:column; gap:6px; }
+#cfa-root .lane { display:flex; align-items:stretch; gap:0; border-radius:8px; overflow:hidden; border:1px solid #2a3142; }
+#cfa-root .lane-label { width:80px; min-width:80px; background:#0a0e1a; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#6b7fa3; padding:10px 6px; text-align:center; border-right:1px solid #2a3142; }
+#cfa-root .lane-body { flex:1; background:#141a26; padding:8px 10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-height:44px; }
+#cfa-root .tag { display:inline-block; padding:3px 9px; border-radius:6px; font-size:11px; font-weight:600; border:1px solid; white-space:nowrap; }
+#cfa-root .tag-idle { background:rgba(107,127,163,.1); border-color:#2a3142; color:#6b7fa3; }
+#cfa-root .tag-active { background:rgba(138,180,255,.2); border-color:#8ab4ff; color:#8ab4ff; }
+#cfa-root .tag-wait { background:rgba(255,200,80,.12); border-color:#ffc850; color:#ffc850; }
+#cfa-root .tag-done { background:rgba(126,224,198,.15); border-color:#7ee0c6; color:#7ee0c6; }
+#cfa-root .tag-gpu { background:rgba(255,144,144,.12); border-color:#ff9090; color:#ff9090; }
+#cfa-root .arrow-down { text-align:center; color:#4f648f; font-size:16px; line-height:1; margin:2px 0; }
+</style>
+
+<div class="cfa-card">
+  <div class="cfa-title">clFinish() 내부 연쇄 흐름 시뮬레이터</div>
+  <div class="ctrl-row">
+    <button id="cfa-prev">← 이전</button>
+    <button id="cfa-next" class="primary">다음 단계 →</button>
+    <button id="cfa-auto">▶ 자동 재생</button>
+    <button id="cfa-reset">↺ 처음</button>
+    <span class="step-counter" id="cfa-counter">Step 0 / 7</span>
+  </div>
+  <div class="step-box" id="cfa-desc">
+    <span class="step-num">시작</span>
+    <strong>"다음 단계"를 눌러 clFinish()의 내부를 따라가세요.</strong>
+  </div>
+  <div class="lanes">
+    <div class="lane">
+      <div class="lane-label">App<br>(CPU)</div>
+      <div class="lane-body" id="cfa-l0"><span class="tag tag-idle">대기 중</span></div>
+    </div>
+    <div class="arrow-down">↕</div>
+    <div class="lane">
+      <div class="lane-label">Driver<br>(ANGLE)</div>
+      <div class="lane-body" id="cfa-l1"><span class="tag tag-idle">대기 중</span></div>
+    </div>
+    <div class="arrow-down">↕</div>
+    <div class="lane">
+      <div class="lane-label">GPU<br>Command</div>
+      <div class="lane-body" id="cfa-l2"><span class="tag tag-idle">대기 중</span></div>
+    </div>
+    <div class="arrow-down">↕</div>
+    <div class="lane">
+      <div class="lane-label">GPU<br>Execution</div>
+      <div class="lane-body" id="cfa-l3"><span class="tag tag-idle">대기 중</span></div>
+    </div>
+    <div class="arrow-down">↕</div>
+    <div class="lane">
+      <div class="lane-label">OS /<br>Kernel</div>
+      <div class="lane-body" id="cfa-l4"><span class="tag tag-idle">대기 중</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STEPS = [
+    {
+      desc: '<span class="step-num">1</span><strong>App: <code>clFinish(queue)</code> 호출</strong><br><span style="color:#9aa6bd;font-size:12px;">애플리케이션이 clFinish를 호출합니다. "이 큐의 모든 명령이 GPU에서 끝날 때까지 기다려"라는 의미입니다. CPU 스레드가 이 함수 안으로 들어갑니다.</span>',
+      lanes: [
+        '<span class="tag tag-active">clFinish(queue) 호출</span>',
+        '<span class="tag tag-idle">대기 중</span>',
+        '<span class="tag tag-idle">대기 중</span>',
+        '<span class="tag tag-idle">대기 중</span>',
+        '<span class="tag tag-idle">대기 중</span>',
+      ]
+    },
+    {
+      desc: '<span class="step-num">2</span><strong>Driver: VkFence 생성 + IT_EVENT_WRITE 패킷 삽입</strong><br><span style="color:#9aa6bd;font-size:12px;">ANGLE 드라이버가 VkFence를 생성합니다. 동시에 ring buffer에 <code>IT_EVENT_WRITE</code> 패킷을 삽입합니다 — "이 패킷을 처리하면 fence 메모리에 완료 값을 써라"는 GPU에 대한 지시입니다.</span>',
+      lanes: [
+        '<span class="tag tag-wait">진입 중 (블로킹 대기)</span>',
+        '<span class="tag tag-active">VkFence 생성</span><span class="tag tag-active">IT_EVENT_WRITE → ring buf</span>',
+        '<span class="tag tag-idle">대기 중</span>',
+        '<span class="tag tag-idle">대기 중</span>',
+        '<span class="tag tag-idle">대기 중</span>',
+      ]
+    },
+    {
+      desc: '<span class="step-num">3</span><strong>Driver: vkQueueSubmit → GPU에 명령 전달</strong><br><span style="color:#9aa6bd;font-size:12px;">드라이버가 vkQueueSubmit을 호출합니다. ring buffer에 있는 모든 명령(이전 enqueue된 커널 + IT_EVENT_WRITE 포함)이 GPU CP(Command Processor)로 전달됩니다.</span>',
+      lanes: [
+        '<span class="tag tag-wait">블로킹 대기 중</span>',
+        '<span class="tag tag-active">vkQueueSubmit</span>',
+        '<span class="tag tag-active">명령 수신 완료</span>',
+        '<span class="tag tag-idle">이전 명령 실행 중...</span>',
+        '<span class="tag tag-idle">대기 중</span>',
+      ]
+    },
+    {
+      desc: '<span class="step-num">4</span><strong>CPU: vkWaitForFences → CPU 스레드 잠듦</strong><br><span style="color:#9aa6bd;font-size:12px;">드라이버가 vkWaitForFences를 호출합니다. fence가 아직 signal되지 않았으므로 OS가 이 CPU 스레드를 sleep 상태로 전환합니다. CPU는 다른 일을 하거나 유휴 상태가 됩니다.</span>',
+      lanes: [
+        '<span class="tag tag-wait">💤 CPU 스레드 잠듦</span>',
+        '<span class="tag tag-wait">vkWaitForFences (OS 대기)</span>',
+        '<span class="tag tag-active">명령 순서대로 처리 중</span>',
+        '<span class="tag tag-gpu">이전 커널 실행 중...</span>',
+        '<span class="tag tag-wait">스레드 sleep 처리</span>',
+      ]
+    },
+    {
+      desc: '<span class="step-num">5</span><strong>GPU: 이전 모든 명령 실행 완료 → IT_EVENT_WRITE 처리</strong><br><span style="color:#9aa6bd;font-size:12px;">GPU CP가 ring buffer의 명령을 순서대로 처리합니다. 이전 dispatch들이 완료된 후, IT_EVENT_WRITE 패킷을 처리합니다 — <code>CACHE_FLUSH_AND_INV</code> 후 fence 메모리 주소에 완료 값을 기록합니다.</span>',
+      lanes: [
+        '<span class="tag tag-wait">💤 CPU 스레드 잠듦</span>',
+        '<span class="tag tag-wait">vkWaitForFences (OS 대기)</span>',
+        '<span class="tag tag-done">IT_EVENT_WRITE 처리</span>',
+        '<span class="tag tag-done">모든 명령 완료 ✓</span>',
+        '<span class="tag tag-wait">fence 신호 감지 대기</span>',
+      ]
+    },
+    {
+      desc: '<span class="step-num">6</span><strong>OS: fence 메모리 값 변경 감지 → CPU 스레드 깨움</strong><br><span style="color:#9aa6bd;font-size:12px;">GPU가 fence 메모리에 완료 값을 씁니다. OS 커널이 이 변경을 감지하고 sleep 중인 CPU 스레드를 깨웁니다. 인터럽트 또는 polling 방식 — 드라이버 구현에 따라 다릅니다.</span>',
+      lanes: [
+        '<span class="tag tag-active">스레드 깨어남 ✓</span>',
+        '<span class="tag tag-active">fence 완료 확인</span>',
+        '<span class="tag tag-done">완료</span>',
+        '<span class="tag tag-done">완료 ✓</span>',
+        '<span class="tag tag-done">스레드 wake-up 전송 ✓</span>',
+      ]
+    },
+    {
+      desc: '<span class="step-num">7</span><strong>App: clFinish() 반환</strong><br><span style="color:#9aa6bd;font-size:12px;">드라이버가 VkFence를 정리(vkDestroyFence)하고, clFinish가 반환됩니다. 이 시점 이후부터 큐에 enqueue된 모든 명령의 결과가 CPU에서 관찰 가능합니다.</span>',
+      lanes: [
+        '<span class="tag tag-done">clFinish() 반환 ✓</span>',
+        '<span class="tag tag-done">VkFence 정리 완료</span>',
+        '<span class="tag tag-done">완료</span>',
+        '<span class="tag tag-done">완료</span>',
+        '<span class="tag tag-done">완료</span>',
+      ]
+    },
+  ];
+
+  let step = 0, autoTimer = null;
+  const total = STEPS.length;
+
+  function render() {
+    document.getElementById('cfa-counter').textContent = 'Step ' + step + ' / ' + total;
+    if (step === 0) {
+      document.getElementById('cfa-desc').innerHTML = '<span class="step-num">시작</span><strong>"다음 단계"를 눌러 clFinish()의 내부를 따라가세요.</strong>';
+      ['cfa-l0','cfa-l1','cfa-l2','cfa-l3','cfa-l4'].forEach(id => {
+        document.getElementById(id).innerHTML = '<span class="tag tag-idle">대기 중</span>';
+      });
+      return;
+    }
+    const s = STEPS[step - 1];
+    document.getElementById('cfa-desc').innerHTML = s.desc;
+    ['cfa-l0','cfa-l1','cfa-l2','cfa-l3','cfa-l4'].forEach((id, i) => {
+      document.getElementById(id).innerHTML = s.lanes[i];
+    });
+  }
+
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('cfa-auto').textContent = '▶ 자동 재생';
+  }
+
+  document.getElementById('cfa-next').addEventListener('click', () => {
+    stopAuto();
+    if (step < total) { step++; render(); }
+  });
+  document.getElementById('cfa-prev').addEventListener('click', () => {
+    stopAuto();
+    if (step > 0) { step--; render(); }
+  });
+  document.getElementById('cfa-reset').addEventListener('click', () => { stopAuto(); step = 0; render(); });
+  document.getElementById('cfa-auto').addEventListener('click', () => {
+    if (autoTimer) { stopAuto(); return; }
+    document.getElementById('cfa-auto').textContent = '⏸ 일시정지';
+    if (step === 0) { step = 1; render(); }
+    autoTimer = setInterval(() => {
+      if (step >= total) { stopAuto(); return; }
+      step++; render();
+    }, 2600);
+  });
+
+  render();
+})();
+</script>
+</div>

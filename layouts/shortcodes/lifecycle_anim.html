@@ -1,0 +1,149 @@
+<div id="lca-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#lca-root * { box-sizing:border-box; }
+#lca-root .lca-card { background:#0f1624; border:1px solid #2a3142; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+#lca-root .lca-title { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6b7fa3; margin-bottom:10px; }
+#lca-root .step-box { background:rgba(138,180,255,.07); border:1px solid #2a3142; border-left:3px solid #8ab4ff; border-radius:8px; padding:10px 14px; min-height:56px; line-height:1.7; margin-bottom:12px; }
+#lca-root .step-num { display:inline-block; background:#8ab4ff; color:#0b0d12; font-weight:700; font-size:11px; border-radius:999px; padding:1px 7px; margin-right:6px; }
+#lca-root .ctrl-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+#lca-root button { background:#141a26; border:1px solid #2a3142; border-radius:8px; color:#e6ebf5; padding:6px 14px; cursor:pointer; font-size:12px; transition:background .2s,border-color .2s; }
+#lca-root button:hover { background:#1e2840; border-color:#8ab4ff; }
+#lca-root button.primary { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#lca-root .step-counter { color:#6b7fa3; font-size:12px; margin-left:auto; }
+#lca-root .api-row { display:flex; align-items:stretch; gap:0; border-radius:8px; overflow:hidden; border:1px solid #2a3142; margin-bottom:6px; }
+#lca-root .api-label { width:90px; min-width:90px; background:#0a0e1a; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#6b7fa3; padding:8px 6px; text-align:center; border-right:1px solid #2a3142; }
+#lca-root .api-call { flex:0 0 180px; width:180px; background:#141a26; padding:8px 10px; border-right:1px solid #2a3142; font-family:ui-monospace,monospace; font-size:11px; color:#9aa6bd; display:flex; align-items:center; }
+#lca-root .api-call.highlight { background:rgba(138,180,255,.15); color:#8ab4ff; font-weight:600; }
+#lca-root .api-note { flex:1; background:#141a26; padding:8px 10px; font-size:11px; display:flex; align-items:center; }
+#lca-root .badge { display:inline-block; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:700; margin-right:4px; white-space:nowrap; }
+#lca-root .badge-cpu { background:rgba(138,180,255,.2); color:#8ab4ff; }
+#lca-root .badge-compile { background:rgba(255,200,80,.15); color:#ffc850; }
+#lca-root .badge-gpu { background:rgba(126,224,198,.15); color:#7ee0c6; }
+#lca-root .badge-sync { background:rgba(255,144,144,.12); color:#ff9090; }
+#lca-root .badge-none { background:rgba(107,127,163,.1); color:#6b7fa3; }
+</style>
+
+<div class="lca-card">
+  <div class="lca-title">API 호출 시점 vs GPU 실제 작업 시점</div>
+  <div class="ctrl-row">
+    <button id="lca-prev">← 이전</button>
+    <button id="lca-next" class="primary">다음 →</button>
+    <button id="lca-auto">▶ 자동 재생</button>
+    <button id="lca-reset">↺ 처음</button>
+    <span class="step-counter" id="lca-counter">Step 0 / 8</span>
+  </div>
+  <div class="step-box" id="lca-desc">
+    <span class="step-num">시작</span><strong>"다음"을 눌러 각 API 호출에서 실제로 무슨 일이 일어나는지 확인하세요.</strong>
+  </div>
+
+  <div id="lca-rows">
+    <div class="api-row" id="lca-r0">
+      <div class="api-label">Platform<br>/ Device</div>
+      <div class="api-call" id="lca-c0">clGetPlatformIDs()<br>clGetDeviceIDs()</div>
+      <div class="api-note" id="lca-n0"><span class="badge badge-none">GPU 작업 없음</span>어떤 GPU를 쓸지 열거만 함</div>
+    </div>
+    <div class="api-row" id="lca-r1">
+      <div class="api-label">Context</div>
+      <div class="api-call" id="lca-c1">clCreateContext()</div>
+      <div class="api-note" id="lca-n1"><span class="badge badge-none">GPU 작업 없음</span>논리 영역 생성, 드라이버 상태만 초기화</div>
+    </div>
+    <div class="api-row" id="lca-r2">
+      <div class="api-label">Command<br>Queue</div>
+      <div class="api-call" id="lca-c2">clCreateCommandQueue()</div>
+      <div class="api-note" id="lca-n2"><span class="badge badge-none">GPU 작업 없음</span>명령 채널 준비, 아직 아무 명령도 없음</div>
+    </div>
+    <div class="api-row" id="lca-r3">
+      <div class="api-label">Program</div>
+      <div class="api-call" id="lca-c3">clCreateProgramWithSource()</div>
+      <div class="api-note" id="lca-n3"><span class="badge badge-none">GPU 작업 없음</span>소스 문자열 등록만, 컴파일 아직 안 함</div>
+    </div>
+    <div class="api-row" id="lca-r4">
+      <div class="api-label">Build</div>
+      <div class="api-call" id="lca-c4">clBuildProgram()</div>
+      <div class="api-note" id="lca-n4"><span class="badge badge-compile">컴파일</span>clspv → SPIR-V → Vulkan 파이프라인 생성 ← 여기서 느림</div>
+    </div>
+    <div class="api-row" id="lca-r5">
+      <div class="api-label">Kernel</div>
+      <div class="api-call" id="lca-c5">clCreateKernel()<br>clSetKernelArg()</div>
+      <div class="api-note" id="lca-n5"><span class="badge badge-cpu">CPU 전용</span>실행 엔트리 + 인자 바인딩 (descriptor 준비)</div>
+    </div>
+    <div class="api-row" id="lca-r6">
+      <div class="api-label">Enqueue</div>
+      <div class="api-call" id="lca-c6">clEnqueueNDRangeKernel()</div>
+      <div class="api-note" id="lca-n6"><span class="badge badge-cpu">큐 제출</span>명령 큐에 등록 — 즉시 GPU 실행 아님!</div>
+    </div>
+    <div class="api-row" id="lca-r7">
+      <div class="api-label">Finish</div>
+      <div class="api-call" id="lca-c7">clFinish()</div>
+      <div class="api-note" id="lca-n7"><span class="badge badge-sync">동기화</span>GPU 완료 대기 — 이 반환 후 결과 보장</div>
+    </div>
+  </div>
+
+  <div style="margin-top:10px;padding:8px 12px;background:#0a0e1a;border-radius:8px;border:1px solid #2a3142;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+    <span style="font-size:11px;color:#6b7fa3;">범례:</span>
+    <span><span class="badge badge-none">GPU 없음</span></span>
+    <span><span class="badge badge-compile">컴파일</span></span>
+    <span><span class="badge badge-cpu">CPU 작업</span></span>
+    <span><span class="badge badge-sync">동기화</span></span>
+    <span><span class="badge badge-gpu">GPU 실행</span></span>
+    <div id="lca-gpu-marker" style="display:none;margin-left:auto;padding:5px 10px;background:rgba(126,224,198,.12);border:1px solid #7ee0c6;border-radius:6px;color:#7ee0c6;font-size:11px;font-weight:600;">← GPU가 실제로 일하는 구간</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STEPS = [
+    { idx:0, desc:'<span class="step-num">1</span><strong>clGetPlatformIDs / clGetDeviceIDs</strong><br><span style="color:#9aa6bd;font-size:12px;">어떤 플랫폼과 GPU 장치를 쓸지 열거합니다. 드라이버가 응답을 돌려줄 뿐, GPU에서 어떤 연산도 일어나지 않습니다.</span>' },
+    { idx:1, desc:'<span class="step-num">2</span><strong>clCreateContext</strong><br><span style="color:#9aa6bd;font-size:12px;">리소스와 객체가 공유되는 논리 영역을 만듭니다. 드라이버 내부 상태 초기화만 있고, GPU 명령은 없습니다.</span>' },
+    { idx:2, desc:'<span class="step-num">3</span><strong>clCreateCommandQueue</strong><br><span style="color:#9aa6bd;font-size:12px;">명령 채널을 준비합니다. 아직 이 큐에 아무 명령도 없습니다. GPU는 아직 모릅니다.</span>' },
+    { idx:3, desc:'<span class="step-num">4</span><strong>clCreateProgramWithSource</strong><br><span style="color:#9aa6bd;font-size:12px;">OpenCL C 소스 문자열을 드라이버에 등록합니다. 컴파일은 아직 일어나지 않습니다 — 소스를 기억해두는 것뿐입니다.</span>' },
+    { idx:4, desc:'<span class="step-num">5</span><strong>clBuildProgram ← 여기서 컴파일</strong><br><span style="color:#9aa6bd;font-size:12px;">이 단계에서 실제 컴파일이 일어납니다: OpenCL C → clspv → SPIR-V → Vulkan Compute Pipeline. 느릴 수 있는 이유가 여기에 있습니다. GPU dispatch는 아직 없습니다.</span>', compile:true },
+    { idx:5, desc:'<span class="step-num">6</span><strong>clCreateKernel + clSetKernelArg</strong><br><span style="color:#9aa6bd;font-size:12px;">실행 엔트리포인트를 만들고 인자를 바인딩합니다. descriptor set에 버퍼를 연결하는 준비 단계입니다. GPU 실행은 아직 없습니다.</span>' },
+    { idx:6, desc:'<span class="step-num">7</span><strong>clEnqueueNDRangeKernel — 즉시 실행이 아닙니다!</strong><br><span style="color:#9aa6bd;font-size:12px;">명령 큐에 실행 명령을 등록합니다. 많은 사람이 이 시점에 GPU가 실행된다고 오해합니다. 실제 GPU 제출은 드라이버가 vkQueueSubmit을 부를 때 일어납니다 — clFlush/clFinish 시점이나 드라이버 내부 정책에 따라 결정됩니다.</span>', showGpu:true },
+    { idx:7, desc:'<span class="step-num">8</span><strong>clFinish — GPU 완료 보장</strong><br><span style="color:#9aa6bd;font-size:12px;">이 시점에 아직 제출되지 않은 명령이 있으면 flush되고, CPU는 GPU 완료를 기다립니다. 이 함수가 반환된 후부터 out 버퍼의 결과를 안전하게 읽을 수 있습니다.</span>', sync:true },
+  ];
+
+  let step = 0, autoTimer = null;
+  const total = STEPS.length;
+  const rowIds = ['lca-r0','lca-r1','lca-r2','lca-r3','lca-r4','lca-r5','lca-r6','lca-r7'];
+  const callIds = ['lca-c0','lca-c1','lca-c2','lca-c3','lca-c4','lca-c5','lca-c6','lca-c7'];
+
+  function render() {
+    document.getElementById('lca-counter').textContent = 'Step ' + step + ' / ' + total;
+    if (step === 0) {
+      document.getElementById('lca-desc').innerHTML = '<span class="step-num">시작</span><strong>"다음"을 눌러 각 API 호출에서 실제로 무슨 일이 일어나는지 확인하세요.</strong>';
+      rowIds.forEach(id => document.getElementById(id).style.opacity = '0.4');
+      callIds.forEach(id => document.getElementById(id).classList.remove('highlight'));
+      document.getElementById('lca-gpu-marker').style.display = 'none';
+      return;
+    }
+    const s = STEPS[step - 1];
+    document.getElementById('lca-desc').innerHTML = s.desc;
+    rowIds.forEach((id, i) => {
+      document.getElementById(id).style.opacity = i < step ? '1' : '0.35';
+    });
+    callIds.forEach((id, i) => {
+      document.getElementById(id).classList.toggle('highlight', i === s.idx);
+    });
+    document.getElementById('lca-gpu-marker').style.display = (s.showGpu || s.sync) ? '' : 'none';
+  }
+
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('lca-auto').textContent = '▶ 자동 재생';
+  }
+
+  document.getElementById('lca-next').addEventListener('click', () => { stopAuto(); if (step < total) { step++; render(); } });
+  document.getElementById('lca-prev').addEventListener('click', () => { stopAuto(); if (step > 0) { step--; render(); } });
+  document.getElementById('lca-reset').addEventListener('click', () => { stopAuto(); step = 0; render(); });
+  document.getElementById('lca-auto').addEventListener('click', () => {
+    if (autoTimer) { stopAuto(); return; }
+    document.getElementById('lca-auto').textContent = '⏸ 일시정지';
+    if (step === 0) { step = 1; render(); }
+    autoTimer = setInterval(() => { if (step >= total) { stopAuto(); return; } step++; render(); }, 2400);
+  });
+
+  render();
+})();
+</script>
+</div>

@@ -26,6 +26,7 @@
 | `bullet-note` | `content/posts/` | 핵심 요점만 bullet로 정리. 복습용 |
 | `wiki` | `content/wiki/` | 주제별 누적 정리 문서. 단일 페이지로 계속 갱신 |
 | `glossary` | `content/glossary/` | 용어 사전. 용어 하나당 파일 하나 |
+| `quiz` | `content/quiz/` | 주제별 퀴즈. localStorage 가중치 기반 랜덤 출제 |
 
 ---
 
@@ -34,16 +35,22 @@
 ```
 content/
   posts/          ← 개별 학습 노트 (note, wrong-note, bullet-note)
-  wiki/           ← 주제별 누적 위키
-  glossary/       ← 용어 사전 (term 하나 = 파일 하나)
+  wiki/           ← 주제별 누적 위키 (angle, compiler, opencl, pm4, vulkan + taxonomy)
+  glossary/       ← 용어 사전 (16개 용어 파일 + _index.md)
+  quiz/           ← 주제별 퀴즈 (angle, compiler, opencl, pm4, vulkan)
   opencl/         ← OpenCL 개요 및 study plan (고정 페이지)
 layouts/
   _default/
     baseof.html   ← 전체 레이아웃 (CSS, Mermaid, wikilink JS 포함)
     single.html
     list.html
-  shortcodes/     ← 커스텀 animation shortcode
-static/           ← 정적 파일 (필요 시)
+    _markup/      ← Hugo render hooks
+  glossary/       ← glossary 전용 list.html / single.html
+  quiz/           ← quiz 전용 list.html / single.html
+  partials/       ← 재사용 partial 컴포넌트
+  shortcodes/     ← 커스텀 animation shortcode (8종)
+static/
+  assets/         ← 정적 파일 (default-icon.png 등)
 ```
 
 ---
@@ -146,6 +153,26 @@ function renderWikilinks() {
 - shortcode 파일명: `layouts/shortcodes/{topic}_{version}.html`
 - 버전이 바뀌면 새 파일 생성, 구 파일 유지 (하위 호환)
 
+### 현재 구현된 shortcode 목록 (2026-04-15 기준)
+
+| 파일 | 내용 |
+|------|------|
+| `compat_anim_v2.html` | Vulkan layout compatibility 상태 전환 |
+| `chain_anim_v2.html` | command buffer chain 계층 흐름 |
+| `gpu_memory_anim.html` | OpenCL GPU memory 계층 시각화 |
+| `occupancy_anim.html` | wavefront occupancy / 레지스터 사용량 |
+| `pipeline_barrier_anim.html` | Vulkan pipeline barrier scope |
+| `pm4_submit_anim.html` | PM4 command 제출 전체 흐름 |
+| `pm4_ib_anim.html` | PM4 indirect buffer 체인 |
+| `wavefront_sched_anim.html` | wavefront 스케줄링 / latency hiding |
+| `clfinish_anim.html` | clFinish 내부 연쇄 (Fence→IT_EVENT_WRITE→OS→wake) |
+| `lifecycle_anim.html` | API 호출 시점 vs GPU 실제 실행 시점 타임라인 |
+| `coalescing_anim.html` | coalesced vs non-coalesced vs __local 패턴 |
+| `roofline_anim.html` | Roofline 차트 interactive (슬라이더로 커널 위치 확인) |
+| `arg_slot_anim.html` | saxpy arg→SPIR-V decoration→Vulkan 슬롯 매핑 |
+| `bigpicture_anim.html` | GPU 배송센터 비유 9단계 전개 |
+| `pipeline_stages_anim.html` | pipeline stage mask 시각화 (barrier 3 시나리오) |
+
 ---
 
 ## 10. Mermaid 사용 기준
@@ -240,34 +267,44 @@ related: ["work-group", "NDRange"]
 |-----------|------|
 | Hugo | 정적 사이트 빌드 |
 | Mermaid | 정적 구조 다이어그램 |
-| JS animation shortcode | 동적 흐름 시각화 |
+| JS animation shortcode | 동적 흐름 시각화 (8종 구현 완료) |
 | Obsidian + Dataview | 로컬 노트 탐색, 태그 기반 뷰 |
-| `[[wikilink]]` + JS | 용어 연결 (Obsidian ↔ Hugo 공용) |
+| `[[wikilink]]` + JS | 용어 연결 (Obsidian ↔ Hugo 공용, baseof.html 구현 완료) |
 | `<details>` 코드 블록 | 긴 코드 접기 |
 | front matter tags/series | 포스트 분류 및 추적 |
+| quiz + localStorage | 가중치 기반 랜덤 퀴즈, 틀린 문제 우선 출제 |
+| `safeJS` Hugo pipe | JS 코드를 Hugo 이스케이프 없이 템플릿에 삽입 |
 
 ---
 
 ## 15. 콘텐츠 로드맵
 
-### Phase 1 — 뼈대 (현재)
+### Phase 1 — 뼈대 ✅ 완료
 - [x] Hugo 다크 테마 기본 레이아웃
 - [x] Mermaid 지원
-- [x] Animation shortcode (compat, chain)
-- [x] Wiki 누적 문서
-- [ ] Glossary 섹션 생성
-- [ ] `[[wikilink]]` JS 렌더링
-- [ ] Front matter 표준화 (기존 포스트)
+- [x] Animation shortcode (compat, chain, 총 8종)
+- [x] Wiki 누적 문서 (angle, compiler, opencl, pm4, vulkan + taxonomy)
+- [x] Glossary 섹션 생성 (16개 용어: work-item, work-group, NDRange, command-buffer, command-queue, descriptor-set, pipeline-layout, SPIR-V, ANGLE, barrier, clspv, local-memory, pm4-packet, ring-buffer, wavefront 등)
+- [x] `[[wikilink]]` JS 렌더링 (baseof.html 구현)
+- [ ] Front matter 표준화 (기존 포스트) — 구형 slug 포함 포스트 일부 미완
 
-### Phase 2 — 내용 심화
-- [ ] OpenCL memory model 시각화
-- [ ] Vulkan pipeline 전체 흐름 animation
-- [ ] PM4 packet 구조 animation (command buffer → GPU 제출 흐름)
-- [ ] command queue / command buffer 계층 animation
-- [ ] Barrier scope 시각화
+### Phase 2 — 내용 심화 ✅ 대부분 완료
+- [x] OpenCL memory model 시각화 (`gpu_memory_anim.html`, memory-coalescing 노트)
+- [x] Vulkan pipeline 전체 흐름 animation (`pipeline_barrier_anim.html`)
+- [x] PM4 packet 구조 animation (`pm4_submit_anim.html`, `pm4_ib_anim.html`)
+- [x] command queue / command buffer 계층 animation (`chain_anim_v2.html`)
+- [x] Barrier scope 시각화 (`pipeline_barrier_anim.html`)
+- [x] Wavefront scheduling / latency hiding animation (`wavefront_sched_anim.html`, `occupancy_anim.html`)
+- [x] Roofline 모델 노트 (2026-04-15)
+
+### Phase 2b — Quiz 시스템 (신규 추가)
+- [x] 주제별 문제 은행 (opencl, vulkan, angle, pm4, compiler — 각 12~13문제)
+- [x] localStorage 가중치 기반 랜덤 출제 (틀린 문제 우선)
+- [x] 문제 데이터 JSON 분리 (`data/` 디렉토리)
+- [x] quiz 전용 레이아웃 (`layouts/quiz/`)
 
 ### Phase 3 — 탐색성 강화
-- [ ] 태그별 포스트 목록 페이지
-- [ ] Series 페이지 (연관 글 묶음)
-- [ ] Glossary 전체 목록 페이지
-- [ ] Difficulty 기준 필터링
+- [x] 태그별 포스트 목록 페이지 — Hugo taxonomy 활성화 (`/tags/{tag}/`)
+- [x] Series 페이지 — taxonomy로 자동 생성 (`/series/{series-name}/`)
+- [ ] Difficulty 기준 필터링 — list.html JS 클라이언트 필터 (미구현)
+- [ ] Glossary 전체 목록 페이지 완성도 향상 (_index.md 있음, 레이아웃 존재)

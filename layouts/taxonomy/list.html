@@ -1,0 +1,28 @@
+{{ define "main" }}
+<h2>{{ .Title }}</h2>
+<p style="color:#6b7fa3;font-size:13px;margin-bottom:20px;">
+  {{ if eq .Data.Plural "tags" }}
+    태그 <strong style="color:#8ab4ff;">{{ .Title }}</strong>로 분류된 포스트 {{ len .Pages }}개
+  {{ else if eq .Data.Plural "series" }}
+    시리즈 <strong style="color:#7ee0c6;">{{ .Title }}</strong> — {{ len .Pages }}개 포스트
+  {{ else }}
+    {{ len .Pages }}개 포스트
+  {{ end }}
+</p>
+<ul class="post-list">
+  {{ $abbr := dict "beginner" "BEG" "intermediate" "MID" "advanced" "ADV" }}
+  {{ range .Pages.ByDate.Reverse }}
+    <li>
+      <span class="post-title-group">
+        <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+      </span>
+      <span class="post-badges">
+        {{ if .Params.animation }}<span class="anim-badge" title="Animation 포함">▶</span>{{ end }}
+        {{ with .Params.layer }}<span class="layer-badge layer-{{ . | lower }}">{{ . }}</span>{{ end }}
+        {{ with .Params.difficulty }}<span class="diff-badge diff-{{ . }}">{{ index $abbr . | default . }}</span>{{ end }}
+      </span>
+      <span class="meta post-date">{{ .Date.Format "2006-01-02" }}</span>
+    </li>
+  {{ end }}
+</ul>
+{{ end }}

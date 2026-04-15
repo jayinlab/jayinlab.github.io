@@ -114,8 +114,10 @@
 <h2>{{ .Title }}</h2>
 {{ with .Params.description }}<p class="meta" style="margin-bottom:14px">{{ . }}</p>{{ end }}
 
+{{ $data := index $.Site.Data.quiz .File.ContentBaseName }}
+{{ $questions := $data.questions }}
 <div class="quiz-score-bar">
-  <span id="quiz-progress">0 / {{ len .Params.questions }} 완료</span>
+  <span id="quiz-progress">0 / {{ len $questions }} 완료</span>
   <strong id="quiz-score">정답 0개</strong>
 </div>
 
@@ -128,7 +130,7 @@
   <button class="quiz-reset-btn" id="quiz-reset">다시 풀기</button>
 </div>
 
-<script id="quiz-data" type="application/json">{{ .Params.questions | jsonify }}</script>
+<script id="quiz-data" type="application/json">{{ $questions | jsonify | safeJS }}</script>
 
 <script>
 (function () {

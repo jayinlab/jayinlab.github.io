@@ -10,8 +10,9 @@
       {{ with .Params.description }}<span class="meta" style="display:block;font-size:.83rem;margin-top:2px">{{ . }}</span>{{ end }}
     </span>
     <span class="post-badges">
-      {{ with .Params.questions }}
-        <span class="diff-badge" style="background:rgba(138,180,255,.12);color:#8ab4ff;border:1px solid rgba(138,180,255,.3)">{{ len . }}문항</span>
+      {{ $d := index $.Site.Data.quiz .File.ContentBaseName }}
+      {{ if $d }}
+        <span class="diff-badge" style="background:rgba(138,180,255,.12);color:#8ab4ff;border:1px solid rgba(138,180,255,.3)">{{ len $d.questions }}문항</span>
       {{ end }}
     </span>
   </li>

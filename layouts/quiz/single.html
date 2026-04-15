@@ -128,9 +128,11 @@
   <button class="quiz-reset-btn" id="quiz-reset">다시 풀기</button>
 </div>
 
+<script id="quiz-data" type="application/json">{{ .Params.questions | jsonify }}</script>
+
 <script>
 (function () {
-  const QUESTIONS = {{ .Params.questions | jsonify }};
+  const QUESTIONS = JSON.parse(document.getElementById('quiz-data').textContent);
   const DIFF_LABEL = { beginner: 'BEG', intermediate: 'MID', advanced: 'ADV' };
   const DIFF_CLASS = { beginner: 'diff-beginner', intermediate: 'diff-intermediate', advanced: 'diff-advanced' };
 

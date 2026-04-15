@@ -109,6 +109,12 @@
     font-family: inherit;
   }
   .quiz-reset-btn:hover { border-color: var(--brand); }
+  .quiz-post-link {
+    font-size: .85rem;
+    color: var(--brand-2);
+    border-bottom: 1px dotted var(--brand-2);
+  }
+  .quiz-post-link:hover { border-bottom-style: solid; text-decoration: none; }
 </style>
 
 <h2>{{ .Title }}</h2>
@@ -117,54 +123,89 @@
 {{ $data := index $.Site.Data.quiz .File.ContentBaseName }}
 {{ $questions := $data.questions }}
 <div class="quiz-score-bar">
-  <span id="quiz-progress">0 / {{ len $questions }} 완료</span>
+  <span id="quiz-progress">0 / 7 완료</span>
+  <span id="quiz-bank" class="meta" style="font-size:.82rem">뱅크 {{ len $questions }}문항</span>
   <strong id="quiz-score">정답 0개</strong>
 </div>
 
 <div id="quiz-container"></div>
 
 <div class="quiz-final" id="quiz-final">
-  <div class="meta">최종 결과</div>
+  <div class="meta">세션 결과</div>
   <span class="quiz-final-score" id="quiz-final-score"></span>
   <div class="meta" id="quiz-final-msg"></div>
-  <button class="quiz-reset-btn" id="quiz-reset">다시 풀기</button>
+  <div id="quiz-stats" style="margin-top:10px;font-size:.85rem;color:var(--muted)"></div>
+  <button class="quiz-reset-btn" id="quiz-reset">다른 7문제 풀기</button>
 </div>
 
 <script id="quiz-data" type="application/json">{{ $questions | jsonify | safeJS }}</script>
 
 <script>
 (function () {
-  const QUESTIONS = JSON.parse(document.getElementById('quiz-data').textContent);
+  const BANK = JSON.parse(document.getElementById('quiz-data').textContent);
+  const PICK = 7;
+  const STORAGE_KEY = 'quiz_{{ .File.ContentBaseName }}';
   const DIFF_LABEL = { beginner: 'BEG', intermediate: 'MID', advanced: 'ADV' };
   const DIFF_CLASS = { beginner: 'diff-beginner', intermediate: 'diff-intermediate', advanced: 'diff-advanced' };
 
-  let score = 0, answered = 0;
-  const total = QUESTIONS.length;
+  // ── localStorage 기록 ─────────────────────────────────────────────
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+  }
+  function saveHistory(h) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(h)); } catch(e) {}
+  }
+  function recordAnswer(id, correct) {
+    const h = loadHistory();
+    if (!h[id]) h[id] = { c: 0, w: 0 };
+    correct ? h[id].c++ : h[id].w++;
+    saveHistory(h);
+  }
+
+  // ── 가중치 선택: 틀린 문제 우선, 안 본 문제 다음, 맞힌 문제 마지막 ──
+  function pickQuestions() {
+    const h = loadHistory();
+    const scored = BANK.map(function(q) {
+      const rec = h[q.id] || { c: 0, w: 0 };
+      // 점수: wrong 많을수록 높음, correct 많을수록 낮음, 안 본 것은 중간
+      const base = rec.c === 0 && rec.w === 0 ? 50 : rec.w * 30 - rec.c * 10;
+      return { q: q, score: base + Math.random() * 20 };
+    });
+    scored.sort(function(a, b) { return b.score - a.score; });
+    return scored.slice(0, PICK).map(function(x) { return x.q; });
+  }
+
+  // ── 상태 ────────────────────────────────────────────────────────────
+  let QUESTIONS = [], score = 0, answered = 0;
 
   function updateScore() {
-    document.getElementById('quiz-progress').textContent = answered + ' / ' + total + ' 완료';
+    document.getElementById('quiz-progress').textContent = answered + ' / ' + PICK + ' 완료';
     document.getElementById('quiz-score').textContent = '정답 ' + score + '개';
   }
 
   function finalMsg(s, t) {
     const r = s / t;
-    if (r === 1)   return '완벽합니다! 🎯';
-    if (r >= 0.8)  return '아주 잘 알고 있습니다.';
-    if (r >= 0.6)  return '좋은 시도입니다. 틀린 부분을 복습해보세요.';
+    if (r === 1)   return '완벽합니다!';
+    if (r >= 0.8)  return '거의 다 알고 있습니다.';
+    if (r >= 0.6)  return '좋은 시도입니다. 틀린 항목을 복습해보세요.';
     return '틀린 문제들을 다시 살펴보세요.';
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   function buildCard(q, idx) {
     const card = document.createElement('div');
     card.className = 'quiz-card';
-
     const diffLabel = DIFF_LABEL[q.difficulty] || q.difficulty;
     const diffClass = DIFF_CLASS[q.difficulty] || '';
-
-    const optsHtml = q.options.map((opt, i) =>
-      '<button class="quiz-opt" data-qi="' + idx + '" data-oi="' + i + '">' + escHtml(opt) + '</button>'
-    ).join('');
-
+    const optsHtml = q.options.map(function(opt, i) {
+      return '<button class="quiz-opt" data-qi="' + idx + '" data-oi="' + i + '">' + escHtml(opt) + '</button>';
+    }).join('');
+    const postLink = q.post
+      ? '<a class="quiz-post-link" href="/posts/' + escHtml(q.post) + '/">→ 관련 포스트 읽기</a>'
+      : '';
     card.innerHTML =
       '<div class="quiz-header">' +
         '<span class="quiz-num">Q' + (idx + 1) + '</span>' +
@@ -174,30 +215,23 @@
       '<div class="quiz-options" id="opts-' + idx + '">' + optsHtml + '</div>' +
       '<div class="quiz-explanation" id="exp-' + idx + '">' +
         '<span class="quiz-result-label" id="icon-' + idx + '"></span>' +
-        escHtml(q.explanation) +
+        '<span>' + escHtml(q.explanation) + '</span>' +
+        (postLink ? '<div style="margin-top:7px">' + postLink + '</div>' : '') +
       '</div>';
-
     return card;
-  }
-
-  function escHtml(s) {
-    return String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
   }
 
   function handleAnswer(qi, oi) {
     const q = QUESTIONS[qi];
     const opts = document.querySelectorAll('#opts-' + qi + ' .quiz-opt');
     const correct = q.answer;
+    const isCorrect = oi === correct;
 
-    opts.forEach(function (btn) { btn.disabled = true; });
+    opts.forEach(function(btn) { btn.disabled = true; });
     opts[correct].classList.add('quiz-opt-correct');
 
     const icon = document.getElementById('icon-' + qi);
-    if (oi === correct) {
+    if (isCorrect) {
       score++;
       icon.textContent = '✅ 정답!';
       icon.className = 'quiz-result-label quiz-result-ok';
@@ -207,31 +241,34 @@
       icon.className = 'quiz-result-label quiz-result-ng';
     }
 
+    recordAnswer(q.id, isCorrect);
     answered++;
     document.getElementById('exp-' + qi).style.display = 'block';
     updateScore();
 
-    if (answered === total) {
+    if (answered === PICK) {
+      const h = loadHistory();
+      const total_q = Object.keys(h).length;
+      const mastered = Object.values(h).filter(function(r){ return r.c >= 3 && r.w === 0; }).length;
+      document.getElementById('quiz-final-score').textContent = score + ' / ' + PICK;
+      document.getElementById('quiz-final-msg').textContent = finalMsg(score, PICK);
+      document.getElementById('quiz-stats').textContent =
+        '누적: ' + total_q + '문항 접근 · 완전 학습 ' + mastered + '문항';
       const fin = document.getElementById('quiz-final');
-      document.getElementById('quiz-final-score').textContent = score + ' / ' + total;
-      document.getElementById('quiz-final-msg').textContent = finalMsg(score, total);
       fin.style.display = 'block';
       fin.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
 
   function render() {
+    QUESTIONS = pickQuestions();
+    score = 0; answered = 0;
     const container = document.getElementById('quiz-container');
     container.innerHTML = '';
-    score = 0; answered = 0;
     document.getElementById('quiz-final').style.display = 'none';
     updateScore();
-
-    QUESTIONS.forEach(function (q, i) {
-      container.appendChild(buildCard(q, i));
-    });
-
-    container.addEventListener('click', function (e) {
+    QUESTIONS.forEach(function(q, i) { container.appendChild(buildCard(q, i)); });
+    container.addEventListener('click', function(e) {
       const btn = e.target.closest('.quiz-opt');
       if (!btn || btn.disabled) return;
       handleAnswer(+btn.dataset.qi, +btn.dataset.oi);

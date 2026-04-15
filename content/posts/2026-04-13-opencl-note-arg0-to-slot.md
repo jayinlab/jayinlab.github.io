@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "descriptor", "opencl"]
 difficulty: "intermediate"
+animation: true
 layer: "COMP"
 ---
 

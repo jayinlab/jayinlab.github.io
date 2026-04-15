@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "barrier", "synchronization"]
 difficulty: "intermediate"
+animation: true
 layer: "VK"
 ---
 

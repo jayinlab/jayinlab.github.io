@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "execution", "lifecycle"]
 difficulty: "beginner"
+animation: true
 layer: "CL"
 ---
 

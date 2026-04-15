@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "gpu", "memory", "performance"]
 difficulty: "intermediate"
+animation: true
 layer: "CL"
 ---
 

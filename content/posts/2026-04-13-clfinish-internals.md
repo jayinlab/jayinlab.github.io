@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "sync", "fence", "gpu"]
 difficulty: "intermediate"
+animation: true
 layer: "VK"
 ---
 

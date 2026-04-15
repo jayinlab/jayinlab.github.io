@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "performance", "roofline", "bandwidth", "flops", "occupancy", "memory"]
 difficulty: "intermediate"
+animation: true
 layer: "CL"
 ---
 

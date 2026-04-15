@@ -1,0 +1,172 @@
+{
+  "questions": [
+    {
+      "id": "angle-01",
+      "difficulty": "beginner",
+      "q": "ANGLE의 핵심 역할은?",
+      "options": [
+        "GPU 드라이버를 직접 제어하는 커널 모듈",
+        "OpenGL ES / OpenCL 등의 API 호출을 Vulkan(또는 Metal, D3D)으로 변환하는 번역 레이어",
+        "SPIR-V를 AMD ISA로 컴파일하는 backend",
+        "PM4 패킷을 GPU에 직접 제출하는 user-space 라이브러리"
+      ],
+      "answer": 1,
+      "explanation": "ANGLE(Almost Native Graphics Layer Engine)은 OpenGL ES, WebGL, OpenCL 등의 API 호출을 하드웨어에 더 가까운 API(Vulkan, Metal, Direct3D)로 번역합니다. 이를 통해 하나의 상위 API 구현이 여러 플랫폼에서 동작할 수 있습니다.",
+      "post": "opencl-note-angle-kickoff"
+    },
+    {
+      "id": "angle-02",
+      "difficulty": "beginner",
+      "q": "ANGLE 내부에서 OpenCL 처리 경로는 크게 두 갈래로 나뉜다. 각각의 이름은?",
+      "options": [
+        "read chain과 write chain",
+        "compile chain과 submit chain",
+        "frontend chain과 backend chain",
+        "host chain과 device chain"
+      ],
+      "answer": 1,
+      "explanation": "compile chain은 OpenCL 소스를 실행 가능한 형태로 준비하는 경로(clCreateProgram → clBuildProgram → VkComputePipeline)이고, submit chain은 준비된 커널을 실제 실행 명령으로 제출하는 경로(clSetKernelArg → clEnqueueNDRangeKernel → vkCmdDispatch)입니다.",
+      "post": "opencl-note-angle-map"
+    },
+    {
+      "id": "angle-03",
+      "difficulty": "beginner",
+      "q": "compile chain과 submit chain이 갈라지는 API 경계는?",
+      "options": [
+        "clCreateContext와 clCreateCommandQueue",
+        "clCreateBuffer와 clCreateImage",
+        "clBuildProgram(compile) vs clEnqueueNDRangeKernel(submit)",
+        "clGetPlatformIDs와 clGetDeviceIDs"
+      ],
+      "answer": 2,
+      "explanation": "clBuildProgram이 compile chain의 핵심 진입점이고, clEnqueueNDRangeKernel이 submit chain의 핵심 진입점입니다. 전자는 pipeline을 준비하고, 후자는 준비된 pipeline으로 command를 기록·제출합니다.",
+      "post": "opencl-note-angle-map"
+    },
+    {
+      "id": "angle-04",
+      "difficulty": "intermediate",
+      "q": "clBuildProgram이 ANGLE을 통해 최종적으로 생성하는 Vulkan 객체는?",
+      "options": [
+        "VkRenderPass",
+        "VkCommandBuffer",
+        "VkComputePipeline (경유: SPIR-V → VkShaderModule → VkComputePipeline)",
+        "VkDescriptorPool"
+      ],
+      "answer": 2,
+      "explanation": "clBuildProgram의 compile chain: OpenCL C 소스 → clspv로 SPIR-V 생성 → VkShaderModule 생성 → VkComputePipeline 생성. 이후 clEnqueueNDRangeKernel 시점에는 이미 완성된 pipeline을 바인딩만 합니다.",
+      "post": "opencl-note-angle-map"
+    },
+    {
+      "id": "angle-05",
+      "difficulty": "intermediate",
+      "q": "clEnqueueNDRangeKernel의 submit chain에서 실제 dispatch를 트리거하는 Vulkan 호출은?",
+      "options": [
+        "vkQueueSubmit",
+        "vkCmdDispatch",
+        "vkCmdExecuteCommands",
+        "vkCmdPipelineBarrier"
+      ],
+      "answer": 1,
+      "explanation": "submit chain 흐름: clEnqueueNDRangeKernel → command buffer recording 시작 → vkCmdBindPipeline → vkCmdBindDescriptorSets → vkCmdDispatch → queue submit. vkCmdDispatch가 실제 compute dispatch를 command buffer에 기록합니다.",
+      "post": "opencl-note-angle-map"
+    },
+    {
+      "id": "angle-06",
+      "difficulty": "intermediate",
+      "q": "clSetKernelArg는 submit chain에서 어느 Vulkan 개념과 연결되는가?",
+      "options": [
+        "VkPipelineLayout",
+        "VkDescriptorSet — 커널 인자가 descriptor binding으로 매핑됨",
+        "VkSemaphore",
+        "VkPushConstant만 사용하며 DescriptorSet은 관계없음"
+      ],
+      "answer": 1,
+      "explanation": "OpenCL의 kernel argument(버퍼, 이미지, 상수 등)는 Vulkan의 VkDescriptorSet binding으로 매핑됩니다. clSetKernelArg로 인자 상태가 업데이트되면, dispatch 직전에 vkCmdBindDescriptorSets로 바인딩됩니다.",
+      "post": "opencl-note-angle-phase1"
+    },
+    {
+      "id": "angle-07",
+      "difficulty": "intermediate",
+      "q": "ANGLE 추적 시 권장되는 접근 방식은?",
+      "options": [
+        "첫 함수부터 모든 내부 구현을 완전히 이해하고 다음 단계로 진행",
+        "breadth-first — 각 단계의 '다음 1단계'만 기록하며 전체 지도를 먼저 완성",
+        "binary 분석으로 어셈블리를 직접 추적",
+        "Vulkan 레이어부터 역방향으로 OpenCL API까지 거슬러 올라가기"
+      ],
+      "answer": 1,
+      "explanation": "ANGLE처럼 규모가 큰 코드베이스는 깊이 우선(depth-first)으로 파고들면 전체 지도를 잃습니다. 각 API에서 바로 다음 호출 1단계씩 기록하는 breadth-first 방식이 효과적입니다.",
+      "post": "opencl-note-angle-phase1"
+    },
+    {
+      "id": "angle-08",
+      "difficulty": "intermediate",
+      "q": "ANGLE의 compile chain에서 clCreateProgramWithSource 호출 직후 일어나는 일은?",
+      "options": [
+        "즉시 SPIR-V로 컴파일",
+        "Program 객체에 source를 등록만 하고 컴파일은 하지 않음",
+        "VkShaderModule을 즉시 생성",
+        "GPU에 source를 업로드"
+      ],
+      "answer": 1,
+      "explanation": "clCreateProgramWithSource는 소스 코드를 Program 객체에 저장만 합니다. 실제 컴파일(SPIR-V 생성, VkShaderModule, VkComputePipeline 생성)은 clBuildProgram 호출 시점에 이루어집니다.",
+      "post": "opencl-note-angle-map"
+    },
+    {
+      "id": "angle-09",
+      "difficulty": "advanced",
+      "q": "ANGLE의 submit chain에서 command buffer recording이 시작되는 시점은?",
+      "options": [
+        "clCreateCommandQueue 호출 시",
+        "clSetKernelArg 호출 시",
+        "clEnqueueNDRangeKernel 내부 — dispatch 명령을 command buffer에 기록하기 시작",
+        "clFinish 호출 시"
+      ],
+      "answer": 2,
+      "explanation": "clEnqueueNDRangeKernel 내부에서 Vulkan command buffer recording이 시작됩니다. vkCmdBindPipeline, vkCmdBindDescriptorSets, vkCmdDispatch가 순서대로 기록되고, 이후 queue submit이 일어납니다.",
+      "post": "opencl-note-angle-phase2"
+    },
+    {
+      "id": "angle-10",
+      "difficulty": "advanced",
+      "q": "ANGLE 내부에서 cl_mem 버퍼 객체가 매핑되는 Vulkan 객체는?",
+      "options": [
+        "VkImage",
+        "VkBuffer",
+        "VkDeviceMemory (직접 매핑)",
+        "VkPipeline"
+      ],
+      "answer": 1,
+      "explanation": "OpenCL의 cl_mem(버퍼 타입)은 ANGLE 내부에서 VkBuffer로 매핑됩니다. cl_mem 이미지는 VkImage로 매핑됩니다. 실제 GPU 메모리는 VkDeviceMemory가 backing하지만 API 레벨 매핑 객체는 VkBuffer입니다.",
+      "post": "opencl-note-angle-phase2"
+    },
+    {
+      "id": "angle-11",
+      "difficulty": "advanced",
+      "q": "전체 스택에서 ANGLE의 위치는? (위 = 상위 API, 아래 = HW에 가까움)",
+      "options": [
+        "OpenCL API → ANGLE → PM4 → HW (Vulkan을 건너뜀)",
+        "OpenCL API → ANGLE → Vulkan UMD(RADV 등) → PM4 → HW",
+        "OpenCL API → Vulkan → ANGLE → PM4 → HW",
+        "ANGLE → OpenCL API → Vulkan → HW"
+      ],
+      "answer": 1,
+      "explanation": "스택 순서: OpenCL API 호출 → ANGLE(번역) → Vulkan API → UMD(RADV/AMDVLK, PM4 조립) → KMD(ring buffer 제출) → GPU CP(PM4 실행) → HW. ANGLE은 OpenCL과 Vulkan 사이의 번역 계층입니다.",
+      "post": "opencl-note-angle-map"
+    },
+    {
+      "id": "angle-12",
+      "difficulty": "advanced",
+      "q": "ANGLE에서 clBuildProgram의 compile chain과 clEnqueueNDRangeKernel의 submit chain을 분리해서 이해해야 하는 이유는?",
+      "options": [
+        "두 API는 서로 다른 스레드에서만 호출되기 때문",
+        "compile chain은 Vulkan pipeline 객체를 준비하고 submit chain은 그것을 사용하는 경로로 역할이 근본적으로 다르기 때문",
+        "submit chain이 compile chain보다 항상 먼저 실행되기 때문",
+        "두 체인은 완전히 독립적이며 서로 Vulkan 객체를 공유하지 않기 때문"
+      ],
+      "answer": 1,
+      "explanation": "compile chain(준비)과 submit chain(실행)은 역할이 다릅니다. compile chain이 만든 VkComputePipeline을 submit chain이 vkCmdBindPipeline으로 바인딩해서 사용합니다. 두 경로를 같은 지도에 그리면 추적 중 길을 잃습니다.",
+      "post": "opencl-note-angle-map"
+    }
+  ]
+}

@@ -62,6 +62,76 @@
       "answer": 1,
       "explanation": "fence 메커니즘을 사용합니다. UMD가 IB 끝에 WRITE_DATA 패킷(fence value 기록)을 삽입하고, CPU는 해당 메모리 주소의 값이 예상 값이 될 때까지 폴링(또는 wait ioctl)합니다. clFinish/vkQueueWaitIdle이 이 경로를 사용합니다.",
       "post": "pm4-indirect-buffer"
+    },
+    {
+      "id": "pm4-08",
+      "difficulty": "beginner",
+      "q": "PM4 패킷 헤더의 최상위 2비트(TYPE 필드)가 0b11이면 어떤 패킷인가?",
+      "options": [
+        "Type-0 (레지스터 순차 쓰기)",
+        "Type-1 (확장 헤더)",
+        "Type-2 (NOP/padding)",
+        "Type-3 (opcode 기반 명령 패킷)"
+      ],
+      "answer": 3,
+      "explanation": "PM4 패킷 타입은 헤더 최상위 2비트로 결정됩니다. 0b11(=3)이면 Type-3 패킷입니다. Type-3는 IT_DISPATCH_DIRECT, IT_SET_SH_REG 등 opcode를 통해 GPU에 명령을 전달하는 핵심 패킷 형식입니다.",
+      "post": "opencl-note-pm4-overview"
+    },
+    {
+      "id": "pm4-09",
+      "difficulty": "intermediate",
+      "q": "IT_SET_SH_REG 패킷의 역할은?",
+      "options": [
+        "shader 바이너리를 VRAM에 업로드",
+        "shader 실행에 필요한 레지스터(SPI, SRD 등)를 설정",
+        "compute dispatch를 즉시 실행",
+        "ring buffer write pointer를 갱신"
+      ],
+      "answer": 1,
+      "explanation": "IT_SET_SH_REG는 Shader HW 레지스터를 설정합니다. dispatch 전에 shader 바이너리 주소, SRD(Shader Resource Descriptor), 상수 버퍼 등의 정보를 SH 레지스터에 기록해야 CP가 IT_DISPATCH_DIRECT를 처리할 때 올바른 리소스를 참조할 수 있습니다.",
+      "post": "opencl-note-pm4-overview"
+    },
+    {
+      "id": "pm4-10",
+      "difficulty": "intermediate",
+      "q": "IT_DISPATCH_DIRECT와 IT_DISPATCH_INDIRECT의 차이는?",
+      "options": [
+        "DIRECT는 CPU에서, INDIRECT는 GPU에서 실행",
+        "DIRECT는 패킷에 dim 값이 직접 포함, INDIRECT는 dim 값을 GPU 메모리 버퍼에서 읽어옴",
+        "INDIRECT가 더 빠른 실행 경로를 사용",
+        "차이 없음 — 같은 opcode의 다른 이름"
+      ],
+      "answer": 1,
+      "explanation": "DIRECT는 dimX/Y/Z가 패킷 payload에 직접 포함됩니다. INDIRECT는 GPU 버퍼 주소를 지정하고 CP가 런타임에 해당 버퍼에서 dim 값을 읽습니다. GPU-driven rendering이나 variable dispatch size에 INDIRECT가 유용합니다.",
+      "post": "opencl-note-pm4-overview"
+    },
+    {
+      "id": "pm4-11",
+      "difficulty": "advanced",
+      "q": "GPU CP(Command Processor)가 ring buffer를 소비하는 방식은?",
+      "options": [
+        "CPU가 ioctl로 각 패킷을 하나씩 전달",
+        "CP가 read pointer를 이동시키며 ring buffer를 폴링 — KMD가 write pointer를 갱신하면 CP가 새 항목을 처리",
+        "DMA 엔진이 ring buffer 전체를 메모리에 복사 후 CP가 처리",
+        "ring buffer 대신 직접 IB 주소로 점프"
+      ],
+      "answer": 1,
+      "explanation": "ring buffer는 write pointer(KMD 관리)와 read pointer(CP 관리)를 갖는 원형 큐입니다. KMD가 write pointer를 갱신(새 IB 등록)하면 CP는 read pointer를 진행시키며 항목을 처리합니다. CP는 하드웨어 수준에서 ring buffer를 직접 폴링합니다.",
+      "post": "pm4-indirect-buffer"
+    },
+    {
+      "id": "pm4-12",
+      "difficulty": "advanced",
+      "q": "PM4 NOP(Type-2) 패킷은 언제 사용하는가?",
+      "options": [
+        "GPU를 idle 상태로 전환할 때",
+        "ring buffer 또는 IB의 alignment 맞추기나 padding 목적",
+        "fence signal 전송",
+        "shader cache를 flush할 때"
+      ],
+      "answer": 1,
+      "explanation": "Type-2 패킷(NOP)은 ring buffer나 IB의 특정 alignment 요구사항을 맞추거나 실행할 명령 없이 공간을 채울 때 사용합니다. CP는 이를 읽고 그냥 건너뜁니다.",
+      "post": "opencl-note-pm4-overview"
     }
   ]
 }

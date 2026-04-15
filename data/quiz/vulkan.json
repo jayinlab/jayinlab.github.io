@@ -62,6 +62,76 @@
       "answer": 1,
       "explanation": "Vulkan에서 동기화는 명시적입니다. barrier 없이는 GPU가 두 dispatch를 동시에 또는 순서 없이 실행할 수 있고, 캐시도 일관성이 보장되지 않습니다. implicit barrier를 기대하면 race condition이 발생합니다.",
       "post": "vulkan-pipeline-barrier"
+    },
+    {
+      "id": "vk-08",
+      "difficulty": "beginner",
+      "q": "VkDescriptorSet의 역할은?",
+      "options": [
+        "GPU에서 실행할 shader 바이너리를 담는 객체",
+        "shader가 접근할 리소스(버퍼, 이미지, 샘플러)의 binding을 기술하는 객체",
+        "command buffer를 기록하는 컨테이너",
+        "GPU 메모리 할당 단위"
+      ],
+      "answer": 1,
+      "explanation": "VkDescriptorSet은 shader binding point와 실제 리소스(VkBuffer, VkImageView 등)를 연결합니다. vkCmdBindDescriptorSets로 바인딩하면 dispatch/draw 시 shader가 해당 리소스에 접근할 수 있습니다.",
+      "post": ""
+    },
+    {
+      "id": "vk-09",
+      "difficulty": "intermediate",
+      "q": "VkFence와 VkSemaphore의 주요 차이는?",
+      "options": [
+        "VkFence는 GPU-GPU 동기화, VkSemaphore는 CPU-GPU 동기화",
+        "VkFence는 CPU-GPU 동기화(CPU가 GPU 완료를 대기), VkSemaphore는 queue 간 GPU-GPU 동기화",
+        "기능이 동일하며 용도 차이만 있음",
+        "VkSemaphore는 deprecated, VkFence 사용 권장"
+      ],
+      "answer": 1,
+      "explanation": "VkFence: CPU가 GPU 작업 완료를 기다릴 때 사용(vkWaitForFences). VkSemaphore: GPU queue 간 또는 swapchain present/acquire 간 GPU-side 동기화. 두 객체는 용도가 다르며 함께 사용됩니다.",
+      "post": ""
+    },
+    {
+      "id": "vk-10",
+      "difficulty": "intermediate",
+      "q": "VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT의 의미는?",
+      "options": [
+        "GPU만 접근 가능한 빠른 VRAM",
+        "CPU에서 vkMapMemory로 직접 접근 가능한 메모리",
+        "자동으로 CPU↔GPU 동기화가 일어나는 메모리",
+        "persistent mapping이 불가능한 메모리"
+      ],
+      "answer": 1,
+      "explanation": "HOST_VISIBLE 메모리는 vkMapMemory로 CPU에서 직접 읽고 쓸 수 있습니다. 단, HOST_COHERENT 비트가 없으면 flush/invalidate가 필요합니다. GPU-only VRAM(DEVICE_LOCAL only)은 CPU 직접 접근이 불가능하여 staging buffer를 통한 전송이 필요합니다.",
+      "post": ""
+    },
+    {
+      "id": "vk-11",
+      "difficulty": "advanced",
+      "q": "compute pipeline 생성 시 VkPipelineLayout이 필요한 이유는?",
+      "options": [
+        "shader 바이너리를 저장하기 위해",
+        "descriptor set 레이아웃과 push constant 범위를 정의하여 shader와 리소스 바인딩 인터페이스를 명시",
+        "command buffer recording 순서를 지정하기 위해",
+        "GPU 메모리 레이아웃을 최적화하기 위해"
+      ],
+      "answer": 1,
+      "explanation": "VkPipelineLayout은 pipeline이 사용할 descriptor set 레이아웃(set 0, 1, 2...)과 push constant 범위를 정의합니다. shader와 host code 양쪽이 동일한 layout을 공유해야 올바른 리소스 바인딩이 됩니다.",
+      "post": ""
+    },
+    {
+      "id": "vk-12",
+      "difficulty": "advanced",
+      "q": "vkQueueSubmit 시점에 실제로 일어나는 일은?",
+      "options": [
+        "command buffer 안의 명령이 CPU에서 즉시 실행됨",
+        "command buffer가 드라이버(UMD)로 전달되어 PM4 패킷으로 변환 후 KMD를 통해 GPU에 제출됨",
+        "GPU가 command buffer를 직접 DMA로 읽어서 실행",
+        "command buffer 내용이 검증(validation)만 수행됨"
+      ],
+      "answer": 1,
+      "explanation": "vkQueueSubmit은 UMD(RADV 등)에서 command buffer의 Vulkan 명령들을 PM4 패킷으로 변환하여 IB(Indirect Buffer)를 구성합니다. 이후 DRM_AMDGPU_CS ioctl로 KMD에 제출하면 KMD가 ring buffer에 등록하고 GPU CP가 실행합니다.",
+      "post": "vulkan-pipeline-barrier"
     }
   ]
 }

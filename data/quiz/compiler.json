@@ -62,6 +62,76 @@
       "answer": 1,
       "explanation": "LLVM AMDGPU backend는 AMDVLK(공식 Vulkan driver)와 ROCm에서 사용합니다. ACO(AMD Compiler)는 Mesa RADV의 독자 SPIR-V→ISA backend로, LLVM backend보다 컴파일 속도와 일부 최적화에서 우수합니다.",
       "post": "opencl-note-clspv-practice"
+    },
+    {
+      "id": "comp-08",
+      "difficulty": "beginner",
+      "q": "SPIR-V 명령어 OpLoad의 역할은?",
+      "options": [
+        "GPU 메모리에서 데이터를 DMA로 가져옴",
+        "포인터(변수 주소)로부터 값을 SSA value로 읽어옴",
+        "shader 모듈을 GPU에 업로드",
+        "함수 호출"
+      ],
+      "answer": 1,
+      "explanation": "SPIR-V는 SSA(Static Single Assignment) 형식입니다. OpLoad는 OpVariable 등의 포인터에서 값을 읽어 새로운 SSA ID에 저장합니다. OpStore는 반대로 SSA 값을 포인터에 씁니다.",
+      "post": "opencl-note-spirv-reading"
+    },
+    {
+      "id": "comp-09",
+      "difficulty": "intermediate",
+      "q": "OpenCL binary cache(clBuildProgram 캐싱)의 동작 원리는?",
+      "options": [
+        "clGetProgramInfo로 ISA 바이너리를 추출하여 저장, 다음 실행 시 clCreateProgramWithBinary로 로드",
+        "드라이버가 자동으로 네트워크 캐시를 사용",
+        "SPIR-V를 캐시하여 재사용 (ISA 재컴파일은 매번 발생)",
+        "OS 커널이 shader 캐시를 관리"
+      ],
+      "answer": 0,
+      "explanation": "binary cache 패턴: clBuildProgram 후 clGetProgramInfo(CL_PROGRAM_BINARIES)로 ISA 바이너리를 추출해 파일로 저장. 다음 실행 시 clCreateProgramWithBinary로 로드하면 clspv + backend 컴파일을 건너뛰어 first-run latency를 제거합니다.",
+      "post": "opencl-note-clspv-practice"
+    },
+    {
+      "id": "comp-10",
+      "difficulty": "intermediate",
+      "q": "SPIR-V에서 OpDecorate의 역할은?",
+      "options": [
+        "함수를 정의",
+        "변수나 타입에 binding, location, built-in 등의 메타데이터를 부여",
+        "조건 분기",
+        "메모리 배리어 삽입"
+      ],
+      "answer": 1,
+      "explanation": "OpDecorate는 ID(변수, 타입 등)에 decoration을 붙입니다. 예: OpDecorate %buf DescriptorSet 0 → set=0에 바인딩, OpDecorate %buf Binding 1 → binding=1. Vulkan pipeline 생성 시 descriptor layout과 매칭됩니다.",
+      "post": "opencl-note-spirv-reading"
+    },
+    {
+      "id": "comp-11",
+      "difficulty": "advanced",
+      "q": "clspv가 OpenCL C의 __kernel 함수를 변환할 때 Vulkan SPIR-V에서 사용하는 execution model은?",
+      "options": [
+        "GLCompute",
+        "Vertex",
+        "Fragment",
+        "RayGeneration"
+      ],
+      "answer": 0,
+      "explanation": "compute kernel은 Vulkan SPIR-V에서 GLCompute execution model을 사용합니다. OpEntryPoint의 첫 번째 피연산자가 GLCompute이며, LocalSize decoration으로 work-group 크기를 지정합니다.",
+      "post": "opencl-note-clspv-practice"
+    },
+    {
+      "id": "comp-12",
+      "difficulty": "advanced",
+      "q": "ACO(AMD Compiler)가 LLVM AMDGPU backend보다 유리한 점은?",
+      "options": [
+        "더 많은 GPU 아키텍처를 지원",
+        "컴파일 속도가 빠르고 Mesa RADV에 최적화된 ISA 생성",
+        "OpenCL C를 직접 컴파일 가능 (SPIR-V 불필요)",
+        "하드웨어 레지스터를 더 많이 사용할 수 있음"
+      ],
+      "answer": 1,
+      "explanation": "ACO는 LLVM을 거치지 않아 컴파일 레이턴시가 낮습니다. 게임 등 런타임 컴파일이 빈번한 상황에서 stutter 감소에 기여합니다. 또한 RADV에 특화된 최적화로 일부 워크로드에서 LLVM backend보다 나은 ISA를 생성합니다.",
+      "post": "opencl-note-clspv-practice"
     }
   ]
 }

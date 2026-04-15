@@ -123,8 +123,8 @@
 {{ $data := index $.Site.Data.quiz .File.ContentBaseName }}
 {{ $questions := $data.questions }}
 <div class="quiz-score-bar">
-  <span id="quiz-progress">0 / 7 완료</span>
-  <span id="quiz-bank" class="meta" style="font-size:.82rem">뱅크 {{ len $questions }}문항</span>
+  <span id="quiz-progress">0 / 7 완료</span>  {{/* JS가 렌더 시 실제 PICK 값으로 업데이트 */}}
+  <span id="quiz-bank" class="meta" style="font-size:.82rem">문제 은행 {{ len $questions }}문항</span>
   <strong id="quiz-score">정답 0개</strong>
 </div>
 
@@ -143,7 +143,7 @@
 <script>
 (function () {
   const BANK = JSON.parse(document.getElementById('quiz-data').textContent);
-  const PICK = 7;
+  const PICK = Math.min(7, BANK.length);
   const STORAGE_KEY = 'quiz_{{ .File.ContentBaseName }}';
   const DIFF_LABEL = { beginner: 'BEG', intermediate: 'MID', advanced: 'ADV' };
   const DIFF_CLASS = { beginner: 'diff-beginner', intermediate: 'diff-intermediate', advanced: 'diff-advanced' };

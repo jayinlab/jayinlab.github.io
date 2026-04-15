@@ -1,0 +1,77 @@
+---
+title: "Vulkan Barrier & Pipeline Quiz"
+date: 2026-04-15
+slug: "vulkan"
+draft: false
+description: "pipeline stages, barrier, access mask, synchronization"
+questions:
+  - difficulty: beginner
+    q: "vkCmdPipelineBarrier에서 srcStageMask가 의미하는 것은?"
+    options:
+      - "뒤 명령이 시작을 막을 pipeline stage"
+      - "앞 명령이 완료되어야 하는 pipeline stage"
+      - "barrier가 삽입되는 위치의 stage"
+      - "access mask의 유형을 결정하는 stage"
+    answer: 1
+    explanation: "srcStageMask = '앞 명령의 어느 stage까지 끝나야 하나'. dstStageMask = '뒤 명령의 어느 stage부터 막을 것인가'. 두 값 모두 정확해야 필요한 순서만 강제하는 최소 barrier가 됩니다."
+
+  - difficulty: beginner
+    q: "compute dispatch 전후 barrier에서 가장 일반적으로 사용하는 stage 플래그는?"
+    options:
+      - "VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT"
+      - "VK_PIPELINE_STAGE_TRANSFER_BIT"
+      - "VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT"
+      - "VK_PIPELINE_STAGE_ALL_COMMANDS_BIT"
+    answer: 2
+    explanation: "dispatch 간 데이터 의존성을 표현할 때는 src/dstStageMask 모두 COMPUTE_SHADER_BIT를 사용합니다. TOP_OF_PIPE는 '아무것도 안 기다릴 때', BOTTOM_OF_PIPE는 '모든 것 끝난 후'에 씁니다."
+
+  - difficulty: intermediate
+    q: "srcAccessMask=0, dstAccessMask=0으로 barrier를 설정하면 어떤 문제가 생기나?"
+    options:
+      - "barrier가 완전히 무시되어 실행 순서도 보장되지 않음"
+      - "실행 순서는 보장되지만 메모리 가시성(cache flush/invalidate)이 보장되지 않음"
+      - "GPU가 크래시됨"
+      - "아무 문제 없음 — access mask는 선택 사항"
+    answer: 1
+    explanation: "stage mask는 실행 순서만 제어합니다. cache flush/invalidate는 access mask가 있어야 일어납니다. access mask 없이 stage mask만 잡으면 앞 명령의 write가 캐시에 남아 뒤 명령에서 stale 값을 읽을 수 있습니다."
+
+  - difficulty: intermediate
+    q: "dispatch A가 버퍼에 쓰고, dispatch B가 그 버퍼를 읽을 때 올바른 access mask 조합은?"
+    options:
+      - "srcAccess=SHADER_READ_BIT, dstAccess=SHADER_WRITE_BIT"
+      - "srcAccess=SHADER_WRITE_BIT, dstAccess=SHADER_READ_BIT"
+      - "srcAccess=0, dstAccess=SHADER_READ_BIT"
+      - "srcAccess=SHADER_WRITE_BIT, dstAccess=0"
+    answer: 1
+    explanation: "A가 쓴(SHADER_WRITE) 내용이 캐시에서 flush되고, B가 읽기(SHADER_READ) 전에 invalidate되어야 합니다. src=WRITE, dst=READ 조합이 write-after-write, read-after-write hazard를 모두 해결합니다."
+
+  - difficulty: intermediate
+    q: "VK_PIPELINE_STAGE_HOST_BIT는 언제 사용하는가?"
+    options:
+      - "command buffer 기록 시작 전"
+      - "CPU가 메모리에 직접 접근하는 순서를 GPU와 동기화할 때"
+      - "swapchain present 직전"
+      - "shader에서 atomics를 사용할 때"
+    answer: 1
+    explanation: "HOST stage는 CPU의 direct memory access를 표현합니다. CPU write → GPU read 순서를 보장하려면 srcStage=HOST, dstStage=COMPUTE_SHADER와 적절한 access mask를 조합합니다."
+
+  - difficulty: advanced
+    q: "VK_PIPELINE_STAGE_ALL_COMMANDS_BIT를 과도하게 사용하면 생기는 주요 문제는?"
+    options:
+      - "메모리 사용량이 증가하여 OOM 발생"
+      - "GPU가 완전히 드레인될 때까지 대기 — 불필요한 stall로 동시 실행 기회 제거"
+      - "barrier가 무시되어 동기화 실패"
+      - "command buffer 재사용이 불가능해짐"
+    answer: 1
+    explanation: "ALL_COMMANDS_BIT는 GPU의 모든 파이프라인을 멈춥니다. 프로파일러에서 'GPU idle' 구간으로 나타납니다. 올바른 접근은 필요한 최소 stage와 access 마스크만 지정하는 것입니다."
+
+  - difficulty: advanced
+    q: "같은 queue에서 연속으로 제출된 두 dispatch 사이에 barrier 없이 두 번째 dispatch가 첫 번째 dispatch의 출력을 읽으면 어떻게 되나?"
+    options:
+      - "항상 올바른 값이 보장된다 — Vulkan spec이 queue 순서를 보장하므로"
+      - "undefined behavior — GPU는 두 dispatch를 겹쳐 실행할 수 있고 캐시 일관성도 미보장"
+      - "두 번째 dispatch가 자동 대기한다"
+      - "driver가 자동으로 implicit barrier를 삽입한다"
+    answer: 1
+    explanation: "Vulkan에서 동기화는 명시적입니다. barrier 없이는 GPU가 두 dispatch를 동시에 또는 순서 없이 실행할 수 있고, 캐시도 일관성이 보장되지 않습니다. implicit barrier를 기대하면 race condition이 발생합니다."
+---

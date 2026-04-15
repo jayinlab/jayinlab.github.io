@@ -1,0 +1,20 @@
+{{ define "main" }}
+<h2>Quiz</h2>
+<p class="meta">카테고리를 선택하세요. 객관식 · 즉시 정오답 확인 · BEG/MID/ADV 난이도 표시</p>
+
+<ul class="post-list" style="margin-top:14px">
+  {{ range .Pages }}
+  <li>
+    <span class="post-title-group">
+      <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+      {{ with .Params.description }}<span class="meta" style="display:block;font-size:.83rem;margin-top:2px">{{ . }}</span>{{ end }}
+    </span>
+    <span class="post-badges">
+      {{ with .Params.questions }}
+        <span class="diff-badge" style="background:rgba(138,180,255,.12);color:#8ab4ff;border:1px solid rgba(138,180,255,.3)">{{ len . }}문항</span>
+      {{ end }}
+    </span>
+  </li>
+  {{ end }}
+</ul>
+{{ end }}

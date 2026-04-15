@@ -1,0 +1,241 @@
+{{ define "main" }}
+<style>
+  .quiz-score-bar {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+    font-size: .9rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 8px;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+  }
+  .quiz-score-bar strong { color: var(--brand); }
+
+  .quiz-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .quiz-num { color: var(--muted); font-size: .82rem; font-variant-numeric: tabular-nums; }
+  .quiz-question { margin: 0 0 12px; font-weight: 600; line-height: 1.6; }
+
+  .quiz-options { display: flex; flex-direction: column; gap: 7px; }
+  .quiz-opt {
+    text-align: left;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 9px 13px;
+    color: var(--text);
+    font-size: .92rem;
+    cursor: pointer;
+    line-height: 1.5;
+    transition: border-color .12s;
+    font-family: inherit;
+  }
+  .quiz-opt:hover:not(:disabled) { border-color: var(--brand); background: rgba(138,180,255,.07); }
+  .quiz-opt:disabled { cursor: default; opacity: .85; }
+  .quiz-opt-correct {
+    background: rgba(74,222,128,.14) !important;
+    border-color: rgba(74,222,128,.55) !important;
+    color: #4ade80 !important;
+  }
+  .quiz-opt-wrong {
+    background: rgba(248,113,113,.13) !important;
+    border-color: rgba(248,113,113,.5) !important;
+    color: #f87171 !important;
+  }
+
+  .quiz-explanation {
+    margin-top: 11px;
+    padding: 9px 12px;
+    background: rgba(138,180,255,.06);
+    border: 1px dashed #3a4560;
+    border-radius: 8px;
+    font-size: .88rem;
+    color: #c5d0e6;
+    line-height: 1.65;
+    display: none;
+  }
+  .quiz-result-label {
+    display: inline-block;
+    font-weight: 700;
+    margin-bottom: 5px;
+    font-size: .87rem;
+  }
+  .quiz-result-ok  { color: #4ade80; }
+  .quiz-result-ng  { color: #f87171; }
+
+  .quiz-final {
+    text-align: center;
+    padding: 22px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-top: 6px;
+    display: none;
+  }
+  .quiz-final-score {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--brand);
+    display: block;
+    margin: 6px 0 4px;
+  }
+  .quiz-reset-btn {
+    margin-top: 14px;
+    padding: 8px 20px;
+    border-radius: 999px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    color: var(--brand);
+    font-size: .9rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .quiz-reset-btn:hover { border-color: var(--brand); }
+</style>
+
+<h2>{{ .Title }}</h2>
+{{ with .Params.description }}<p class="meta" style="margin-bottom:14px">{{ . }}</p>{{ end }}
+
+<div class="quiz-score-bar">
+  <span id="quiz-progress">0 / {{ len .Params.questions }} 완료</span>
+  <strong id="quiz-score">정답 0개</strong>
+</div>
+
+<div id="quiz-container"></div>
+
+<div class="quiz-final" id="quiz-final">
+  <div class="meta">최종 결과</div>
+  <span class="quiz-final-score" id="quiz-final-score"></span>
+  <div class="meta" id="quiz-final-msg"></div>
+  <button class="quiz-reset-btn" id="quiz-reset">다시 풀기</button>
+</div>
+
+<script>
+(function () {
+  const QUESTIONS = {{ .Params.questions | jsonify }};
+  const DIFF_LABEL = { beginner: 'BEG', intermediate: 'MID', advanced: 'ADV' };
+  const DIFF_CLASS = { beginner: 'diff-beginner', intermediate: 'diff-intermediate', advanced: 'diff-advanced' };
+
+  let score = 0, answered = 0;
+  const total = QUESTIONS.length;
+
+  function updateScore() {
+    document.getElementById('quiz-progress').textContent = answered + ' / ' + total + ' 완료';
+    document.getElementById('quiz-score').textContent = '정답 ' + score + '개';
+  }
+
+  function finalMsg(s, t) {
+    const r = s / t;
+    if (r === 1)   return '완벽합니다! 🎯';
+    if (r >= 0.8)  return '아주 잘 알고 있습니다.';
+    if (r >= 0.6)  return '좋은 시도입니다. 틀린 부분을 복습해보세요.';
+    return '틀린 문제들을 다시 살펴보세요.';
+  }
+
+  function buildCard(q, idx) {
+    const card = document.createElement('div');
+    card.className = 'quiz-card';
+
+    const diffLabel = DIFF_LABEL[q.difficulty] || q.difficulty;
+    const diffClass = DIFF_CLASS[q.difficulty] || '';
+
+    const optsHtml = q.options.map((opt, i) =>
+      '<button class="quiz-opt" data-qi="' + idx + '" data-oi="' + i + '">' + escHtml(opt) + '</button>'
+    ).join('');
+
+    card.innerHTML =
+      '<div class="quiz-header">' +
+        '<span class="quiz-num">Q' + (idx + 1) + '</span>' +
+        '<span class="diff-badge ' + diffClass + '">' + diffLabel + '</span>' +
+      '</div>' +
+      '<p class="quiz-question">' + escHtml(q.q) + '</p>' +
+      '<div class="quiz-options" id="opts-' + idx + '">' + optsHtml + '</div>' +
+      '<div class="quiz-explanation" id="exp-' + idx + '">' +
+        '<span class="quiz-result-label" id="icon-' + idx + '"></span>' +
+        escHtml(q.explanation) +
+      '</div>';
+
+    return card;
+  }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function handleAnswer(qi, oi) {
+    const q = QUESTIONS[qi];
+    const opts = document.querySelectorAll('#opts-' + qi + ' .quiz-opt');
+    const correct = q.answer;
+
+    opts.forEach(function (btn) { btn.disabled = true; });
+    opts[correct].classList.add('quiz-opt-correct');
+
+    const icon = document.getElementById('icon-' + qi);
+    if (oi === correct) {
+      score++;
+      icon.textContent = '✅ 정답!';
+      icon.className = 'quiz-result-label quiz-result-ok';
+    } else {
+      opts[oi].classList.add('quiz-opt-wrong');
+      icon.textContent = '❌ 오답 — 정답은 ' + (correct + 1) + '번';
+      icon.className = 'quiz-result-label quiz-result-ng';
+    }
+
+    answered++;
+    document.getElementById('exp-' + qi).style.display = 'block';
+    updateScore();
+
+    if (answered === total) {
+      const fin = document.getElementById('quiz-final');
+      document.getElementById('quiz-final-score').textContent = score + ' / ' + total;
+      document.getElementById('quiz-final-msg').textContent = finalMsg(score, total);
+      fin.style.display = 'block';
+      fin.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function render() {
+    const container = document.getElementById('quiz-container');
+    container.innerHTML = '';
+    score = 0; answered = 0;
+    document.getElementById('quiz-final').style.display = 'none';
+    updateScore();
+
+    QUESTIONS.forEach(function (q, i) {
+      container.appendChild(buildCard(q, i));
+    });
+
+    container.addEventListener('click', function (e) {
+      const btn = e.target.closest('.quiz-opt');
+      if (!btn || btn.disabled) return;
+      handleAnswer(+btn.dataset.qi, +btn.dataset.oi);
+    });
+  }
+
+  document.getElementById('quiz-reset').addEventListener('click', render);
+  render();
+})();
+</script>
+{{ end }}

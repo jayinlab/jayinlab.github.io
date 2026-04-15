@@ -1,6 +1,7 @@
 baseURL = 'https://jayinlab.github.io/'
 languageCode = 'ko-kr'
 title = 'jayinlab'
+enableGitInfo = true
 
 [taxonomies]
   tag = 'tags'

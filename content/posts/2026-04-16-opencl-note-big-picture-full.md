@@ -1,6 +1,6 @@
 ---
 title: "GPU 배송센터 심화편 — 박스가 트럭에 실리고 출발하는 전 과정"
-date: 2026-04-15
+date: 2026-04-16
 slug: "opencl-note-big-picture-full"
 draft: false
 type: "note"
@@ -11,11 +11,11 @@ animation: true
 layer: "VK"
 ---
 
-[큰 그림 비유 1편](/opencl-note-big-picture-kids/)에서는 배송센터 이야기를 글로 정리했다.  
-이번에는 그 이야기를 **처음부터 끝까지 움직이는 애니메이션**으로 다시 본다.
+[큰 그림 비유 1편](/opencl-note-big-picture-kids/)에서는 배송센터 이야기를 글로 읽었다.  
+이번에는 **1막(배송 이야기) → 2막(GPU 언어로 복습)**의 흐름으로 움직이는 애니메이션을 본다.
 
-박스가 어디서 오고, 트럭에 어떻게 실리고, 설계 종이는 무슨 역할을 하는지,  
-작업반장이 세 마디를 외치면 무슨 일이 벌어지는지 — 11개 장면으로 순서대로 확인한다.
+박스 안에 실제로 뭐가 들었는지, 설계 종이와 오늘 배송표의 차이, 작업반장이 세 마디를 외치면  
+무슨 일이 벌어지는지를 먼저 순수한 이야기로 따라간 다음 — 2막에서 GPU 용어로 복습한다.
 
 ---
 
@@ -23,79 +23,92 @@ layer: "VK"
 
 ---
 
-## 11개 장면 요약
+## 11장면 구성
 
-| 장면 | 내용 | 실제 개념 |
-|------|------|-----------|
-| ① | 배송센터 등장 | GPU — 고속 병렬 처리 공장 |
-| ② | 박스들 도착 | VkBuffer / VkImage — GPU 리소스 |
-| ③ | 트럭과 칸 | Descriptor Set / binding index |
-| ④ | 설계 종이 펼치기 | Descriptor Set Layout + Pipeline Layout |
-| ⑤ | 오늘 작업 종이 | vkUpdateDescriptorSets |
-| ⑥ | 박스가 슬롯으로 날아들기 | vkCmdBindDescriptorSets |
-| ⑦ | 작업반장의 세 마디 | CPU host — vkCmd* 호출 순서 |
-| ⑧ | 트럭 출발 | vkCmdDispatch → GPU 실행 |
-| ⑨ | 규격 불일치 오류 | descriptor type mismatch |
-| ⑩ | 신호실 PM4 | 드라이버 → PM4 패킷 → GPU CP |
-| ⑪ | 전체 매핑 테이블 | 비유 ↔ 실제 개념 한눈에 |
+### 1막 — 배송 이야기 (장면 1–8)
+
+| 장면 | 내용 | 핵심 포인트 |
+|------|------|------------|
+| ① | 오늘 할 일 | saxpy 계산: y = a × x + y, 숫자 1백만 개 |
+| ② | 박스 안에 뭐가? | 박스를 열면 float 배열 — 숫자 데이터 그 자체 |
+| ③ | 트럭과 칸 구조 | 칸마다 받을 수 있는 박스 종류가 정해져 있음 |
+| ④ | 설계 종이 | 한 번 만들면 고정, 규격 바꾸려면 재생성 |
+| ⑤ | 오늘 배송표 | 실제 박스 배정, 내일은 다른 박스도 가능 |
+| ⑥ | 박스 탑승! | 박스들이 포물선을 그리며 슬롯으로 날아듦 |
+| ⑦ | 작업반장 세 마디 | 순서: ①bind pipeline → ②bind set → ③dispatch |
+| ⑧ | GPU 처리 + 결과 | 64 work-items 동시 실행, 결과 배열 출력 |
+
+### 2막 — GPU 언어로 (장면 9–11)
+
+| 장면 | 내용 | 핵심 포인트 |
+|------|------|------------|
+| ⑨ | GPU 언어로 복습 | 이야기 속 각 요소에 API 이름 레이블 부착 |
+| ⑩ | 규격 불일치 오류 | pipeline create 성공 ≠ dispatch 성공 |
+| ⑪ | 전체 매핑 테이블 | 비유 ↔ API 이름 ↔ 설명 3열 정리 |
 
 ---
 
-## 장면 ④가 중요한 이유
+## 장면 ②: 박스 안에 뭐가 있나
 
-설계 종이(Descriptor Set Layout)는 **한 번 만들면 바뀌지 않는다.**
+박스는 단순한 "데이터 덩어리"다. saxpy 예제에서는:
+
+| 박스 이름 | 안의 내용 | 설명 |
+|-----------|-----------|------|
+| `x_buffer` | `[0.5f, 1.2f, 3.7f, ...]` | 곱할 입력 배열 |
+| `y_buffer` | `[2.1f, 0.8f, 4.1f, ...]` | 더할 입력 + 결과 덮어씀 |
+| `output`   | (비어 있음) | 결과 저장소 |
+| `a`        | `2.0f` | 스칼라 상수 — 박스가 아닌 push constant |
+
+GPU는 이 숫자 배열들을 한 번에 64개씩 병렬로 처리한다.
+
+---
+
+## 장면 ④ vs ⑤: 설계 종이와 배송표의 차이
 
 ```c
-// 설계 종이 = DSL 생성 (재사용 가능)
+// 설계 종이 (한 번 생성, 재사용)
 VkDescriptorSetLayoutBinding bindings[] = {
     { .binding=0, .descriptorType=VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, ... },
     { .binding=1, .descriptorType=VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, ... },
     { .binding=2, .descriptorType=VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, ... },
 };
 vkCreateDescriptorSetLayout(device, &layoutInfo, NULL, &dsl);
-```
 
-오늘 작업 종이(vkUpdateDescriptorSets)는 **매번 바뀔 수 있다.**  
-설계 규격은 같은 채로, 어떤 실제 버퍼가 들어가는지만 갈아끼운다.
+// 오늘 배송표 (매 프레임/커널마다 바꿀 수 있음)
+VkWriteDescriptorSet writes[] = {
+    { .dstBinding=0, .pBufferInfo=&x_bufInfo, ... },  // 칸0 ← x_buffer
+    { .dstBinding=1, .pBufferInfo=&y_bufInfo, ... },  // 칸1 ← y_buffer
+    { .dstBinding=2, .pBufferInfo=&outBufInfo, ... }, // 칸2 ← output
+};
+vkUpdateDescriptorSets(device, 3, writes, 0, NULL);
+```
 
 ---
 
-## 장면 ⑦의 세 마디 순서가 중요한 이유
+## 장면 ⑦: 작업반장 세 마디 순서
 
 ```c
 // ① 작업 라인 선택
 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-// ② 트럭 배정 (어떤 descriptor set이 어떤 set slot에)
+// ② 트럭 배정
 vkCmdBindDescriptorSets(cmd, ..., 0, 1, &descSet, 0, NULL);
+vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 4, &a);
 
-// ③ 시작
+// ③ 출발!
 vkCmdDispatch(cmd, n/64, 1, 1);
 ```
 
 이 순서는 command buffer에 **기록**되는 순서다.  
-실제 GPU 실행은 command buffer가 submit된 이후 — 더 나중에 일어난다.
-
----
-
-## 장면 ⑨를 꼭 기억해야 하는 이유
-
-설계도 승인(`vkCreatePipeline` 성공)이 곧 dispatch 안전을 뜻하지 않는다.
-
-```
-pipeline create 성공  →  규격서(DSL)가 올바른지만 확인됨
-descriptor bind/dispatch  →  실물이 규격서와 맞는지 그때 가서 확인됨
-```
-
-실물(actual descriptor)이 규격(DSL type)과 다르면 **validation error** 또는 **GPU hang**.
+실제 GPU 실행은 command buffer submit 이후 — 더 나중에 일어난다.
 
 ---
 
 ## 핵심 3줄
 
 ```
-1. 설계 종이(DSL) = 트럭 칸 규격, 한 번 정하면 고정
-2. 오늘 작업 종이(vkUpdate) = 실제 박스 배정, 매번 바뀔 수 있음
+1. 박스 안 = float 배열 — GPU 메모리에 올라간 숫자 덩어리
+2. 설계 종이(DSL) ≠ 오늘 배송표 — 규격은 고정, 실물은 교체 가능
 3. 작업반장 세 마디 순서(pipeline → bind → dispatch)는 반드시 지킨다
 ```
 

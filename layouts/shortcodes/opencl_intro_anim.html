@@ -1,0 +1,1057 @@
+{{- $id := printf "oclbp-%d" now.UnixNano -}}
+<style>
+.oclbp-wrap{max-width:720px;margin:2rem auto;font-family:'Segoe UI',system-ui,sans-serif;}
+.oclbp-mobile-hint{display:none;background:#0e1f1c;border:1px solid #00c9a755;border-radius:6px;padding:7px 12px;font-size:11px;color:#00c9a7;margin-bottom:6px;text-align:center;}
+@media(max-width:700px){.oclbp-mobile-hint{display:block;}}
+.oclbp-hdr{background:#0e1a18;border-radius:8px 8px 0 0;padding:6px 12px;display:flex;align-items:center;gap:8px;}
+.oclbp-act{font-size:10px;background:#163028;color:#00c9a7;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+.oclbp-snum{font-size:10px;color:#7ee0c6;font-weight:bold;min-width:44px;}
+.oclbp-stitle{font-size:12px;color:#c8d0de;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.oclbp-cv-wrap{overflow:hidden;line-height:0;background:#0a1612;}
+canvas.oclbp-cv{display:block;}
+.oclbp-foot{background:#0e1a18;border-radius:0 0 8px 8px;padding:7px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.oclbp-concept{font-size:11px;color:#7ee0c6;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.oclbp-nav{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.oclbp-btn{background:#0e1f1c;border:1px solid #1a3530;color:#7ee0c6;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px;}
+.oclbp-btn:hover:not(:disabled){background:#163028;}
+.oclbp-btn:disabled{opacity:.4;cursor:default;}
+.oclbp-dots{display:flex;gap:4px;align-items:center;}
+.oclbp-dot{width:7px;height:7px;border-radius:50%;background:#1a3530;cursor:pointer;transition:background .2s,transform .2s;}
+.oclbp-dot.active{background:#00c9a7;transform:scale(1.3);}
+</style>
+
+<div id="{{ $id }}" class="oclbp-wrap">
+  <div class="oclbp-mobile-hint">📱 가로 화면이나 PC에서 더 잘 보입니다 — 터치로 장면 이동 가능</div>
+  <div class="oclbp-hdr">
+    <span class="oclbp-act"></span>
+    <span class="oclbp-snum"></span>
+    <span class="oclbp-stitle"></span>
+  </div>
+  <div class="oclbp-cv-wrap"><canvas class="oclbp-cv"></canvas></div>
+  <div class="oclbp-foot">
+    <div class="oclbp-concept"></div>
+    <div class="oclbp-nav">
+      <button class="oclbp-btn oclbp-prev">◀</button>
+      <div class="oclbp-dots"></div>
+      <button class="oclbp-btn oclbp-next">▶</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var root=document.getElementById('{{ $id }}');
+if(!root)return;
+var wrap=root.querySelector('.oclbp-cv-wrap');
+var cv=root.querySelector('.oclbp-cv');
+var g=cv.getContext('2d');
+var actEl=root.querySelector('.oclbp-act');
+var snEl=root.querySelector('.oclbp-snum');
+var stEl=root.querySelector('.oclbp-stitle');
+var coEl=root.querySelector('.oclbp-concept');
+var prevB=root.querySelector('.oclbp-prev');
+var nextB=root.querySelector('.oclbp-next');
+var dotsEl=root.querySelector('.oclbp-dots');
+
+var W=700,H=390;
+var dpr=Math.min(window.devicePixelRatio||1,2);
+function resizeCanvas(){
+  var cw=root.offsetWidth||W;
+  var sc=Math.min(1,cw/W);
+  var dw=Math.round(W*sc),dh=Math.round(H*sc);
+  cv.width=W*dpr;cv.height=H*dpr;
+  cv.style.width=dw+'px';cv.style.height=dh+'px';
+  wrap.style.height=dh+'px';
+  g.setTransform(1,0,0,1,0,0);g.scale(dpr,dpr);
+}
+resizeCanvas();
+window.addEventListener('resize',resizeCanvas);
+
+var P={
+  bg:'#0a1612',bg2:'#0e1a18',bg3:'#122018',bg4:'#163028',
+  teal:'#00c9a7',tealD:'#007a64',teal2:'#00e5bf',
+  blue:'#8ab4ff',blD:'#4a72cc',
+  green:'#7ee0c6',grD:'#3a9a78',
+  orange:'#f4a261',orD:'#b06020',
+  pink:'#e76f51',yellow:'#ffd166',purple:'#b39ddb',red:'#ff6b6b',
+  txt:'#e8eaed',muted:'#7a9a8a',dim:'#1e3830',
+  xBuf:'#8ab4ff',yBuf:'#7ee0c6',oBuf:'#f4a261',aBuf:'#ffd166',
+  intel:'#0071c5',amd:'#ed1c24',nvidia:'#76b900',
+};
+
+/* ── helpers ── */
+function cl(v,lo,hi){lo=lo===undefined?0:lo;hi=hi===undefined?1:hi;return Math.max(lo,Math.min(hi,v));}
+function eO(t){t=cl(t);return 1-(1-t)*(1-t)*(1-t);}
+function eIO(t){t=cl(t);return t<0.5?4*t*t*t:(t-1)*(2*t-2)*(2*t-2)+1;}
+function eBounce(t){t=cl(t);var n=7.5625,d=2.75;if(t<1/d)return n*t*t;if(t<2/d){t-=1.5/d;return n*t*t+0.75;}if(t<2.5/d){t-=2.25/d;return n*t*t+0.9375;}t-=2.625/d;return n*t*t+0.984375;}
+function wn(t,s,e){return cl((t-s)/(e-s));}
+function lp(a,b,t){return a+(b-a)*t;}
+
+function rr(x,y,w,h,r,fill,stroke,sw){
+  g.beginPath();
+  if(g.roundRect){g.roundRect(x,y,w,h,r);}
+  else{
+    r=Math.min(r,w/2,h/2);
+    g.moveTo(x+r,y);g.lineTo(x+w-r,y);g.arcTo(x+w,y,x+w,y+r,r);
+    g.lineTo(x+w,y+h-r);g.arcTo(x+w,y+h,x+w-r,y+h,r);
+    g.lineTo(x+r,y+h);g.arcTo(x,y+h,x,y+h-r,r);
+    g.lineTo(x,y+r);g.arcTo(x,y,x+r,y,r);g.closePath();
+  }
+  if(fill){g.fillStyle=fill;g.fill();}
+  if(stroke&&sw){g.strokeStyle=stroke;g.lineWidth=sw;g.stroke();}
+}
+
+function tx(s,x,y,opt){
+  opt=opt||{};
+  var sz=opt.sz||12,c=opt.c||P.txt,a=opt.a===undefined?1:opt.a,
+      al=opt.al||'center',w=opt.w||'normal';
+  g.save();g.globalAlpha*=a;
+  g.fillStyle=c;g.font=w+' '+sz+'px "Segoe UI",system-ui,sans-serif';
+  g.textAlign=al;g.textBaseline='middle';
+  g.fillText(s,x,y);
+  g.restore();
+}
+
+function arr(x1,y1,x2,y2,col,lw,a,headSz){
+  a=a===undefined?1:a;lw=lw||1.5;headSz=headSz||7;
+  g.save();g.globalAlpha*=a;
+  var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+  if(len<1){g.restore();return;}
+  var ux=dx/len,uy=dy/len;
+  g.strokeStyle=col;g.lineWidth=lw;g.lineCap='round';
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-ux*headSz*0.5,y2-uy*headSz*0.5);g.stroke();
+  g.fillStyle=col;g.beginPath();
+  g.moveTo(x2,y2);
+  g.lineTo(x2-ux*headSz-uy*headSz*0.4,y2-uy*headSz+ux*headSz*0.4);
+  g.lineTo(x2-ux*headSz+uy*headSz*0.4,y2-uy*headSz-ux*headSz*0.4);
+  g.closePath();g.fill();
+  g.restore();
+}
+
+function codeLine(s,x,y,a,col){
+  tx(s,x,y,{sz:10,c:col||P.teal,a:a||1,al:'left',w:'normal'});
+}
+
+/* ── component helpers ── */
+function drawBuf(x,y,label,content,col,a){
+  a=a===undefined?1:a;
+  var W2=136,H2=52;
+  g.save();g.globalAlpha*=a;
+  rr(x,y,W2,H2,6,P.bg3,col,1.5);
+  tx(label,x+W2/2,y+14,{sz:10,c:col,w:'bold'});
+  tx(content,x+W2/2,y+34,{sz:9,c:P.muted});
+  g.restore();
+}
+
+function drawSmallBuf(x,y,label,col,a){
+  a=a===undefined?1:a;
+  var W2=100,H2=32;
+  g.save();g.globalAlpha*=a;
+  rr(x,y,W2,H2,5,P.bg3,col,1.5);
+  tx(label,x+W2/2,y+H2/2,{sz:9,c:col,w:'bold'});
+  g.restore();
+}
+
+function drawKernelBox(x,y,label,nArgs,a){
+  a=a===undefined?1:a;
+  var BW=140,BH=30+nArgs*26;
+  g.save();g.globalAlpha*=a;
+  rr(x,y,BW,BH,8,P.bg3,P.teal,1.8);
+  tx('⚙ '+label,x+BW/2,y+16,{sz:10,c:P.teal,w:'bold'});
+  for(var i=0;i<nArgs;i++){
+    var ly=y+32+i*26;
+    rr(x+10,ly,BW-20,20,4,P.bg4,P.dim,1);
+    tx('arg'+i,x+30,ly+10,{sz:8,c:P.muted});
+  }
+  g.restore();
+  return {x:x,y:y,BW:BW,BH:BH};
+}
+
+function drawPlatformCard(x,y,label,sublabel,col,selected,a){
+  a=a===undefined?1:a;
+  var W2=120,H2=64;
+  g.save();g.globalAlpha*=a;
+  rr(x,y,W2,H2,8,selected?P.bg4:P.bg3,col,selected?2.5:1.5);
+  if(selected){
+    g.save();g.globalAlpha*=0.15;rr(x,y,W2,H2,8,col,'',0);g.fill();g.restore();
+  }
+  tx(label,x+W2/2,y+22,{sz:13,c:col,w:'bold'});
+  tx(sublabel,x+W2/2,y+42,{sz:9,c:selected?P.txt:P.muted});
+  if(selected){tx('✓ 선택됨',x+W2/2,y+56,{sz:8,c:col});}
+  g.restore();
+}
+
+function drawDeviceChip(x,y,label,type,col,a){
+  a=a===undefined?1:a;
+  var W2=110,H2=44;
+  g.save();g.globalAlpha*=a;
+  rr(x,y,W2,H2,6,P.bg4,col,2);
+  tx(label,x+W2/2,y+14,{sz:9,c:col,w:'bold'});
+  tx(type,x+W2/2,y+30,{sz:8,c:P.muted});
+  g.restore();
+}
+
+function drawContextBox(x,y,w,h,a){
+  a=a===undefined?1:a;
+  g.save();g.globalAlpha*=a;
+  rr(x,y,w,h,10,P.bg2,P.tealD,1.5);
+  g.setLineDash([5,3]);g.strokeStyle=P.teal+'66';g.lineWidth=1;
+  g.beginPath();if(g.roundRect)g.roundRect(x+4,y+4,w-8,h-8,8);
+  else{g.rect(x+4,y+4,w-8,h-8);}g.stroke();g.setLineDash([]);
+  tx('cl_context',x+w/2,y+14,{sz:9,c:P.teal+'aa',w:'bold'});
+  g.restore();
+}
+
+function drawQueueBox(x,y,items,a){
+  a=a===undefined?1:a;
+  var QW=190,QH=28+items.length*24;
+  g.save();g.globalAlpha*=a;
+  rr(x,y,QW,QH,8,P.bg2,P.green,1.5);
+  tx('cl_command_queue',x+QW/2,y+14,{sz:9,c:P.green,w:'bold'});
+  for(var i=0;i<items.length;i++){
+    var iy=y+24+i*24;
+    rr(x+8,iy,QW-16,20,4,P.bg4,P.grD,1);
+    tx(items[i].label,x+QW/2,iy+10,{sz:8,c:items[i].col||P.green});
+  }
+  g.restore();
+}
+
+function drawNDGrid(x,y,cols,rows,filledRatio,col,a){
+  a=a===undefined?1:a;
+  var sz=9,gap=3,fillN=Math.round(cols*rows*filledRatio);
+  g.save();g.globalAlpha*=a;
+  for(var r=0;r<rows;r++){
+    for(var c=0;c<cols;c++){
+      var idx=r*cols+c;
+      var cx=x+c*(sz+gap),cy=y+r*(sz+gap);
+      g.fillStyle=idx<fillN?col:P.dim;
+      g.fillRect(cx,cy,sz,sz);
+    }
+  }
+  g.restore();
+}
+
+function drawWorkGroup(x,y,n,col,a){
+  a=a===undefined?1:a;
+  var sz=8,gap=2,cols=8,rows=Math.ceil(n/8);
+  g.save();g.globalAlpha*=a;
+  rr(x-4,y-4,(sz+gap)*cols+2,(sz+gap)*rows+2,4,'',P.teal,1.5);
+  for(var i=0;i<n;i++){
+    var r=Math.floor(i/cols),c=i%cols;
+    g.fillStyle=col;
+    g.fillRect(x+c*(sz+gap),y+r*(sz+gap),sz,sz);
+  }
+  g.restore();
+}
+
+/* ── scene functions ── */
+function drawS0(t){
+  // saxpy intro
+  var a1=eO(wn(t,0,0.2)),a2=eO(wn(t,0.2,0.4)),a3=eO(wn(t,0.35,0.55)),
+      a4=eO(wn(t,0.5,0.7)),a5=eO(wn(t,0.65,0.85));
+
+  // title
+  tx('오늘 할 일: GPU로 saxpy 계산하기',350,38,{sz:15,c:P.teal,w:'bold',a:a1});
+  tx('y[i] = a × x[i] + y[i]  (i = 0 … 999,999)',350,72,{sz:17,c:P.txt,w:'bold',a:a2});
+
+  // three float arrays
+  var bx=[60,238,416];
+  var bc=[P.xBuf,P.yBuf,P.oBuf];
+  var bl=['x[ ]','y[ ]','out[ ]'];
+  var bd=['[0.5, 1.2, 3.7, ...]','[2.1, 0.8, 4.1, ...]','(결과 저장소)'];
+  var ba=[a3,a3,a4];
+  for(var i=0;i<3;i++){
+    drawBuf(bx[i],106,bl[i],bd[i],bc[i],ba[i]);
+  }
+  // a scalar
+  g.save();g.globalAlpha*=a4;
+  rr(594,106,88,52,6,P.bg3,P.aBuf,1.5);
+  tx('a',638,120,{sz:10,c:P.aBuf,w:'bold'});
+  tx('= 2.0f',638,140,{sz:11,c:P.txt});
+  g.restore();
+
+  // bottom label
+  tx('이 계산을 OpenCL로 GPU에서 돌린다',350,198,{sz:12,c:P.muted,a:a5});
+  tx('Platform → Device → Context → Queue → Buffer → Kernel → NDRange → Enqueue',350,222,{sz:9,c:P.tealD,a:a5});
+
+  // API flow hint
+  if(a5>0.1){
+    var steps=['clGetPlatformIDs','clCreateContext','clCreateBuffer','clBuildProgram','clSetKernelArg','clEnqueueNDRangeKernel','clFinish'];
+    var sx=38;
+    for(var j=0;j<steps.length;j++){
+      rr(sx,252,88,26,5,P.bg3,P.tealD,1);
+      tx(steps[j],sx+44,265,{sz:7,c:P.teal,a:a5});
+      if(j<steps.length-1){arr(sx+88,265,sx+96,265,P.dim,1,a5,5);}
+      sx+=96;
+    }
+  }
+
+  // data size note
+  tx('1,000,000개의 float — GPU 병렬 처리로 한 번에!',350,315,{sz:11,c:P.yellow,a:a5});
+}
+
+function drawS1(t){
+  // Platform & Device selection
+  var a1=eO(wn(t,0,0.18)),a2=eO(wn(t,0.15,0.35)),a3=eO(wn(t,0.3,0.5)),
+      a4=eO(wn(t,0.48,0.65)),a5=eO(wn(t,0.62,0.8));
+
+  tx('어느 공장을 쓸까? — Platform & Device 선택',350,32,{sz:13,c:P.teal,w:'bold',a:a1});
+
+  // Platform cards
+  var pcols=[P.intel,P.amd,P.nvidia];
+  var plabs=['Intel','AMD','NVIDIA'];
+  var psub=['CPU OpenCL','GPU OpenCL','GPU CUDA/CL'];
+  var px=[44,224,404];
+  var psel=[false,true,false];
+  var pa=[a2,a3,a2];
+  for(var i=0;i<3;i++){
+    drawPlatformCard(px[i],60,plabs[i],psub[i],pcols[i],psel[i],pa[i]);
+  }
+
+  // code for platform query
+  g.save();g.globalAlpha*=a3;
+  rr(36,146,300,50,6,P.bg3,'',0);
+  codeLine('cl_platform_id platforms[4];',44,158,1,P.teal);
+  codeLine('clGetPlatformIDs(4, platforms, &nPlatforms);',44,174,1,P.teal);
+  g.restore();
+
+  // arrow to device
+  arr(344,92,392,92,P.amd,2,a4,8);
+  tx('선택!',368,82,{sz:9,c:P.amd,w:'bold',a:a4});
+
+  // Device chip
+  drawDeviceChip(536,60,'AMD Radeon GPU','GPU Device (CL 3.0)',P.amd,a4);
+
+  // device query code
+  g.save();g.globalAlpha*=a4;
+  rr(530,118,162,50,6,P.bg3,'',0);
+  codeLine('cl_device_id device;',538,130,1,P.amd);
+  codeLine('clGetDeviceIDs(',538,146,1,P.amd);
+  codeLine('  platform, GPU, 1, &device, 0);',538,160,1,P.amd);
+  g.restore();
+
+  // key point
+  g.save();g.globalAlpha*=a5;
+  rr(36,210,628,72,8,P.bg3,P.teal+'44',1);
+  tx('★ Platform = "어느 회사 드라이버를 쓸지" 선택',350,232,{sz:11,c:P.teal,w:'bold'});
+  tx('Device = "그 회사의 어떤 장치를 쓸지" 선택 (CPU? GPU? FPGA?)',350,254,{sz:10,c:P.txt});
+  tx('하나의 머신에 여러 platform, 여러 device가 공존할 수 있음',350,272,{sz:9,c:P.muted});
+  g.restore();
+
+  // CL_DEVICE_TYPE note
+  tx('CL_DEVICE_TYPE_GPU → GPU 장치만 선택',350,308,{sz:9,c:P.muted,a:a5});
+  tx('CL_DEVICE_TYPE_ALL → 사용 가능한 모든 장치',350,326,{sz:9,c:P.muted,a:a5});
+}
+
+function drawS2(t){
+  // Context + Command Queue
+  var a1=eO(wn(t,0,0.18)),a2=eO(wn(t,0.15,0.35)),a3=eO(wn(t,0.32,0.52)),
+      a4=eO(wn(t,0.5,0.68)),a5=eO(wn(t,0.65,0.82));
+
+  tx('계약서 + 주문 창구 — Context & Command Queue',350,32,{sz:13,c:P.teal,w:'bold',a:a1});
+
+  // Context box (big container)
+  g.save();g.globalAlpha*=a2;
+  drawContextBox(36,55,290,130,1);
+  tx('clCreateContext',181,75,{sz:9,c:P.tealD});
+  drawDeviceChip(86,84,'AMD GPU','CL 3.0',P.amd,1);
+  // memory area inside context
+  rr(56,104,100,68,5,P.bg4,P.tealD+'88',1);
+  tx('GPU memory',106,120,{sz:8,c:P.tealD});
+  tx('(버퍼 공간)',106,136,{sz:8,c:P.muted});
+  tx('clCreateBuffer→',106,152,{sz:7,c:P.tealD});
+  g.restore();
+
+  // Command Queue
+  g.save();g.globalAlpha*=a3;
+  drawQueueBox(360,55,[
+    {label:'WriteBuffer (x_buf)', col:P.xBuf},
+    {label:'WriteBuffer (y_buf)', col:P.yBuf},
+    {label:'NDRangeKernel',       col:P.teal},
+    {label:'ReadBuffer (out_buf)',col:P.oBuf},
+  ],1);
+  g.restore();
+
+  // arrow from queue to context
+  arr(550,120,556,120,P.green,2,a4,7);
+  arr(556,120,560,120,P.green,2,a4,7);
+
+  // the GPU device receives
+  g.save();g.globalAlpha*=a4;
+  rr(562,95,110,50,6,P.bg4,P.amd,1.5);
+  tx('AMD GPU',617,108,{sz:9,c:P.amd,w:'bold'});
+  tx('명령 실행!',617,126,{sz:8,c:P.muted});
+  g.restore();
+
+  // arrow queue → gpu
+  arr(552,122,560,118,P.green,2,a4,6);
+
+  // code
+  g.save();g.globalAlpha*=a3;
+  rr(36,202,290,60,6,P.bg3,'',0);
+  codeLine('cl_context ctx =',44,214,1,P.teal);
+  codeLine('  clCreateContext(0,1,&device,0,0,0);',44,228,1,P.teal);
+  codeLine('cl_command_queue q =',44,244,1,P.green);
+  codeLine('  clCreateCommandQueueWithProperties(ctx,device,0,0);',44,258,1,P.green);
+  g.restore();
+
+  // key insight
+  g.save();g.globalAlpha*=a5;
+  rr(36,278,628,72,8,P.bg3,P.teal+'44',1);
+  tx('★ Context = "어떤 device와 일할지" 작업 공간 계약서',350,298,{sz:11,c:P.teal,w:'bold'});
+  tx('Command Queue = "GPU에 명령을 줄 서서 보내는 창구"',350,318,{sz:10,c:P.txt});
+  tx('같은 Context에서 여러 Queue를 만들 수 있음 (병렬 큐)',350,336,{sz:9,c:P.muted});
+  g.restore();
+}
+
+function drawS3(t){
+  // Buffers: clCreateBuffer + clEnqueueWriteBuffer
+  var a1=eO(wn(t,0,0.15)),a2=eO(wn(t,0.12,0.30)),a3=eO(wn(t,0.28,0.46)),
+      a4=eO(wn(t,0.44,0.62)),a5=eO(wn(t,0.6,0.78)),a6=eO(wn(t,0.76,0.92));
+
+  tx('창고 예약 + 짐 배달 — cl_mem 버퍼',350,30,{sz:13,c:P.teal,w:'bold',a:a1});
+
+  // CPU side (left)
+  g.save();g.globalAlpha*=a2;
+  rr(22,48,200,200,8,P.bg2,P.muted,1);
+  tx('CPU 메모리',122,66,{sz:10,c:P.muted,w:'bold'});
+  drawBuf(32,80,'float x[]','[0.5,1.2,3.7,...]',P.xBuf,1);
+  drawBuf(32,144,'float y[]','[2.1,0.8,4.1,...]',P.yBuf,1);
+  g.restore();
+
+  // GPU side (right)
+  g.save();g.globalAlpha*=a3;
+  rr(430,48,252,270,8,P.bg2,P.teal,1);
+  tx('GPU 메모리 (cl_context 내)',556,68,{sz:10,c:P.teal,w:'bold'});
+  g.restore();
+
+  // GPU buffers appearing
+  drawBuf(444,82,'x_buf (cl_mem)','clCreateBuffer, READ_ONLY',P.xBuf,a4);
+  drawBuf(444,146,'y_buf (cl_mem)','clCreateBuffer, READ_WRITE',P.yBuf,a5);
+  drawBuf(444,210,'out_buf (cl_mem)','clCreateBuffer, WRITE_ONLY',P.oBuf,a5);
+
+  // arrows (WriteBuffer)
+  arr(162,104,442,114,P.xBuf,1.5,a4,7);
+  tx('Write',302,96,{sz:8,c:P.xBuf,a:a4});
+  arr(162,168,442,178,P.yBuf,1.5,a5,7);
+  tx('Write',302,160,{sz:8,c:P.yBuf,a:a5});
+
+  // code
+  g.save();g.globalAlpha*=a4;
+  rr(22,262,400,100,6,P.bg3,'',0);
+  codeLine('// GPU 메모리 공간 예약',30,274,1,P.muted);
+  codeLine('cl_mem x_buf = clCreateBuffer(ctx, CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,',30,288,1,P.xBuf);
+  codeLine('                              N*sizeof(float), host_x, &err);',30,302,1,P.xBuf);
+  codeLine('cl_mem y_buf = clCreateBuffer(ctx, CL_MEM_READ_WRITE|CL_MEM_COPY_HOST_PTR,',30,316,1,P.yBuf);
+  codeLine('                              N*sizeof(float), host_y, &err);',30,330,1,P.yBuf);
+  codeLine('cl_mem out_buf = clCreateBuffer(ctx, CL_MEM_WRITE_ONLY, N*sizeof(float), 0, &err);',30,344,1,P.oBuf);
+  g.restore();
+
+  // note
+  tx('CL_MEM_COPY_HOST_PTR → 생성 시 CPU 데이터를 GPU로 즉시 복사',350,368,{sz:9,c:P.yellow,a:a6});
+}
+
+function drawS4(t){
+  // Program compile + Kernel create
+  var a1=eO(wn(t,0,0.15)),a2=eO(wn(t,0.13,0.30)),a3=eO(wn(t,0.28,0.46)),
+      a4=eO(wn(t,0.44,0.60)),a5=eO(wn(t,0.58,0.74)),a6=eO(wn(t,0.72,0.88));
+
+  tx('작업 레시피 준비 — Program 컴파일 & Kernel',350,30,{sz:13,c:P.teal,w:'bold',a:a1});
+
+  // Source code box
+  g.save();g.globalAlpha*=a2;
+  rr(22,50,200,152,8,P.bg3,P.muted,1.5);
+  tx('saxpy.cl (소스)',122,68,{sz:9,c:P.muted,w:'bold'});
+  codeLine('__kernel void saxpy(',30,86,1,P.txt);
+  codeLine('  __global const float* x,',30,100,1,P.xBuf);
+  codeLine('  __global const float* y,',30,114,1,P.yBuf);
+  codeLine('  __global float* out,',30,128,1,P.oBuf);
+  codeLine('  const float a) {',30,142,1,P.aBuf);
+  codeLine('  int i=get_global_id(0);',30,156,1,P.green);
+  codeLine('  out[i]=a*x[i]+y[i]; }',30,170,1,P.teal);
+  g.restore();
+
+  // Compile gear animation
+  var gearA=wn(t,0.3,0.65);
+  if(gearA>0){
+    g.save();g.globalAlpha*=eO(gearA);
+    var gx=316,gy=126,gr=30,grot=gearA*Math.PI*4;
+    g.translate(gx,gy);g.rotate(grot);
+    g.fillStyle=P.teal+'66';
+    for(var i=0;i<8;i++){
+      g.save();g.rotate(i*Math.PI/4);
+      g.fillRect(-4,gr-8,8,12);
+      g.restore();
+    }
+    g.beginPath();g.arc(0,0,gr*0.7,0,Math.PI*2);g.fillStyle=P.teal;g.fill();
+    g.fillStyle=P.bg;g.beginPath();g.arc(0,0,gr*0.3,0,Math.PI*2);g.fill();
+    g.restore();
+    arr(232,126,282,126,P.teal,2,eO(gearA),8);
+    tx('clBuildProgram',257,114,{sz:8,c:P.teal,a:eO(gearA)});
+    arr(350,126,400,126,P.teal,2,eO(gearA),8);
+  }
+
+  // cl_program + cl_kernel boxes
+  g.save();g.globalAlpha*=a4;
+  rr(402,82,140,88,8,P.bg3,P.orange,1.8);
+  tx('cl_program',472,102,{sz:10,c:P.orange,w:'bold'});
+  tx('(SPIR-V / IL binary)',472,120,{sz:8,c:P.muted});
+  tx('clCreateProgramWithSource',472,140,{sz:7,c:P.orD});
+  tx('→ clBuildProgram',472,154,{sz:7,c:P.orD});
+  g.restore();
+
+  arr(472,172,472,190,P.teal,2,a5,7);
+  tx('clCreateKernel("saxpy")',472,182,{sz:8,c:P.teal,a:a5});
+
+  g.save();g.globalAlpha*=a5;
+  rr(402,192,140,60,8,P.bg3,P.teal,2);
+  tx('cl_kernel',472,214,{sz:11,c:P.teal,w:'bold'});
+  tx('"saxpy" 실행 준비 완료',472,234,{sz:8,c:P.muted});
+  g.restore();
+
+  // code
+  g.save();g.globalAlpha*=a3;
+  rr(22,218,370,148,6,P.bg3,'',0);
+  codeLine('// 소스에서 program 생성',30,232,1,P.muted);
+  codeLine('cl_program prog = clCreateProgramWithSource(',30,246,1,P.orange);
+  codeLine('    ctx, 1, &src, &srcLen, &err);',30,260,1,P.orange);
+  codeLine('// 컴파일',30,278,1,P.muted);
+  codeLine('clBuildProgram(prog, 1, &device, NULL, NULL, NULL);',30,292,1,P.teal);
+  codeLine('// 커널 오브젝트 생성',30,310,1,P.muted);
+  codeLine('cl_kernel k = clCreateKernel(prog, "saxpy", &err);',30,324,1,P.teal);
+  g.restore();
+
+  tx('★ cl_kernel = 실행 가능한 GPU 함수 핸들',350,376,{sz:10,c:P.yellow,w:'bold',a:a6});
+}
+
+function drawS5(t){
+  // clSetKernelArg — THE KEY SCENE
+  var a1=eO(wn(t,0,0.12)),aKern=eO(wn(t,0.1,0.25));
+  var argA=[eO(wn(t,0.22,0.38)),eO(wn(t,0.35,0.51)),eO(wn(t,0.48,0.64)),eO(wn(t,0.61,0.77))];
+  var a5=eO(wn(t,0.74,0.88)),a6=eO(wn(t,0.85,0.98));
+
+  tx('레시피에 재료 꽂기 — clSetKernelArg',350,30,{sz:14,c:P.teal,w:'bold',a:a1});
+
+  // Kernel box (center-left)
+  var kx=80,ky=55;
+  g.save();g.globalAlpha*=aKern;
+  rr(kx,ky,164,160,8,P.bg3,P.teal,2);
+  tx('⚙ cl_kernel',kx+82,ky+18,{sz:10,c:P.teal,w:'bold'});
+  tx('"saxpy"',kx+82,ky+34,{sz:9,c:P.muted});
+  var argCols=[P.xBuf,P.yBuf,P.oBuf,P.aBuf];
+  var argLabs=['arg0  x','arg1  y','arg2  out','arg3  a'];
+  for(var i=0;i<4;i++){
+    var ay=ky+52+i*26;
+    rr(kx+10,ay,144,20,4,P.bg4,argCols[i]+'88',1);
+    tx(argLabs[i],kx+82,ay+10,{sz:8,c:argCols[i]});
+  }
+  g.restore();
+
+  // Buffer boxes (right) and connections
+  var bufX=360;
+  var bufInfos=[
+    {y:62, label:'x_buf (cl_mem)', col:P.xBuf, code:'clSetKernelArg(k, 0, sizeof(cl_mem), &x_buf);'},
+    {y:114,label:'y_buf (cl_mem)', col:P.yBuf, code:'clSetKernelArg(k, 1, sizeof(cl_mem), &y_buf);'},
+    {y:166,label:'out_buf (cl_mem)',col:P.oBuf, code:'clSetKernelArg(k, 2, sizeof(cl_mem), &out_buf);'},
+    {y:218,label:'a = 2.0f',       col:P.aBuf, code:'clSetKernelArg(k, 3, sizeof(float),  &a);'},
+  ];
+
+  for(var j=0;j<4;j++){
+    var bi=bufInfos[j],ba=argA[j];
+    g.save();g.globalAlpha*=ba;
+    rr(bufX,bi.y,200,32,5,P.bg3,bi.col,1.5);
+    tx(bi.label,bufX+100,bi.y+16,{sz:9,c:bi.col,w:'bold'});
+    // connection line from buffer to kernel arg
+    if(ba>0.1){
+      arr(bufX,bi.y+16,kx+154,ky+52+j*26+10,bi.col,1.5,ba,6);
+    }
+    g.restore();
+    // code line
+    codeLine(bi.code,bufX,bi.y+42,ba,bi.col);
+  }
+
+  // Key comparison box
+  g.save();g.globalAlpha*=a5;
+  rr(36,262,628,72,8,P.bg3,P.teal+'44',1);
+  tx('★ OpenCL: clSetKernelArg(kernel, 번호, 크기, &버퍼) — 바로 연결!',350,282,{sz:11,c:P.teal,w:'bold'});
+  tx('Vulkan이었다면: DSL 생성 → AllocDescriptorSets → WriteDescriptorSets → BindDescriptorSets (4단계)',350,302,{sz:9,c:P.muted});
+  tx('OpenCL은 번호(index)로 직접 꽂아서 훨씬 간결',350,320,{sz:10,c:P.txt});
+  g.restore();
+
+  // note on arg3 push constant
+  g.save();g.globalAlpha*=a6;
+  rr(36,348,628,32,6,P.bg3,P.aBuf+'44',1);
+  tx('arg3 (float a)는 스칼라 — Vulkan에서는 PushConstant가 됐지만 OpenCL은 그냥 arg로 처리',350,364,{sz:9,c:P.aBuf});
+  g.restore();
+}
+
+function drawS6(t){
+  // NDRange
+  var a1=eO(wn(t,0,0.15)),a2=eO(wn(t,0.13,0.30)),a3=eO(wn(t,0.28,0.45)),
+      a4=eO(wn(t,0.43,0.60)),a5=eO(wn(t,0.58,0.75)),a6=eO(wn(t,0.73,0.88));
+
+  tx('몇 명이 나눠서? — NDRange 설정',350,30,{sz:14,c:P.teal,w:'bold',a:a1});
+
+  // Global size box
+  g.save();g.globalAlpha*=a2;
+  rr(22,52,168,60,8,P.bg3,P.teal,1.8);
+  tx('global_size',106,72,{sz:10,c:P.teal,w:'bold'});
+  tx('= 1,000,000',106,92,{sz:12,c:P.txt,w:'bold'});
+  g.restore();
+
+  // local size box
+  g.save();g.globalAlpha*=a3;
+  rr(22,128,168,60,8,P.bg3,P.green,1.8);
+  tx('local_size',106,148,{sz:10,c:P.green,w:'bold'});
+  tx('= 64',106,168,{sz:12,c:P.txt,w:'bold'});
+  g.restore();
+
+  // work-groups count
+  arr(192,82,216,82,P.teal,2,a4,7);
+  arr(192,158,216,158,P.green,2,a4,7);
+  g.save();g.globalAlpha*=a4;
+  rr(218,62,160,68,8,P.bg3,P.orange,1.5);
+  tx('Work-Groups',298,82,{sz:10,c:P.orange,w:'bold'});
+  tx('1,000,000 ÷ 64',298,100,{sz:10,c:P.txt});
+  tx('= 15,625 개',298,116,{sz:10,c:P.orange,w:'bold'});
+  g.restore();
+
+  // Work-group visual (right side)
+  g.save();g.globalAlpha*=a5;
+  rr(398,52,276,174,8,P.bg3,P.teal+'66',1);
+  tx('Work-Group 하나',536,70,{sz:9,c:P.teal,w:'bold'});
+  tx('(64 work-items)',536,86,{sz:8,c:P.muted});
+  // 8x8 grid = 64 items
+  var gsx=420,gsy=98,gsz=9,gsgap=2;
+  for(var r=0;r<8;r++){
+    for(var c=0;c<8;c++){
+      g.fillStyle=P.teal;
+      g.fillRect(gsx+c*(gsz+gsgap),gsy+r*(gsz+gsgap),gsz,gsz);
+    }
+  }
+  // get_global_id label on one cell
+  var hc=3,hr=2;
+  g.fillStyle=P.yellow;
+  g.fillRect(gsx+hc*(gsz+gsgap),gsy+hr*(gsz+gsgap),gsz,gsz);
+  tx('get_global_id(0)',536,gsy+hr*(gsz+gsgap)+5,{sz:7,c:P.yellow});
+  tx('= 64*grp_id + item_id',536,gsy+hr*(gsz+gsgap)+17,{sz:7,c:P.muted});
+  g.restore();
+
+  // code
+  g.save();g.globalAlpha*=a3;
+  rr(22,208,370,116,6,P.bg3,'',0);
+  codeLine('size_t global_size = 1000000;   // 전체 work-item 수',30,222,1,P.teal);
+  codeLine('size_t local_size  = 64;        // work-group 크기',30,238,1,P.green);
+  codeLine('// work-group 수 = global / local = 15,625',30,256,1,P.muted);
+  codeLine('// 커널 코드:',30,274,1,P.muted);
+  codeLine('// int i = get_global_id(0);  // 0 ~ 999,999',30,290,1,P.orange);
+  codeLine('// out[i] = a * x[i] + y[i];',30,306,1,P.teal);
+  g.restore();
+
+  // key point
+  g.save();g.globalAlpha*=a6;
+  rr(22,338,656,40,8,P.bg3,P.teal+'44',1);
+  tx('★ NDRange = "1백만 명이 각자 자기 번호(i)로 동시에 계산" — get_global_id(0)이 그 번호',350,358,{sz:10,c:P.teal});
+  g.restore();
+}
+
+function drawS7(t){
+  // clEnqueueNDRangeKernel
+  var a1=eO(wn(t,0,0.15)),a2=eO(wn(t,0.12,0.28)),a3=eO(wn(t,0.26,0.44)),
+      a4=eO(wn(t,0.42,0.58)),a5=eO(wn(t,0.56,0.72)),a6=eO(wn(t,0.70,0.85));
+
+  tx('주문서에 등록! — clEnqueueNDRangeKernel',350,30,{sz:13,c:P.teal,w:'bold',a:a1});
+
+  // Command queue (center)
+  g.save();g.globalAlpha*=a2;
+  rr(194,50,300,220,8,P.bg2,P.green,1.5);
+  tx('cl_command_queue',344,68,{sz:9,c:P.green,w:'bold'});
+  // existing commands
+  var qcmds=[
+    {label:'WriteBuffer (x_buf)', col:P.xBuf, ya:80},
+    {label:'WriteBuffer (y_buf)', col:P.yBuf, ya:108},
+  ];
+  for(var i=0;i<qcmds.length;i++){
+    rr(206,qcmds[i].ya,276,24,4,P.bg4,qcmds[i].col+'88',1);
+    tx(qcmds[i].label,344,qcmds[i].ya+12,{sz:8,c:qcmds[i].col});
+  }
+  g.restore();
+
+  // NEW command entering (animated)
+  var entY=lp(-20,140,eIO(wn(t,0.3,0.55)));
+  g.save();g.globalAlpha*=a3;
+  rr(206,entY,276,28,4,P.bg4,P.teal,2);
+  tx('★ NDRangeKernel ← 지금 추가!',344,entY+14,{sz:8,c:P.teal,w:'bold'});
+  g.restore();
+
+  // ReadBuffer (after)
+  g.save();g.globalAlpha*=a4;
+  rr(206,172,276,24,4,P.bg4,P.oBuf+'88',1);
+  tx('ReadBuffer (out_buf)',344,184,{sz:8,c:P.oBuf});
+  g.restore();
+
+  // flush arrow to GPU
+  arr(496,160,545,160,P.green,2.5,a5,9);
+  tx('Submit!',520,148,{sz:9,c:P.green,w:'bold',a:a5});
+
+  // GPU box
+  g.save();g.globalAlpha*=a5;
+  rr(547,130,130,60,8,P.bg3,P.amd,2);
+  tx('AMD GPU',612,153,{sz:10,c:P.amd,w:'bold'});
+  tx('처리 시작!',612,171,{sz:8,c:P.muted});
+  g.restore();
+
+  // code
+  g.save();g.globalAlpha*=a3;
+  rr(22,282,656,68,6,P.bg3,'',0);
+  codeLine('clEnqueueNDRangeKernel(',30,296,1,P.teal);
+  codeLine('    q,              // command queue',30,310,1,P.green);
+  codeLine('    kernel,         // cl_kernel',30,324,1,P.teal);
+  codeLine('    1,              // work dimension (1D)',30,338,1,P.muted);
+  codeLine('    NULL,           // global offset',30,296+56,1,P.muted);
+  g.restore();
+  g.save();g.globalAlpha*=a3;
+  codeLine('    &global_size,   // global work size = 1,000,000',240,296,1,P.orange);
+  codeLine('    &local_size,    // local work size = 64',240,310,1,P.green);
+  codeLine('    0, NULL, NULL); // 이벤트 없음',240,324,1,P.muted);
+  g.restore();
+
+  // note: lazy execution
+  g.save();g.globalAlpha*=a6;
+  rr(22,358,656,26,6,P.bg3,P.yellow+'44',1);
+  tx('★ Enqueue = 명령을 Queue에 기록하는 것! 실제 GPU 실행은 Queue flush 이후 → clFinish가 완료 대기',350,371,{sz:9,c:P.yellow});
+  g.restore();
+}
+
+function drawS8(t){
+  // GPU processing + ReadBuffer + clFinish
+  var a1=eO(wn(t,0,0.12)),a2=eO(wn(t,0.1,0.26)),a3=eO(wn(t,0.24,0.42)),
+      a4=eO(wn(t,0.40,0.58)),a5=eO(wn(t,0.56,0.72)),a6=eO(wn(t,0.70,0.86));
+
+  tx('GPU 병렬 처리 + 결과 수령',350,30,{sz:14,c:P.teal,w:'bold',a:a1});
+
+  // work-items animation (filling up)
+  var fillRatio=eIO(wn(t,0.12,0.52));
+  g.save();g.globalAlpha*=a2;
+  rr(28,48,300,160,8,P.bg2,P.teal,1.5);
+  tx('GPU — 64 work-items 동시 실행',178,66,{sz:9,c:P.teal,w:'bold'});
+  var gsx=40,gsy=80,gsz=8,gsgap=2,gcols=16,grows=8;
+  var fillN=Math.round(gcols*grows*fillRatio);
+  for(var r=0;r<grows;r++){
+    for(var c=0;c<gcols;c++){
+      var idx=r*gcols+c;
+      g.fillStyle=idx<fillN?P.teal:P.dim;
+      g.fillRect(gsx+c*(gsz+gsgap),gsy+r*(gsz+gsgap),gsz,gsz);
+    }
+  }
+  tx('out[i] = a×x[i] + y[i]',178,194,{sz:8,c:P.muted,a:fillRatio});
+  g.restore();
+
+  // wavefront note
+  g.save();g.globalAlpha*=a3;
+  rr(28,224,300,52,6,P.bg3,P.tealD,1);
+  tx('wavefront (64 work-items)',178,242,{sz:9,c:P.teal,w:'bold'});
+  tx('한 wavefront = 64개 동시 실행',178,260,{sz:8,c:P.muted});
+  g.restore();
+
+  // Result buffer (GPU side → CPU)
+  g.save();g.globalAlpha*=a4;
+  rr(355,50,160,80,8,P.bg3,P.oBuf,1.8);
+  tx('out_buf',435,74,{sz:10,c:P.oBuf,w:'bold'});
+  tx('[a*0.5+2.1, ...]',435,94,{sz:8,c:P.muted});
+  tx('결과 완성!',435,112,{sz:9,c:P.oBuf,w:'bold'});
+  g.restore();
+
+  // ReadBuffer arrow
+  arr(435,132,435,170,P.oBuf,2,a5,8);
+  tx('clEnqueueReadBuffer',435,150,{sz:8,c:P.oBuf,a:a5});
+
+  g.save();g.globalAlpha*=a5;
+  rr(355,172,160,52,8,P.bg3,P.green,1.8);
+  tx('CPU host_out[]',435,192,{sz:9,c:P.green,w:'bold'});
+  tx('결과 배열 도착!',435,210,{sz:8,c:P.muted});
+  g.restore();
+
+  // clFinish
+  g.save();g.globalAlpha*=a4;
+  rr(535,50,148,96,8,P.bg3,P.purple,1.8);
+  tx('clFinish(q)',609,76,{sz:10,c:P.purple,w:'bold'});
+  tx('모든 명령 완료',609,96,{sz:8,c:P.muted});
+  tx('대기 (블로킹)',609,112,{sz:8,c:P.muted});
+  tx('CPU 깨어남 ✓',609,130,{sz:8,c:P.purple});
+  g.restore();
+
+  // code
+  g.save();g.globalAlpha*=a3;
+  rr(28,290,656,72,6,P.bg3,'',0);
+  codeLine('// 결과 GPU → CPU 복사 (queue에 등록)',36,304,1,P.muted);
+  codeLine('clEnqueueReadBuffer(q, out_buf, CL_FALSE, 0, N*sizeof(float), host_out, 0,NULL,NULL);',36,318,1,P.oBuf);
+  codeLine('// 모든 queue 명령이 완료될 때까지 CPU 대기',36,336,1,P.muted);
+  codeLine('clFinish(q);',36,350,1,P.purple);
+  codeLine('// 이제 host_out에 결과가 들어있음',36,366,1,P.green);
+  g.restore();
+
+  tx('CL_FALSE = 비동기 ReadBuffer, clFinish가 실제 완료를 보장',350,374,{sz:8,c:P.muted,a:a6});
+}
+
+function drawS9(t){
+  // 2막: recap with API labels
+  var a1=eO(wn(t,0,0.14)),a2=eO(wn(t,0.12,0.28)),a3=eO(wn(t,0.26,0.42)),
+      a4=eO(wn(t,0.40,0.56)),a5=eO(wn(t,0.54,0.70)),a6=eO(wn(t,0.68,0.84));
+
+  tx('지금까지 본 것을 OpenCL API 이름으로 다시',350,26,{sz:13,c:P.teal,w:'bold',a:a1});
+
+  // Flow diagram: each step as labelled box
+  var steps=[
+    {label:'Platform\n& Device',api:'clGetPlatformIDs\nclGetDeviceIDs',col:P.intel,x:24, y:64},
+    {label:'Context\n& Queue',  api:'clCreateContext\nclCreateCommandQueue',col:P.teal,x:130,y:64},
+    {label:'Buffers',           api:'clCreateBuffer\nclEnqueueWriteBuffer',col:P.xBuf,x:236,y:64},
+    {label:'Program\n& Kernel', api:'clBuildProgram\nclCreateKernel',     col:P.orange,x:342,y:64},
+    {label:'SetKernelArg',      api:'clSetKernelArg\n(arg0,1,2,3)',       col:P.teal,x:448,y:64},
+    {label:'NDRange\n& Enqueue',api:'clEnqueueND\nRangeKernel',           col:P.green,x:554,y:64},
+  ];
+  var stepA=[a2,a2,a3,a3,a4,a5];
+  for(var i=0;i<steps.length;i++){
+    var s=steps[i],sa=stepA[i];
+    g.save();g.globalAlpha*=sa;
+    rr(s.x,s.y,98,88,6,P.bg3,s.col,1.8);
+    var lines=s.label.split('\n');
+    tx(lines[0],s.x+49,s.y+18,{sz:9,c:s.col,w:'bold'});
+    if(lines[1])tx(lines[1],s.x+49,s.y+32,{sz:9,c:s.col,w:'bold'});
+    var alines=s.api.split('\n');
+    tx(alines[0],s.x+49,s.y+54,{sz:7,c:P.muted});
+    if(alines[1])tx(alines[1],s.x+49,s.y+68,{sz:7,c:P.muted});
+    if(i<steps.length-1){arr(s.x+98,s.y+44,s.x+106,s.y+44,s.col,1.5,sa,5);}
+    g.restore();
+  }
+
+  // clFinish step below
+  g.save();g.globalAlpha*=a5;
+  rr(554,168,98,50,6,P.bg3,P.purple,1.8);
+  tx('clFinish',603,186,{sz:9,c:P.purple,w:'bold'});
+  tx('동기화 완료',603,202,{sz:7,c:P.muted});
+  arr(603,153,603,166,P.purple,1.5,a5,5);
+  g.restore();
+
+  // saxpy summary box
+  g.save();g.globalAlpha*=a6;
+  rr(24,240,656,78,8,P.bg3,P.teal+'44',1);
+  tx('saxpy 실행 전체 흐름',350,260,{sz:11,c:P.teal,w:'bold'});
+  tx('Platform/Device 선택 → Context+Queue → Buffer 생성 및 데이터 복사 → Program 컴파일',350,280,{sz:9,c:P.txt});
+  tx('→ Kernel 생성 → SetKernelArg (번호로 직접!) → NDRangeKernel Enqueue → clFinish → ReadBuffer',350,298,{sz:9,c:P.txt});
+  g.restore();
+
+  // Release note
+  g.save();g.globalAlpha*=a6;
+  rr(24,334,656,40,6,P.bg3,P.muted+'44',1);
+  tx('★ 사용 후: clReleaseKernel / clReleaseProgram / clReleaseMemObject / clReleaseCommandQueue / clReleaseContext',350,354,{sz:8,c:P.muted});
+  g.restore();
+}
+
+function drawS10(t){
+  // OpenCL vs Vulkan comparison
+  var a1=eO(wn(t,0,0.14)),aL=eO(wn(t,0.12,0.30)),aR=eO(wn(t,0.28,0.46)),
+      a4=eO(wn(t,0.44,0.62)),a5=eO(wn(t,0.60,0.78)),a6=eO(wn(t,0.76,0.92));
+
+  tx('OpenCL vs Vulkan — 무엇이 다른가',350,28,{sz:14,c:P.teal,w:'bold',a:a1});
+
+  // Left: OpenCL
+  g.save();g.globalAlpha*=aL;
+  rr(22,48,314,250,8,P.bg2,P.teal,1.8);
+  tx('OpenCL',179,68,{sz:13,c:P.teal,w:'bold'});
+  tx('(간결함)',179,86,{sz:9,c:P.muted});
+  var oclSteps=[
+    {s:'clCreateBuffer',c:P.xBuf},
+    {s:'clCreateKernel',c:P.orange},
+    {s:'clSetKernelArg(k, 0, ..., &x_buf)',c:P.teal},
+    {s:'clSetKernelArg(k, 1, ..., &y_buf)',c:P.teal},
+    {s:'clSetKernelArg(k, 2, ..., &out)',c:P.teal},
+    {s:'clEnqueueNDRangeKernel(...)',c:P.green},
+  ];
+  for(var i=0;i<oclSteps.length;i++){
+    rr(34,98+i*28,290,22,4,P.bg3,oclSteps[i].c+'66',1);
+    tx(oclSteps[i].s,179,109+i*28,{sz:8,c:oclSteps[i].c});
+  }
+  tx('6 steps',179,280,{sz:11,c:P.teal,w:'bold'});
+  g.restore();
+
+  // Right: Vulkan
+  g.save();g.globalAlpha*=aR;
+  rr(364,48,314,250,8,P.bg2,P.blue,1.8);
+  tx('Vulkan',521,68,{sz:13,c:P.blue,w:'bold'});
+  tx('(세밀한 제어)',521,86,{sz:9,c:P.muted});
+  var vkSteps=[
+    {s:'vkCreateBuffer + allocateMemory',c:P.xBuf},
+    {s:'vkCreateDescriptorSetLayout',c:P.blue},
+    {s:'vkAllocateDescriptorSets',c:P.blue},
+    {s:'vkUpdateDescriptorSets',c:P.blue},
+    {s:'vkCreateComputePipeline',c:P.purple},
+    {s:'vkCmdBindDescriptorSets + Dispatch',c:P.green},
+  ];
+  for(var j=0;j<vkSteps.length;j++){
+    rr(376,98+j*28,290,22,4,P.bg3,vkSteps[j].c+'66',1);
+    tx(vkSteps[j].s,521,109+j*28,{sz:8,c:vkSteps[j].c});
+  }
+  tx('많은 steps + 더 많은 코드',521,280,{sz:10,c:P.blue,w:'bold'});
+  g.restore();
+
+  // Arrow + vs
+  g.save();g.globalAlpha*=a4;
+  tx('vs',350,172,{sz:18,c:P.yellow,w:'bold'});
+  g.restore();
+
+  // Summary comparison
+  g.save();g.globalAlpha*=a5;
+  rr(22,310,314,66,6,P.bg3,P.teal+'44',1);
+  tx('✓ 빠른 프로토타입',179,328,{sz:10,c:P.teal,w:'bold'});
+  tx('✓ 이식성 (CPU/GPU/FPGA)',179,346,{sz:9,c:P.txt});
+  tx('✗ 낮은 수준 제어 어려움',179,362,{sz:9,c:P.muted});
+  g.restore();
+
+  g.save();g.globalAlpha*=a6;
+  rr(364,310,314,66,6,P.bg3,P.blue+'44',1);
+  tx('✓ 낮은 수준 GPU 제어',521,328,{sz:10,c:P.blue,w:'bold'});
+  tx('✓ 최적 성능 가능',521,346,{sz:9,c:P.txt});
+  tx('✗ 더 많은 보일러플레이트',521,362,{sz:9,c:P.muted});
+  g.restore();
+}
+
+function drawS11(t){
+  // Full mapping table
+  var a1=eO(wn(t,0,0.12)),a2=eO(wn(t,0.10,0.30));
+  var rowA=[];
+  for(var i=0;i<11;i++) rowA.push(eO(wn(t,(0.1+i*0.07),(0.28+i*0.07))));
+
+  tx('전체 OpenCL 비유 ↔ API 매핑',350,24,{sz:13,c:P.teal,w:'bold',a:a1});
+
+  var rows=[
+    ['배달 회사 선택','clGetPlatformIDs','어느 드라이버/벤더를 쓸지 선택'],
+    ['특정 공장(GPU)','clGetDeviceIDs','실제 장치 핸들 획득'],
+    ['계약서','clCreateContext','장치와의 작업 공간 계약'],
+    ['주문 창구','clCreateCommandQueue','GPU에 명령 보내는 큐'],
+    ['창고 예약','clCreateBuffer','GPU 메모리 공간 할당'],
+    ['짐 배달','clEnqueueWriteBuffer','CPU→GPU 데이터 전송'],
+    ['작업 레시피 컴파일','clBuildProgram','커널 소스 → GPU 바이너리'],
+    ['레시피 핸들','clCreateKernel','실행 가능한 함수 오브젝트'],
+    ['재료 번호로 꽂기','clSetKernelArg','인자를 번호 index로 직접 바인딩'],
+    ['작업 범위 정하기','clEnqueueNDRangeKernel','실행 명령을 큐에 등록'],
+    ['완료 대기','clFinish','모든 큐 명령 완료까지 CPU 블로킹'],
+  ];
+
+  var cols=[['비유',130,P.muted],['OpenCL API',220,P.teal],['설명',270,P.txt]];
+  var hx=[26,158,390];
+  // header
+  g.save();g.globalAlpha*=a2;
+  rr(22,38,656,20,4,P.bg4,'',0);
+  for(var c=0;c<cols.length;c++){
+    tx(cols[c][0],hx[c]+cols[c][1]/2,48,{sz:9,c:cols[c][2],w:'bold',al:'center'});
+  }
+  g.restore();
+
+  for(var ri=0;ri<rows.length;ri++){
+    var ra=rowA[ri],row=rows[ri];
+    var ry=58+ri*29;
+    var isKey=(ri===8); // clSetKernelArg
+    g.save();g.globalAlpha*=ra;
+    rr(22,ry,656,26,3,isKey?P.teal+'18':P.bg3,isKey?P.teal+'55':P.dim,isKey?1.5:1);
+    tx(row[0],hx[0]+cols[0][1]/2,ry+13,{sz:8,c:isKey?P.yellow:P.muted,w:isKey?'bold':'normal',al:'center'});
+    tx(row[1],hx[1]+cols[1][1]/2,ry+13,{sz:8,c:isKey?P.teal:P.teal,w:isKey?'bold':'normal',al:'center'});
+    tx(row[2],hx[2]+30,ry+13,{sz:8,c:isKey?P.txt:P.muted,al:'left'});
+    g.restore();
+  }
+
+  // bottom note
+  tx('clSetKernelArg ← 노란색 강조: Vulkan의 descriptor set 바인딩 전체를 대체하는 핵심 API',350,382,{sz:8.5,c:P.yellow,a:eO(wn(t,0.85,1.0))});
+}
+
+/* ── SCENES ── */
+var SCENES=[
+  {act:'1막 — 주문 이야기',title:'오늘 할 일 — saxpy GPU 계산',concept:'y[i] = a × x[i] + y[i], float 1,000,000개',dur:4500,draw:drawS0},
+  {act:'1막 — 주문 이야기',title:'어느 공장을 쓸까? — Platform & Device 선택',concept:'clGetPlatformIDs → clGetDeviceIDs',dur:5000,draw:drawS1},
+  {act:'1막 — 주문 이야기',title:'계약서 + 주문 창구 — Context & Command Queue',concept:'clCreateContext → clCreateCommandQueue',dur:5500,draw:drawS2},
+  {act:'1막 — 주문 이야기',title:'창고 예약 + 짐 배달 — cl_mem 버퍼',concept:'clCreateBuffer → clEnqueueWriteBuffer',dur:5500,draw:drawS3},
+  {act:'1막 — 주문 이야기',title:'작업 레시피 준비 — Program 컴파일',concept:'clCreateProgramWithSource → clBuildProgram → clCreateKernel',dur:5000,draw:drawS4},
+  {act:'1막 — 주문 이야기',title:'레시피에 재료 꽂기 — clSetKernelArg ★',concept:'번호로 직접! arg0=x_buf, arg1=y_buf, arg2=out, arg3=a',dur:6000,draw:drawS5},
+  {act:'1막 — 주문 이야기',title:'몇 명이 나눠서? — NDRange 설정',concept:'global=1,000,000 / local=64 → 15,625 work-groups',dur:5500,draw:drawS6},
+  {act:'1막 — 주문 이야기',title:'주문서에 등록! — clEnqueueNDRangeKernel',concept:'Command Queue에 실행 명령 기록 → GPU 제출',dur:5500,draw:drawS7},
+  {act:'1막 — 주문 이야기',title:'GPU 병렬 처리 + 결과 수령',concept:'64 work-items 동시 실행 → ReadBuffer → clFinish',dur:6000,draw:drawS8},
+  {act:'2막 — OpenCL 언어로',title:'지금까지 본 것을 API 이름으로 다시',concept:'배달 비유 → OpenCL API 이름 레이블',dur:5500,draw:drawS9},
+  {act:'2막 — OpenCL 언어로',title:'OpenCL vs Vulkan — 무엇이 다른가',concept:'clSetKernelArg(직접) vs DSL→DS→bind(단계적)',dur:6000,draw:drawS10},
+  {act:'2막 — OpenCL 언어로',title:'전체 OpenCL API 흐름 매핑',concept:'비유 ↔ API 이름 ↔ 한줄 설명',dur:6000,draw:drawS11},
+];
+
+/* ── animation engine ── */
+var curIdx=0,sceneStart=0,paused=false,raf=null;
+
+function buildDots(){
+  dotsEl.innerHTML='';
+  SCENES.forEach(function(_,i){
+    var d=document.createElement('span');
+    d.className='oclbp-dot'+(i===0?' active':'');
+    d.addEventListener('click',function(){jumpTo(i);});
+    dotsEl.appendChild(d);
+  });
+}
+buildDots();
+
+function updateUI(idx){
+  var sc=SCENES[idx];
+  actEl.textContent=sc.act;
+  snEl.textContent=(idx+1)+'/'+SCENES.length;
+  stEl.textContent=sc.title;
+  coEl.textContent=sc.concept;
+  prevB.disabled=idx===0;
+  nextB.disabled=idx===SCENES.length-1;
+  var dots=dotsEl.querySelectorAll('.oclbp-dot');
+  dots.forEach(function(d,i){d.className='oclbp-dot'+(i===idx?' active':'');});
+}
+updateUI(0);
+
+function jumpTo(idx){
+  idx=Math.max(0,Math.min(SCENES.length-1,idx));
+  curIdx=idx;sceneStart=performance.now();
+  updateUI(idx);
+}
+
+prevB.addEventListener('click',function(){jumpTo(curIdx-1);});
+nextB.addEventListener('click',function(){jumpTo(curIdx+1);});
+
+function loop(now){
+  raf=requestAnimationFrame(loop);
+  var sc=SCENES[curIdx];
+  var t=Math.min(1,(now-sceneStart)/sc.dur);
+  g.clearRect(0,0,W,H);
+  g.fillStyle=P.bg;g.fillRect(0,0,W,H);
+  sc.draw(t);
+  if(t>=1&&!paused&&curIdx<SCENES.length-1){
+    jumpTo(curIdx+1);
+  }
+}
+sceneStart=performance.now();
+raf=requestAnimationFrame(loop);
+
+// Touch swipe
+var touchStartX=0;
+cv.addEventListener('touchstart',function(e){touchStartX=e.touches[0].clientX;},{passive:true});
+cv.addEventListener('touchend',function(e){
+  var dx=e.changedTouches[0].clientX-touchStartX;
+  if(Math.abs(dx)>40){jumpTo(curIdx+(dx<0?1:-1));}
+},{passive:true});
+
+// Cleanup
+if(typeof MutationObserver!=='undefined'){
+  new MutationObserver(function(ms){
+    ms.forEach(function(m){
+      m.removedNodes.forEach(function(n){
+        if(n===root||n.contains&&n.contains(root)){
+          cancelAnimationFrame(raf);
+          window.removeEventListener('resize',resizeCanvas);
+        }
+      });
+    });
+  }).observe(document.body,{childList:true,subtree:true});
+}
+
+})();
+</script>

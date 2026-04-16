@@ -1,0 +1,844 @@
+{{- $id := printf "ocl2vk-%d" now.UnixNano -}}
+<style>
+.ocl2vk-wrap{max-width:720px;margin:2rem auto;font-family:'Segoe UI',system-ui,sans-serif;}
+.ocl2vk-mobile-hint{display:none;background:#161224;border:1px solid #b39ddb55;border-radius:6px;padding:7px 12px;font-size:11px;color:#b39ddb;margin-bottom:6px;text-align:center;}
+@media(max-width:700px){.ocl2vk-mobile-hint{display:block;}}
+.ocl2vk-hdr{background:#131020;border-radius:8px 8px 0 0;padding:6px 12px;display:flex;align-items:center;gap:8px;}
+.ocl2vk-act{font-size:10px;background:#201a38;color:#b39ddb;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+.ocl2vk-snum{font-size:10px;color:#e0b0ff;font-weight:bold;min-width:44px;}
+.ocl2vk-stitle{font-size:12px;color:#c8d0de;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ocl2vk-cv-wrap{overflow:hidden;line-height:0;background:#0d0b18;}
+canvas.ocl2vk-cv{display:block;}
+.ocl2vk-foot{background:#131020;border-radius:0 0 8px 8px;padding:7px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.ocl2vk-concept{font-size:11px;color:#b39ddb;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ocl2vk-nav{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.ocl2vk-btn{background:#161224;border:1px solid #2a1e4a;color:#b39ddb;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px;}
+.ocl2vk-btn:hover:not(:disabled){background:#201a38;}
+.ocl2vk-btn:disabled{opacity:.4;cursor:default;}
+.ocl2vk-dots{display:flex;gap:4px;align-items:center;}
+.ocl2vk-dot{width:7px;height:7px;border-radius:50%;background:#2a1e4a;cursor:pointer;transition:background .2s,transform .2s;}
+.ocl2vk-dot.active{background:#b39ddb;transform:scale(1.3);}
+</style>
+
+<div id="{{ $id }}" class="ocl2vk-wrap">
+  <div class="ocl2vk-mobile-hint">📱 가로 화면이나 PC에서 더 잘 보입니다 — 터치로 장면 이동 가능</div>
+  <div class="ocl2vk-hdr">
+    <span class="ocl2vk-act"></span>
+    <span class="ocl2vk-snum"></span>
+    <span class="ocl2vk-stitle"></span>
+  </div>
+  <div class="ocl2vk-cv-wrap"><canvas class="ocl2vk-cv"></canvas></div>
+  <div class="ocl2vk-foot">
+    <div class="ocl2vk-concept"></div>
+    <div class="ocl2vk-nav">
+      <button class="ocl2vk-btn ocl2vk-prev">◀</button>
+      <div class="ocl2vk-dots"></div>
+      <button class="ocl2vk-btn ocl2vk-next">▶</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var root=document.getElementById('{{ $id }}');
+if(!root)return;
+var wrap=root.querySelector('.ocl2vk-cv-wrap');
+var cv=root.querySelector('.ocl2vk-cv');
+var g=cv.getContext('2d');
+var actEl=root.querySelector('.ocl2vk-act');
+var snEl=root.querySelector('.ocl2vk-snum');
+var stEl=root.querySelector('.ocl2vk-stitle');
+var coEl=root.querySelector('.ocl2vk-concept');
+var prevB=root.querySelector('.ocl2vk-prev');
+var nextB=root.querySelector('.ocl2vk-next');
+var dotsEl=root.querySelector('.ocl2vk-dots');
+
+var W=700,H=390;
+var dpr=Math.min(window.devicePixelRatio||1,2);
+function resizeCanvas(){
+  var cw=root.offsetWidth||W;
+  var sc=Math.min(1,cw/W);
+  var dw=Math.round(W*sc),dh=Math.round(H*sc);
+  cv.width=W*dpr;cv.height=H*dpr;
+  cv.style.width=dw+'px';cv.style.height=dh+'px';
+  wrap.style.height=dh+'px';
+  g.setTransform(1,0,0,1,0,0);g.scale(dpr,dpr);
+}
+resizeCanvas();
+window.addEventListener('resize',resizeCanvas);
+
+/* palette */
+var P={
+  bg:'#0d0b18',bg2:'#131020',bg3:'#1a1530',bg4:'#221d40',
+  /* OpenCL = teal */
+  ocl:'#00c9a7',oclD:'#007a64',ocl2:'#7ee0c6',
+  /* SPIR-V / clspv = orange/yellow */
+  spv:'#f4a261',spvD:'#b06020',spv2:'#ffd166',
+  /* Vulkan = blue */
+  vk:'#8ab4ff',vkD:'#4a72cc',vk2:'#b39ddb',
+  /* buffer colors */
+  xc:'#8ab4ff',yc:'#7ee0c6',oc:'#f4a261',ac:'#ffd166',
+  txt:'#e8eaed',muted:'#7a7a9a',dim:'#221d40',
+  green:'#7ee0c6',red:'#ff6b6b',yellow:'#ffd166',purple:'#b39ddb',
+};
+
+/* helpers */
+function cl(v,lo,hi){lo=lo===undefined?0:lo;hi=hi===undefined?1:hi;return Math.max(lo,Math.min(hi,v));}
+function eO(t){t=cl(t);return 1-(1-t)*(1-t)*(1-t);}
+function eIO(t){t=cl(t);return t<0.5?4*t*t*t:(t-1)*(2*t-2)*(2*t-2)+1;}
+function wn(t,s,e){return cl((t-s)/(e-s));}
+function lp(a,b,t){return a+(b-a)*t;}
+
+function rr(x,y,w,h,r,fill,stroke,sw){
+  g.beginPath();
+  if(g.roundRect){g.roundRect(x,y,w,h,r);}
+  else{
+    r=Math.min(r,w/2,h/2);
+    g.moveTo(x+r,y);g.lineTo(x+w-r,y);g.arcTo(x+w,y,x+w,y+r,r);
+    g.lineTo(x+w,y+h-r);g.arcTo(x+w,y+h,x+w-r,y+h,r);
+    g.lineTo(x+r,y+h);g.arcTo(x,y+h,x,y+h-r,r);
+    g.lineTo(x,y+r);g.arcTo(x,y,x+r,y,r);g.closePath();
+  }
+  if(fill){g.fillStyle=fill;g.fill();}
+  if(stroke&&sw){g.strokeStyle=stroke;g.lineWidth=sw;g.stroke();}
+}
+
+function tx(s,x,y,opt){
+  opt=opt||{};
+  var sz=opt.sz||12,c=opt.c||P.txt,a=opt.a===undefined?1:opt.a,
+      al=opt.al||'center',w=opt.w||'normal';
+  g.save();g.globalAlpha*=a;
+  g.fillStyle=c;g.font=w+' '+sz+'px "Segoe UI",system-ui,sans-serif';
+  g.textAlign=al;g.textBaseline='middle';
+  g.fillText(s,x,y);
+  g.restore();
+}
+
+function arr(x1,y1,x2,y2,col,lw,a,hs){
+  a=a===undefined?1:a;lw=lw||1.5;hs=hs||7;
+  g.save();g.globalAlpha*=a;
+  var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+  if(len<1){g.restore();return;}
+  var ux=dx/len,uy=dy/len;
+  g.strokeStyle=col;g.lineWidth=lw;g.lineCap='round';
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-ux*hs*0.5,y2-uy*hs*0.5);g.stroke();
+  g.fillStyle=col;g.beginPath();
+  g.moveTo(x2,y2);
+  g.lineTo(x2-ux*hs-uy*hs*0.4,y2-uy*hs+ux*hs*0.4);
+  g.lineTo(x2-ux*hs+uy*hs*0.4,y2-uy*hs-ux*hs*0.4);
+  g.closePath();g.fill();
+  g.restore();
+}
+
+/* column headers */
+function drawColHeaders(aL,aM,aR){
+  g.save();g.globalAlpha*=Math.max(aL,aM,aR);
+  rr(22,38,196,24,4,P.ocl+'22','',0);
+  rr(252,38,196,24,4,P.spv+'22','',0);
+  rr(482,38,196,24,4,P.vk+'22','',0);
+  g.restore();
+  tx('OpenCL',120,50,{sz:10,c:P.ocl,w:'bold',a:aL});
+  tx('clspv / SPIR-V',350,50,{sz:10,c:P.spv,w:'bold',a:aM});
+  tx('Vulkan',580,50,{sz:10,c:P.vk,w:'bold',a:aR});
+  // dividers
+  g.save();g.globalAlpha*=Math.max(aL,aM,aR)*0.3;
+  g.strokeStyle=P.muted;g.lineWidth=1;g.setLineDash([3,4]);
+  g.beginPath();g.moveTo(248,32);g.lineTo(248,390);g.stroke();
+  g.beginPath();g.moveTo(478,32);g.lineTo(478,390);g.stroke();
+  g.setLineDash([]);
+  g.restore();
+}
+
+function codeBox(x,y,w,h,lines,col,a){
+  a=a===undefined?1:a;
+  g.save();g.globalAlpha*=a;
+  rr(x,y,w,h,6,P.bg3,col+'66',1.2);
+  for(var i=0;i<lines.length;i++){
+    g.fillStyle=lines[i][1]||P.txt;
+    g.font='normal 9px "Consolas","Courier New",monospace';
+    g.textAlign='left';g.textBaseline='middle';
+    g.fillText(lines[i][0],x+8,y+12+i*14);
+  }
+  g.restore();
+}
+
+/* ── SCENE FUNCTIONS ── */
+
+function drawS0(t){
+  /* Two worlds: same saxpy, different API */
+  var a1=eO(wn(t,0,0.2)),aL=eO(wn(t,0.18,0.38)),aM=eO(wn(t,0.36,0.54)),aR=eO(wn(t,0.52,0.70)),a5=eO(wn(t,0.68,0.85));
+
+  tx('같은 saxpy — 두 가지 다른 언어',350,22,{sz:14,c:P.purple,w:'bold',a:a1});
+
+  /* OpenCL side */
+  g.save();g.globalAlpha*=aL;
+  rr(22,36,208,310,8,P.bg2,P.ocl,1.8);
+  tx('OpenCL',126,56,{sz:12,c:P.ocl,w:'bold'});
+  codeBox(32,70,188,200,[
+    ['__kernel void saxpy(',P.txt],
+    ['  __global float* x,',P.xc],
+    ['  __global float* y,',P.yc],
+    ['  __global float* out,',P.oc],
+    ['  float a) {',P.ac],
+    ['  int i=get_global_id(0);',P.ocl2],
+    ['  out[i]=a*x[i]+y[i];',P.ocl2],
+    ['}',P.txt],
+  ],P.ocl,1);
+  codeBox(32,278,188,58,[
+    ['clSetKernelArg(k,0,&x_buf);',P.ocl],
+    ['clSetKernelArg(k,1,&y_buf);',P.ocl],
+    ['clSetKernelArg(k,2,&out_buf);',P.ocl],
+  ],P.ocl,1);
+  g.restore();
+
+  /* clspv arrow center */
+  g.save();g.globalAlpha*=aM;
+  rr(252,155,196,60,10,P.bg3,P.spv,2);
+  tx('clspv',350,172,{sz:13,c:P.spv,w:'bold'});
+  tx('"번역기"',350,190,{sz:9,c:P.muted});
+  arr(232,185,250,185,P.spv,2.5,aM,9);
+  arr(450,185,470,185,P.spv,2.5,aM,9);
+  g.restore();
+
+  /* Vulkan side */
+  g.save();g.globalAlpha*=aR;
+  rr(470,36,208,310,8,P.bg2,P.vk,1.8);
+  tx('Vulkan',574,56,{sz:12,c:P.vk,w:'bold'});
+  codeBox(480,70,188,120,[
+    ['VkDescriptorSetLayout dsl;',P.vk],
+    ['VkDescriptorSet ds;',P.vk],
+    ['VkPipelineLayout layout;',P.vk2],
+    ['VkPipeline pipeline;',P.vk2],
+    ['// ...많은 설정...', P.muted],
+  ],P.vk,1);
+  codeBox(480,200,188,80,[
+    ['vkCmdBindPipeline(...);',P.vk],
+    ['vkCmdBindDescriptorSets(...);',P.vk],
+    ['vkCmdDispatch(15625,1,1);',P.vk],
+  ],P.vk,1);
+  codeBox(480,290,188,46,[
+    ['vkUpdateDescriptorSets(...);',P.vk2],
+    ['// 총 ~150줄',P.muted],
+  ],P.vk,1);
+  g.restore();
+
+  tx('clspv가 OpenCL 커널을 Vulkan이 쓸 수 있는 SPIR-V로 변환',350,364,{sz:10,c:P.yellow,a:a5});
+}
+
+function drawS1(t){
+  /* clspv 컴파일러 내부 */
+  var a1=eO(wn(t,0,0.18)),a2=eO(wn(t,0.16,0.34)),a3=eO(wn(t,0.32,0.50)),
+      a4=eO(wn(t,0.48,0.65)),a5=eO(wn(t,0.63,0.80));
+
+  tx('clspv — OpenCL C를 SPIR-V로 변환하는 컴파일러',350,22,{sz:13,c:P.spv,w:'bold',a:a1});
+
+  /* input: .cl file */
+  g.save();g.globalAlpha*=a2;
+  rr(22,50,180,120,8,P.bg3,P.ocl,1.5);
+  tx('saxpy.cl',112,70,{sz:11,c:P.ocl,w:'bold'});
+  codeBox(32,84,160,76,[
+    ['__kernel void saxpy(',P.txt],
+    ['  __global float* x, // arg0',P.xc],
+    ['  __global float* y, // arg1',P.yc],
+    ['  __global float* out,// arg2',P.oc],
+    ['  float a) { ... }   // arg3',P.ac],
+  ],P.ocl,1);
+  g.restore();
+
+  /* compile arrow + gear */
+  var gA=wn(t,0.34,0.70);
+  if(gA>0){
+    var ea=eO(gA);
+    arr(204,110,248,110,P.spv,2.5,ea,9);
+    g.save();g.globalAlpha*=ea;
+    g.translate(270,110);g.rotate(gA*Math.PI*6);
+    g.fillStyle=P.spv+'88';
+    for(var i=0;i<6;i++){g.save();g.rotate(i*Math.PI/3);g.fillRect(-3,18,6,10);g.restore();}
+    g.beginPath();g.arc(0,0,18,0,Math.PI*2);g.fillStyle=P.spv;g.fill();
+    g.beginPath();g.arc(0,0,8,0,Math.PI*2);g.fillStyle=P.bg;g.fill();
+    g.restore();
+    tx('clspv',270,140,{sz:9,c:P.spv,w:'bold',a:ea});
+  }
+
+  /* output: .spv */
+  g.save();g.globalAlpha*=a4;
+  rr(294,50,200,190,8,P.bg3,P.spv,1.8);
+  tx('saxpy.spv (SPIR-V)',394,70,{sz:10,c:P.spv,w:'bold'});
+  codeBox(304,84,180,148,[
+    ['; arg0 → binding=0',P.xc],
+    ['OpDecorate %x DescriptorSet 0',P.xc],
+    ['OpDecorate %x Binding 0',P.xc],
+    ['; arg1 → binding=1',P.yc],
+    ['OpDecorate %y DescriptorSet 0',P.yc],
+    ['OpDecorate %y Binding 1',P.yc],
+    ['; arg2 → binding=2',P.oc],
+    ['OpDecorate %out DescriptorSet 0',P.oc],
+    ['OpDecorate %out Binding 2',P.oc],
+    ['; arg3 → PushConstant',P.ac],
+    ['OpDecorate %a PushConstant',P.ac],
+  ],P.spv,1);
+  g.restore();
+
+  /* Vulkan reads SPIR-V */
+  arr(496,145,548,145,P.vk,2,a5,8);
+  g.save();g.globalAlpha*=a5;
+  rr(550,110,132,70,8,P.bg3,P.vk,1.5);
+  tx('Vulkan',616,130,{sz:10,c:P.vk,w:'bold'});
+  tx('SPIR-V reflection으로',616,148,{sz:8,c:P.muted});
+  tx('DSL 자동 구성',616,162,{sz:8,c:P.vk});
+  g.restore();
+
+  /* bottom note */
+  g.save();g.globalAlpha*=a5;
+  rr(22,256,656,56,8,P.bg3,P.spv+'44',1);
+  tx('SPIR-V decoration = "이 변수는 set 0 binding 0 번 슬롯에 있어요" 라는 주소 레이블',350,276,{sz:10,c:P.spv,w:'bold'});
+  tx('Vulkan 드라이버가 이 레이블을 읽어서 DSL을 구성하는 데 사용',350,296,{sz:9,c:P.txt});
+  g.restore();
+
+  tx('clspv --cl-std=CL2.0 saxpy.cl -o saxpy.spv',350,334,{sz:9,c:P.muted,a:a5});
+}
+
+function drawS2(t){
+  /* arg0~3 → SPIR-V decoration 1:1 매핑 */
+  var a1=eO(wn(t,0,0.15));
+  drawColHeaders(a1,a1,a1);
+
+  var rows=[
+    {arg:'arg0  __global float* x', dec:'OpDecorate %x  DescriptorSet 0\nOpDecorate %x  Binding 0', vk:'binding=0\nSTORAGE_BUFFER', colL:P.xc, colM:P.xc, colR:P.xc},
+    {arg:'arg1  __global float* y', dec:'OpDecorate %y  DescriptorSet 0\nOpDecorate %y  Binding 1', vk:'binding=1\nSTORAGE_BUFFER', colL:P.yc, colM:P.yc, colR:P.yc},
+    {arg:'arg2  __global float* out',dec:'OpDecorate %out DescriptorSet 0\nOpDecorate %out Binding 2',vk:'binding=2\nSTORAGE_BUFFER', colL:P.oc, colM:P.oc, colR:P.oc},
+    {arg:'arg3  const float a',      dec:'OpDecorate %a  PushConstant',                              vk:'PushConstantRange\noffset=0 size=4', colL:P.ac, colM:P.ac, colR:P.ac},
+  ];
+
+  var rowAs=[eO(wn(t,0.15,0.32)),eO(wn(t,0.30,0.47)),eO(wn(t,0.45,0.62)),eO(wn(t,0.60,0.77))];
+  var a5=eO(wn(t,0.75,0.90));
+
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i],ra=rowAs[i],ry=72+i*72;
+    // left: OpenCL arg
+    g.save();g.globalAlpha*=ra;
+    rr(24,ry,198,58,6,P.bg3,r.colL+'88',1.5);
+    tx(r.arg.split('  ')[0],123,ry+14,{sz:8,c:P.muted,al:'center'});
+    tx(r.arg.split('  ')[1]||'',123,ry+30,{sz:9,c:r.colL,w:'bold',al:'center'});
+    if(r.arg.split('  ')[2])tx(r.arg.split('  ')[2],123,ry+46,{sz:8,c:r.colL,al:'center'});
+    // arrow
+    arr(222,ry+28,252,ry+28,r.colM,1.5,ra,6);
+    // center: SPIR-V
+    rr(254,ry,198,58,6,P.bg3,r.colM+'88',1.5);
+    var dlines=r.dec.split('\n');
+    tx(dlines[0],353,ry+(dlines.length>1?18:28),{sz:7.5,c:r.colM,al:'center'});
+    if(dlines[1])tx(dlines[1],353,ry+38,{sz:7.5,c:r.colM,al:'center'});
+    // arrow
+    arr(452,ry+28,482,ry+28,r.colR,1.5,ra,6);
+    // right: Vulkan
+    rr(484,ry,198,58,6,P.bg3,r.colR+'88',1.5);
+    var vlines=r.vk.split('\n');
+    tx(vlines[0],583,ry+(vlines.length>1?18:28),{sz:9,c:r.colR,w:'bold',al:'center'});
+    if(vlines[1])tx(vlines[1],583,ry+38,{sz:8,c:P.muted,al:'center'});
+    g.restore();
+  }
+
+  g.save();g.globalAlpha*=a5;
+  rr(24,362,656,22,6,P.bg3,P.yellow+'44',1);
+  tx('★ __global 포인터 → StorageBuffer descriptor   |   스칼라 → PushConstant  (clspv 기본 규칙)',350,373,{sz:9,c:P.yellow});
+  g.restore();
+}
+
+function drawS3(t){
+  /* SPIR-V decoration → VkDescriptorSetLayoutBinding */
+  var a1=eO(wn(t,0,0.18)),a2=eO(wn(t,0.16,0.34)),a3=eO(wn(t,0.32,0.50)),a4=eO(wn(t,0.48,0.66)),a5=eO(wn(t,0.64,0.80));
+
+  tx('SPIR-V decoration → VkDescriptorSetLayoutBinding',350,22,{sz:12,c:P.spv,w:'bold',a:a1});
+
+  /* SPIR-V box */
+  g.save();g.globalAlpha*=a2;
+  rr(22,38,240,230,8,P.bg3,P.spv,1.5);
+  tx('SPIR-V (clspv 출력)',142,58,{sz:9,c:P.spv,w:'bold'});
+  codeBox(32,70,220,188,[
+    ['OpDecorate %x   DescriptorSet 0',P.xc],
+    ['OpDecorate %x   Binding 0',P.xc],
+    ['',P.muted],
+    ['OpDecorate %y   DescriptorSet 0',P.yc],
+    ['OpDecorate %y   Binding 1',P.yc],
+    ['',P.muted],
+    ['OpDecorate %out DescriptorSet 0',P.oc],
+    ['OpDecorate %out Binding 2',P.oc],
+    ['',P.muted],
+    ['OpTypePointer StorageBuffer',P.xc],
+    ['OpTypePointer StorageBuffer',P.yc],
+    ['OpTypePointer StorageBuffer',P.oc],
+  ],P.spv,1);
+  g.restore();
+
+  /* arrow */
+  arr(264,152,298,152,P.purple,2.5,a3,9);
+  tx('Vulkan\nreflection',281,138,{sz:8,c:P.purple,a:a3});
+
+  /* VkDescriptorSetLayoutBinding */
+  g.save();g.globalAlpha*=a4;
+  rr(300,38,230,230,8,P.bg3,P.vk,1.5);
+  tx('VkDescriptorSetLayoutBinding[]',415,58,{sz:8.5,c:P.vk,w:'bold'});
+  var binds=[
+    {b:'binding=0',t:'STORAGE_BUFFER',s:'COMPUTE',c:P.xc},
+    {b:'binding=1',t:'STORAGE_BUFFER',s:'COMPUTE',c:P.yc},
+    {b:'binding=2',t:'STORAGE_BUFFER',s:'COMPUTE',c:P.oc},
+  ];
+  for(var i=0;i<binds.length;i++){
+    var by=74+i*60;
+    rr(310,by,210,52,4,P.bg4,binds[i].c+'88',1.2);
+    tx('{ .binding='+i,415,by+12,{sz:8,c:binds[i].c,al:'center'});
+    tx('.descriptorType='+binds[i].t,415,by+26,{sz:7,c:P.muted,al:'center'});
+    tx('.stageFlags='+binds[i].s+' }',415,by+40,{sz:7,c:P.muted,al:'center'});
+  }
+  g.restore();
+
+  /* vkCreateDescriptorSetLayout */
+  arr(415,272,415,296,P.vk,2,a4,7);
+  g.save();g.globalAlpha*=a5;
+  rr(300,298,230,50,6,P.bg3,P.vk,2);
+  tx('VkDescriptorSetLayout',415,316,{sz:9,c:P.vk,w:'bold'});
+  tx('vkCreateDescriptorSetLayout(...)',415,334,{sz:8,c:P.muted});
+  g.restore();
+
+  /* right side note */
+  g.save();g.globalAlpha*=a5;
+  rr(544,38,138,310,8,P.bg3,P.vk+'44',1);
+  tx('Vulkan',613,60,{sz:10,c:P.vk,w:'bold'});
+  tx('호스트 코드',613,78,{sz:8,c:P.muted});
+  tx('VkDescriptorSetLayout',613,110,{sz:7,c:P.vk,al:'center'});
+  tx('↓',613,128,{sz:12,c:P.purple});
+  tx('VkPipelineLayout',613,148,{sz:7,c:P.vk,al:'center'});
+  tx('↓',613,166,{sz:12,c:P.purple});
+  tx('VkPipeline',613,186,{sz:7,c:P.vk,al:'center'});
+  tx('↓',613,204,{sz:12,c:P.purple});
+  tx('vkCmdBindDescriptorSets',613,224,{sz:7,c:P.vk2,al:'center'});
+  tx('↓',613,242,{sz:12,c:P.purple});
+  tx('vkCmdDispatch',613,262,{sz:7,c:P.vk,al:'center'});
+  tx('SPIR-V의',613,300,{sz:7.5,c:P.spv});
+  tx('decoration이',613,314,{sz:7.5,c:P.spv});
+  tx('모든 binding을',613,328,{sz:7.5,c:P.spv});
+  tx('정의함',613,342,{sz:7.5,c:P.spv});
+  g.restore();
+}
+
+function drawS4(t){
+  /* clSetKernelArg ↔ vkUpdateDescriptorSets + vkCmdBindDescriptorSets */
+  var a1=eO(wn(t,0,0.18));
+  drawColHeaders(a1,a1,a1);
+
+  var a2=eO(wn(t,0.16,0.34)),a3=eO(wn(t,0.32,0.50)),a4=eO(wn(t,0.48,0.65)),a5=eO(wn(t,0.63,0.80));
+
+  /* OpenCL: clSetKernelArg */
+  g.save();g.globalAlpha*=a2;
+  rr(24,66,198,200,8,P.bg3,P.ocl,1.5);
+  tx('리소스 바인딩',123,86,{sz:9,c:P.ocl,w:'bold'});
+  codeBox(34,100,178,156,[
+    ['clSetKernelArg(',P.ocl],
+    ['  k, 0,',P.ocl],
+    ['  sizeof(cl_mem),',P.ocl],
+    ['  &x_buf);',P.xc],
+    ['clSetKernelArg(',P.ocl],
+    ['  k, 1, sizeof(cl_mem),',P.ocl],
+    ['  &y_buf);',P.yc],
+    ['clSetKernelArg(',P.ocl],
+    ['  k, 2, sizeof(cl_mem),',P.ocl],
+    ['  &out_buf);',P.oc],
+  ],P.ocl,1);
+  g.restore();
+
+  /* Center: SPIR-V mapping hint */
+  g.save();g.globalAlpha*=a3;
+  rr(254,66,198,200,8,P.bg3,P.spv,1.2);
+  tx('바인딩 대응',353,86,{sz:9,c:P.spv,w:'bold'});
+  var rows=[{i:0,c:P.xc},{i:1,c:P.yc},{i:2,c:P.oc}];
+  for(var i=0;i<rows.length;i++){
+    var ry=106+i*54;
+    rr(264,ry,178,42,4,P.bg4,rows[i].c+'66',1);
+    tx('arg'+rows[i].i+' → set=0, binding='+rows[i].i,353,ry+12,{sz:8,c:rows[i].c,al:'center'});
+    tx('(clspv decoration)',353,ry+28,{sz:7,c:P.muted,al:'center'});
+  }
+  arr(222,138,252,138,P.spv,1.5,a3,6);
+  arr(452,138,482,138,P.spv,1.5,a4,6);
+  g.restore();
+
+  /* Vulkan: vkUpdateDescriptorSets + bind */
+  g.save();g.globalAlpha*=a4;
+  rr(484,66,198,200,8,P.bg3,P.vk,1.5);
+  tx('리소스 바인딩',583,86,{sz:9,c:P.vk,w:'bold'});
+  codeBox(494,100,178,156,[
+    ['VkWriteDescriptorSet ws[3];',P.vk],
+    ['ws[0]={.dstBinding=0,',P.xc],
+    ['  .pBufferInfo=&xInfo};',P.xc],
+    ['ws[1]={.dstBinding=1,',P.yc],
+    ['  .pBufferInfo=&yInfo};',P.yc],
+    ['ws[2]={.dstBinding=2,',P.oc],
+    ['  .pBufferInfo=&outInfo};',P.oc],
+    ['vkUpdateDescriptorSets(',P.vk],
+    ['  dev, 3, ws, 0, NULL);',P.vk],
+    ['vkCmdBindDescriptorSets(..);',P.vk2],
+  ],P.vk,1);
+  g.restore();
+
+  /* key insight */
+  g.save();g.globalAlpha*=a5;
+  rr(24,280,656,80,8,P.bg3,P.purple+'44',1);
+  tx('★ clSetKernelArg(k, 0, &x_buf)  ≡  vkUpdateDescriptorSets(dstBinding=0, &x_buf)',350,302,{sz:10,c:P.yellow,w:'bold'});
+  tx('하는 일은 같다 — "binding 0번 슬롯에 x 버퍼를 꽂아라"',350,322,{sz:9,c:P.txt});
+  tx('OpenCL은 단번에 / Vulkan은 DSL→DS→Write→Bind 4단계로 명시적으로',350,340,{sz:9,c:P.muted});
+  g.restore();
+}
+
+function drawS5(t){
+  /* NDRange ↔ vkCmdDispatch */
+  var a1=eO(wn(t,0,0.18));
+  drawColHeaders(a1,a1,a1);
+
+  var a2=eO(wn(t,0.16,0.34)),a3=eO(wn(t,0.32,0.50)),a4=eO(wn(t,0.48,0.66)),a5=eO(wn(t,0.64,0.82));
+
+  /* OpenCL NDRange */
+  g.save();g.globalAlpha*=a2;
+  rr(24,66,198,180,8,P.bg3,P.ocl,1.5);
+  tx('NDRange 실행',123,86,{sz:9,c:P.ocl,w:'bold'});
+  codeBox(34,100,178,136,[
+    ['size_t g = 1000000;',P.ocl2],
+    ['size_t l = 64;',P.green],
+    ['// work-groups = 15625',P.muted],
+    ['clEnqueueNDRangeKernel(',P.ocl],
+    ['  q, k,',P.ocl],
+    ['  1,         // dims',P.muted],
+    ['  NULL,      // offset',P.muted],
+    ['  &g, &l,   // sizes',P.ocl],
+    ['  0,NULL,NULL);',P.muted],
+  ],P.ocl,1);
+  g.restore();
+
+  /* center: 수식 */
+  g.save();g.globalAlpha*=a3;
+  rr(254,66,198,180,8,P.bg3,P.spv,1.2);
+  tx('변환 수식',353,86,{sz:9,c:P.spv,w:'bold'});
+  rr(264,106,178,50,6,P.bg4,P.ocl+'66',1);
+  tx('global_size = 1,000,000',353,120,{sz:8,c:P.ocl2,al:'center'});
+  tx('local_size  =       64',353,136,{sz:8,c:P.green,al:'center'});
+  arr(353,158,353,174,P.spv,2,a3,7);
+  rr(264,176,178,56,6,P.bg4,P.vk+'66',1);
+  tx('groupCountX = 1M ÷ 64',353,192,{sz:8,c:P.vk,al:'center'});
+  tx('           = 15,625',353,208,{sz:8,c:P.vk,w:'bold',al:'center'});
+  tx('groupY=1, groupZ=1',353,226,{sz:7,c:P.muted,al:'center'});
+  arr(222,156,252,156,P.spv,1.5,a3,6);
+  arr(452,156,482,156,P.spv,1.5,a4,6);
+  g.restore();
+
+  /* Vulkan dispatch */
+  g.save();g.globalAlpha*=a4;
+  rr(484,66,198,180,8,P.bg3,P.vk,1.5);
+  tx('Dispatch 실행',583,86,{sz:9,c:P.vk,w:'bold'});
+  codeBox(494,100,178,136,[
+    ['// work-group 수로 dispatch',P.muted],
+    ['vkCmdDispatch(',P.vk],
+    ['  cmd,',P.vk],
+    ['  1000000/64, // =15625',P.vk2],
+    ['  1,          // Y',P.muted],
+    ['  1);         // Z',P.muted],
+    ['// 커널 안:',P.muted],
+    ['// gl_GlobalInvocationID.x',P.vk],
+    ['// = 0 ~ 999,999',P.vk2],
+  ],P.vk,1);
+  g.restore();
+
+  /* comparison table */
+  g.save();g.globalAlpha*=a5;
+  rr(24,264,656,94,8,P.bg3,P.purple+'44',1);
+  tx('OpenCL                          SPIR-V                       Vulkan',350,282,{sz:9,c:P.purple,w:'bold'});
+  tx('get_global_id(0)          ≡    gl_GlobalInvocationID.x      (동일 개념)',350,302,{sz:9,c:P.txt});
+  tx('local_size=64 (work-group)≡    local_size_x=64 decoration   vkCmdDispatch의 groupCount',350,320,{sz:8.5,c:P.muted});
+  tx('NDRange 1D               ≡    1D dispatch                  groupCountX=N/local',350,340,{sz:8.5,c:P.muted});
+  g.restore();
+}
+
+function drawS6(t){
+  /* arg3 float a → PushConstant */
+  var a1=eO(wn(t,0,0.18));
+  drawColHeaders(a1,a1,a1);
+
+  var a2=eO(wn(t,0.16,0.34)),a3=eO(wn(t,0.32,0.50)),a4=eO(wn(t,0.48,0.66)),a5=eO(wn(t,0.64,0.82));
+
+  /* OpenCL side */
+  g.save();g.globalAlpha*=a2;
+  rr(24,66,198,170,8,P.bg3,P.ocl,1.5);
+  tx('스칼라 인자',123,86,{sz:9,c:P.ocl,w:'bold'});
+  codeBox(34,100,178,126,[
+    ['// arg3: const float a',P.ac],
+    ['// __global 포인터가 아님!',P.muted],
+    ['// → 작은 스칼라 값',P.muted],
+    ['',P.muted],
+    ['float a = 2.0f;',P.ac],
+    ['clSetKernelArg(',P.ocl],
+    ['  k, 3,',P.ocl],
+    ['  sizeof(float), &a);',P.ac],
+  ],P.ocl,1);
+  g.restore();
+
+  /* center: clspv detection */
+  g.save();g.globalAlpha*=a3;
+  rr(254,66,198,170,8,P.bg3,P.spv,1.5);
+  tx('clspv 판단',353,86,{sz:9,c:P.spv,w:'bold'});
+  rr(264,106,178,50,5,P.bg4,P.ac+'66',1);
+  tx('"__global 아님 + 작은 크기"',353,120,{sz:8,c:P.ac,al:'center'});
+  tx('→ PushConstant으로 매핑',353,136,{sz:8,c:P.spv,al:'center'});
+  arr(353,158,353,176,P.spv,2,a3,7);
+  codeBox(264,178,178,46,[
+    ['OpDecorate %a Block',P.ac],
+    ['OpDecorate %a PushConstant',P.ac],
+  ],P.spv,1);
+  arr(222,156,252,156,P.spv,1.5,a3,6);
+  arr(452,156,482,156,P.spv,1.5,a4,6);
+  g.restore();
+
+  /* Vulkan side */
+  g.save();g.globalAlpha*=a4;
+  rr(484,66,198,170,8,P.bg3,P.vk,1.5);
+  tx('PushConstant',583,86,{sz:9,c:P.vk,w:'bold'});
+  codeBox(494,100,178,126,[
+    ['VkPushConstantRange pcr={',P.ac],
+    ['  .stageFlags=COMPUTE,',P.ac],
+    ['  .offset=0,',P.muted],
+    ['  .size=sizeof(float)};',P.muted],
+    ['// PipelineLayout에 포함',P.muted],
+    ['',P.muted],
+    ['vkCmdPushConstants(',P.vk],
+    ['  cmd,layout,COMPUTE,',P.vk],
+    ['  0,4,&a);  // a=2.0f',P.ac],
+  ],P.vk,1);
+  g.restore();
+
+  /* why PushConstant */
+  g.save();g.globalAlpha*=a5;
+  rr(24,252,656,108,8,P.bg3,P.ac+'33',1);
+  tx('왜 PushConstant인가?',350,272,{sz:11,c:P.yellow,w:'bold'});
+  tx('descriptor slot은 비싸다 — 작은 스칼라(float 하나)에 슬롯 낭비를 피함',350,292,{sz:9,c:P.txt});
+  tx('PushConstant는 command buffer에 직접 기록 → 메모리 간접 참조 없음 → 오버헤드 최소',350,310,{sz:9,c:P.muted});
+  tx('clspv는 __global 포인터가 아닌 작은 인자를 자동으로 PushConstant로 매핑',350,330,{sz:9,c:P.ac});
+  g.restore();
+}
+
+function drawS7(t){
+  /* 전체 변환 흐름 한눈에 */
+  var a1=eO(wn(t,0,0.15)),a2=eO(wn(t,0.13,0.30)),a3=eO(wn(t,0.28,0.45)),
+      a4=eO(wn(t,0.43,0.60)),a5=eO(wn(t,0.58,0.75)),a6=eO(wn(t,0.73,0.88));
+
+  tx('전체 변환 흐름 — saxpy 하나로',350,22,{sz:14,c:P.purple,w:'bold',a:a1});
+
+  /* Step boxes horizontal flow */
+  var steps=[
+    {label:'saxpy.cl',sub:'OpenCL C 소스',col:P.ocl,x:22,w:104},
+    {label:'clspv',sub:'컴파일러',col:P.spv,x:144,w:80},
+    {label:'saxpy.spv',sub:'SPIR-V + decorations',col:P.spv,x:242,w:126},
+    {label:'Vulkan host',sub:'reflection → DSL',col:P.vk,x:386,w:116},
+    {label:'Pipeline',sub:'DSL+shader',col:P.vk,x:520,w:96},
+    {label:'Dispatch',sub:'vkCmdDispatch',col:P.vk2,x:634,w:54},
+  ];
+  var stepA=[a2,a3,a3,a4,a5,a5];
+  for(var i=0;i<steps.length;i++){
+    var s=steps[i],sa=stepA[i];
+    g.save();g.globalAlpha*=sa;
+    rr(s.x,44,s.w,48,6,P.bg3,s.col,1.8);
+    tx(s.label,s.x+s.w/2,57,{sz:8,c:s.col,w:'bold',al:'center'});
+    tx(s.sub,s.x+s.w/2,72,{sz:6.5,c:P.muted,al:'center'});
+    if(i<steps.length-1)arr(s.x+s.w,68,steps[i+1].x-2,68,s.col,1.5,sa,6);
+    g.restore();
+  }
+
+  /* Detailed rows */
+  var rows=[
+    {ocl:'arg0 (__global float* x)',spv:'OpDecorate %x Binding 0',vk:'DSLBinding{.binding=0, STORAGE_BUFFER}',c:P.xc},
+    {ocl:'arg1 (__global float* y)',spv:'OpDecorate %y Binding 1',vk:'DSLBinding{.binding=1, STORAGE_BUFFER}',c:P.yc},
+    {ocl:'arg2 (__global float* out)',spv:'OpDecorate %out Binding 2',vk:'DSLBinding{.binding=2, STORAGE_BUFFER}',c:P.oc},
+    {ocl:'arg3 (float a)',spv:'OpDecorate %a PushConstant',vk:'VkPushConstantRange{size=4}',c:P.ac},
+    {ocl:'global=1M, local=64',spv:'LocalSize(64,1,1)',vk:'vkCmdDispatch(15625,1,1)',c:P.ocl},
+  ];
+  var rAs=[a3,a3,a4,a5,a5];
+  for(var j=0;j<rows.length;j++){
+    var r=rows[j],ra=rAs[j],ry=106+j*46;
+    g.save();g.globalAlpha*=ra;
+    rr(22,ry,200,38,4,P.bg3,r.c+'55',1);
+    tx(r.ocl,122,ry+19,{sz:7.5,c:r.c,al:'center'});
+    arr(222,ry+19,248,ry+19,r.c,1.5,ra,5);
+    rr(250,ry,200,38,4,P.bg3,r.c+'55',1);
+    tx(r.spv,350,ry+19,{sz:7,c:P.spv,al:'center'});
+    arr(450,ry+19,476,ry+19,r.c,1.5,ra,5);
+    rr(478,ry,200,38,4,P.bg3,r.c+'55',1);
+    tx(r.vk,578,ry+19,{sz:7,c:P.vk,al:'center'});
+    g.restore();
+  }
+
+  /* col labels */
+  tx('OpenCL C',122,338,{sz:8,c:P.ocl,w:'bold',a:a6});
+  tx('SPIR-V decoration',350,338,{sz:8,c:P.spv,w:'bold',a:a6});
+  tx('Vulkan API 구성',578,338,{sz:8,c:P.vk,w:'bold',a:a6});
+  arr(22,346,678,346,P.dim,1,a6,0);
+  tx('이 세 열의 대응 관계를 이해하면 clspv 없이도 직접 Vulkan 코드를 짤 수 있음',350,366,{sz:9,c:P.yellow,a:a6});
+}
+
+function drawS8(t){
+  /* 왜 Vulkan은 더 명시적인가 */
+  var a1=eO(wn(t,0,0.16)),a2=eO(wn(t,0.14,0.32)),a3=eO(wn(t,0.30,0.48)),
+      a4=eO(wn(t,0.46,0.64)),a5=eO(wn(t,0.62,0.80));
+
+  tx('왜 Vulkan은 더 명시적인가?',350,22,{sz:14,c:P.vk,w:'bold',a:a1});
+
+  var reasons=[
+    {title:'① GPU driver가 더 적게 추측',body:'OpenCL: "알아서 최적화해줘"\nVulkan: "내가 직접 다 지정한다" → driver overhead 최소',col:P.vk,a:a2},
+    {title:'② 재사용 & 캐시',body:'DSL/Pipeline/RenderPass를 한 번 만들어\n여러 프레임에서 재사용 → 생성 비용 1회',col:P.vk2,a:a3},
+    {title:'③ 다중 GPU / 타일 아키텍처',body:'descriptor set을 프레임마다 교체\npipeline은 고정 → 모바일 GPU 친화적',col:P.blue,a:a4},
+    {title:'④ 멀티스레드 command 기록',body:'command buffer를 여러 스레드에서 병렬 생성\n→ CPU 병렬화 극대화',col:P.purple,a:a5},
+  ];
+
+  for(var i=0;i<reasons.length;i++){
+    var r=reasons[i],ry=46+i*80;
+    g.save();g.globalAlpha*=r.a;
+    rr(22,ry,656,72,8,P.bg3,r.col+'66',1.5);
+    tx(r.title,350,ry+18,{sz:11,c:r.col,w:'bold'});
+    var lines=r.body.split('\n');
+    tx(lines[0],350,ry+40,{sz:9,c:P.txt});
+    if(lines[1])tx(lines[1],350,ry+56,{sz:9,c:P.muted});
+    g.restore();
+  }
+
+  g.save();g.globalAlpha*=a5;
+  rr(22,370,656,14,4,P.bg3,P.yellow+'44',1);
+  tx('OpenCL = 이식성·간결함 우선   |   Vulkan = GPU를 직접 제어해서 극한 성능 추구',350,377,{sz:8.5,c:P.yellow});
+  g.restore();
+}
+
+function drawS9(t){
+  /* 3열 매핑 테이블 */
+  var a1=eO(wn(t,0,0.12)),a2=eO(wn(t,0.10,0.28));
+  var rowAs=[];
+  for(var i=0;i<12;i++) rowAs.push(eO(wn(t,(0.08+i*0.055),(0.24+i*0.055))));
+
+  tx('전체 매핑 — OpenCL ↔ clspv/SPIR-V ↔ Vulkan',350,20,{sz:12,c:P.purple,w:'bold',a:a1});
+
+  /* header */
+  g.save();g.globalAlpha*=a2;
+  rr(22,32,656,20,4,P.bg4,'',0);
+  tx('OpenCL API',155,42,{sz:8.5,c:P.ocl,w:'bold'});
+  tx('clspv / SPIR-V',350,42,{sz:8.5,c:P.spv,w:'bold'});
+  tx('Vulkan API',550,42,{sz:8.5,c:P.vk,w:'bold'});
+  g.restore();
+
+  var rows=[
+    ['clGetDeviceIDs / clCreateContext','(플랫폼 선택)','VkInstance → VkDevice'],
+    ['cl_command_queue','(실행 채널)','VkCommandBuffer + VkQueue'],
+    ['cl_mem (clCreateBuffer)','OpTypePointer StorageBuffer','VkBuffer + VkDeviceMemory'],
+    ['clEnqueueWriteBuffer','(데이터 복사)','vkCmdCopyBuffer / staging'],
+    ['clBuildProgram','clspv 컴파일 → .spv','vkCreateShaderModule(spv)'],
+    ['clCreateKernel','(커널 핸들)','VkPipeline (compute)'],
+    ['clSetKernelArg(k, N, &buf)★','OpDecorate %x Binding N','vkUpdateDescriptorSets(N)'],
+    ['clSetKernelArg(k, 3, &a)','OpDecorate %a PushConstant','vkCmdPushConstants(a)'],
+    ['global_size / local_size','LocalSize(local,1,1)','vkCmdDispatch(g/l,1,1)'],
+    ['get_global_id(0)','gl_GlobalInvocationID.x','(동일)'],
+    ['clEnqueueNDRangeKernel','(실행 명령 큐 등록)','vkCmdDispatch in CmdBuffer'],
+    ['clFinish(q)','(동기화)','vkQueueWaitIdle / Fence'],
+  ];
+
+  for(var ri=0;ri<rows.length;ri++){
+    var ra=rowAs[ri],row=rows[ri],ry=56+ri*26;
+    var isKey=(ri===6);
+    g.save();g.globalAlpha*=ra;
+    rr(22,ry,656,23,3,isKey?P.yellow+'18':P.bg3,isKey?P.yellow+'66':P.dim,isKey?1.5:1);
+    tx(row[0],155,ry+11.5,{sz:7.5,c:isKey?P.yellow:P.ocl,w:isKey?'bold':'normal',al:'center'});
+    tx(row[1],350,ry+11.5,{sz:7.5,c:isKey?P.spv2:P.spv,w:isKey?'bold':'normal',al:'center'});
+    tx(row[2],550,ry+11.5,{sz:7.5,c:isKey?P.yellow:P.vk,w:isKey?'bold':'normal',al:'center'});
+    g.restore();
+  }
+
+  tx('★ = 핵심 대응 관계',350,374,{sz:8.5,c:P.yellow,a:eO(wn(t,0.80,0.95))});
+}
+
+/* ── SCENES ── */
+var SCENES=[
+  {act:'1막 — 두 세계',title:'같은 saxpy — OpenCL과 Vulkan, 두 가지 API',concept:'clspv가 OpenCL C를 Vulkan용 SPIR-V로 번역',dur:5000,draw:drawS0},
+  {act:'1막 — 두 세계',title:'clspv — 번역기가 하는 일',concept:'OpenCL 인자 → SPIR-V OpDecorate → Vulkan binding',dur:5500,draw:drawS1},
+  {act:'2막 — 변환 규칙',title:'arg0~3 → SPIR-V decoration 1:1 매핑',concept:'__global 포인터→StorageBuffer binding | 스칼라→PushConstant',dur:5500,draw:drawS2},
+  {act:'2막 — 변환 규칙',title:'SPIR-V decoration → VkDescriptorSetLayoutBinding',concept:'decoration의 DescriptorSet/Binding 값이 DSL을 결정',dur:5500,draw:drawS3},
+  {act:'2막 — 변환 규칙',title:'clSetKernelArg ≡ vkUpdateDescriptorSets + vkCmdBindDescriptorSets',concept:'하는 일은 같다 — 표현 방식만 다름',dur:5500,draw:drawS4},
+  {act:'2막 — 변환 규칙',title:'NDRange ↔ vkCmdDispatch',concept:'global/local_size → groupCount = global÷local',dur:5500,draw:drawS5},
+  {act:'2막 — 변환 규칙',title:'arg3 (float a) → PushConstant — 예외 케이스',concept:'작은 스칼라는 descriptor slot 낭비 없이 PushConstant로',dur:5500,draw:drawS6},
+  {act:'3막 — 전체 조망',title:'전체 변환 흐름 한눈에 — .cl → .spv → Vulkan',concept:'5줄 대응표로 보는 OpenCL→clspv→Vulkan 완전 경로',dur:6000,draw:drawS7},
+  {act:'3막 — 전체 조망',title:'왜 Vulkan은 더 명시적인가?',concept:'driver 추측 제거 / 재사용 / 멀티스레드 → 극한 성능',dur:5500,draw:drawS8},
+  {act:'3막 — 전체 조망',title:'전체 매핑 테이블 — OpenCL ↔ SPIR-V ↔ Vulkan',concept:'12개 대응 행 — 이 표를 외우면 두 API가 연결됨',dur:7000,draw:drawS9},
+];
+
+/* ── engine ── */
+var curIdx=0,sceneStart=0,raf=null;
+
+function buildDots(){
+  dotsEl.innerHTML='';
+  SCENES.forEach(function(_,i){
+    var d=document.createElement('span');
+    d.className='ocl2vk-dot'+(i===0?' active':'');
+    d.addEventListener('click',function(){jumpTo(i);});
+    dotsEl.appendChild(d);
+  });
+}
+buildDots();
+
+function updateUI(idx){
+  var sc=SCENES[idx];
+  actEl.textContent=sc.act;
+  snEl.textContent=(idx+1)+'/'+SCENES.length;
+  stEl.textContent=sc.title;
+  coEl.textContent=sc.concept;
+  prevB.disabled=idx===0;
+  nextB.disabled=idx===SCENES.length-1;
+  dotsEl.querySelectorAll('.ocl2vk-dot').forEach(function(d,i){
+    d.className='ocl2vk-dot'+(i===idx?' active':'');
+  });
+}
+updateUI(0);
+
+function jumpTo(idx){
+  idx=Math.max(0,Math.min(SCENES.length-1,idx));
+  curIdx=idx;sceneStart=performance.now();
+  updateUI(idx);
+}
+
+prevB.addEventListener('click',function(){jumpTo(curIdx-1);});
+nextB.addEventListener('click',function(){jumpTo(curIdx+1);});
+
+function loop(now){
+  raf=requestAnimationFrame(loop);
+  var sc=SCENES[curIdx];
+  var t=Math.min(1,(now-sceneStart)/sc.dur);
+  g.clearRect(0,0,W,H);
+  g.fillStyle=P.bg;g.fillRect(0,0,W,H);
+  sc.draw(t);
+}
+sceneStart=performance.now();
+raf=requestAnimationFrame(loop);
+
+var txSt=null;
+cv.addEventListener('touchstart',function(e){txSt=e.touches[0].clientX;},{passive:true});
+cv.addEventListener('touchend',function(e){
+  if(txSt===null)return;
+  var dx=e.changedTouches[0].clientX-txSt;
+  if(Math.abs(dx)>40){jumpTo(curIdx+(dx<0?1:-1));}
+  txSt=null;
+},{passive:true});
+
+if(typeof MutationObserver!=='undefined'){
+  new MutationObserver(function(ms){
+    ms.forEach(function(m){
+      m.removedNodes.forEach(function(n){
+        if(n===root||n.contains&&n.contains(root)){
+          cancelAnimationFrame(raf);
+          window.removeEventListener('resize',resizeCanvas);
+        }
+      });
+    });
+  }).observe(document.body,{childList:true,subtree:true});
+}
+
+})();
+</script>

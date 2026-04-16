@@ -1024,9 +1024,6 @@ function loop(now){
   g.clearRect(0,0,W,H);
   g.fillStyle=P.bg;g.fillRect(0,0,W,H);
   sc.draw(t);
-  if(t>=1&&!paused&&curIdx<SCENES.length-1){
-    jumpTo(curIdx+1);
-  }
 }
 sceneStart=performance.now();
 raf=requestAnimationFrame(loop);

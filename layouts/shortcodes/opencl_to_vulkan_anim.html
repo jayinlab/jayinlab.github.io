@@ -34,6 +34,7 @@ canvas.ocl2vk-cv{display:block;}
       <button class="ocl2vk-btn ocl2vk-prev">◀</button>
       <div class="ocl2vk-dots"></div>
       <button class="ocl2vk-btn ocl2vk-next">▶</button>
+      <button class="ocl2vk-btn ocl2vk-summary" style="margin-left:6px;font-size:11px;">📋 요약</button>
     </div>
   </div>
 </div>
@@ -52,6 +53,7 @@ var stEl=root.querySelector('.ocl2vk-stitle');
 var coEl=root.querySelector('.ocl2vk-concept');
 var prevB=root.querySelector('.ocl2vk-prev');
 var nextB=root.querySelector('.ocl2vk-next');
+var summaryB=root.querySelector('.ocl2vk-summary');
 var dotsEl=root.querySelector('.ocl2vk-dots');
 
 var W=700,H=390;
@@ -192,20 +194,28 @@ function drawS0(t){
   ],P.ocl,1);
   g.restore();
 
-  /* clspv arrow center */
+  /* clspv center — .cl → .spv 출력, Vulkan 직접 출력이 아님 */
   g.save();g.globalAlpha*=aM;
-  rr(252,155,196,60,10,P.bg3,P.spv,2);
-  tx('clspv',350,172,{sz:13,c:P.spv,w:'bold'});
-  tx('"번역기"',350,190,{sz:9,c:P.muted});
-  arr(232,185,250,185,P.spv,2.5,aM,9);
-  arr(450,185,470,185,P.spv,2.5,aM,9);
+  rr(252,150,196,72,10,P.bg3,P.spv,2);
+  tx('clspv',350,166,{sz:13,c:P.spv,w:'bold'});
+  tx('.cl  →  .spv  (SPIR-V)',350,184,{sz:9,c:P.spv2});
+  tx('OpDecorate / Binding 포함',350,199,{sz:8,c:P.muted});
+  arr(232,182,250,182,P.spv,2.5,aM,9);
+  g.restore();
+
+  /* .spv → OpenCL runtime → Vulkan 연결 */
+  g.save();g.globalAlpha*=aR;
+  tx('OpenCL',460,170,{sz:7,c:P.ocl,w:'bold'});
+  tx('runtime',460,180,{sz:7,c:P.ocl});
+  arr(450,186,468,186,P.vk,1.8,aR,7);
   g.restore();
 
   /* Vulkan side */
   g.save();g.globalAlpha*=aR;
   rr(470,36,208,310,8,P.bg2,P.vk,1.8);
-  tx('Vulkan',574,56,{sz:12,c:P.vk,w:'bold'});
-  codeBox(480,70,188,120,[
+  tx('Vulkan',564,52,{sz:12,c:P.vk,w:'bold'});
+  tx('(런타임 내부 호출)',574,67,{sz:8,c:P.muted});
+  codeBox(480,78,188,112,[
     ['VkDescriptorSetLayout dsl;',P.vk],
     ['VkDescriptorSet ds;',P.vk],
     ['VkPipelineLayout layout;',P.vk2],
@@ -223,7 +233,7 @@ function drawS0(t){
   ],P.vk,1);
   g.restore();
 
-  tx('clspv가 OpenCL 커널을 Vulkan이 쓸 수 있는 SPIR-V로 변환',350,364,{sz:10,c:P.yellow,a:a5});
+  tx('clspv: .cl → .spv (SPIR-V) 생성 | OpenCL 런타임이 .spv를 읽어 내부에서 Vulkan 호출',350,364,{sz:9,c:P.yellow,a:a5});
 }
 
 function drawS1(t){
@@ -758,7 +768,7 @@ function drawS9(t){
 
 /* ── SCENES ── */
 var SCENES=[
-  {act:'1막 — 두 세계',title:'같은 saxpy — OpenCL과 Vulkan, 두 가지 API',concept:'clspv가 OpenCL C를 Vulkan용 SPIR-V로 번역',dur:5000,draw:drawS0},
+  {act:'1막 — 두 세계',title:'같은 saxpy — OpenCL API 세계 vs Vulkan API 세계',concept:'clspv: .cl→.spv 생성 | OpenCL 런타임이 .spv로 내부에서 Vulkan 호출',dur:5000,draw:drawS0},
   {act:'1막 — 두 세계',title:'clspv — 번역기가 하는 일',concept:'OpenCL 인자 → SPIR-V OpDecorate → Vulkan binding',dur:5500,draw:drawS1},
   {act:'2막 — 변환 규칙',title:'arg0~3 → SPIR-V decoration 1:1 매핑',concept:'__global 포인터→StorageBuffer binding | 스칼라→PushConstant',dur:5500,draw:drawS2},
   {act:'2막 — 변환 규칙',title:'SPIR-V decoration → VkDescriptorSetLayoutBinding',concept:'decoration의 DescriptorSet/Binding 값이 DSL을 결정',dur:5500,draw:drawS3},
@@ -792,6 +802,7 @@ function updateUI(idx){
   coEl.textContent=sc.concept;
   prevB.disabled=idx===0;
   nextB.disabled=idx===SCENES.length-1;
+  summaryB.textContent=idx===SCENES.length-1?'▶ 처음':'📋 요약';
   dotsEl.querySelectorAll('.ocl2vk-dot').forEach(function(d,i){
     d.className='ocl2vk-dot'+(i===idx?' active':'');
   });
@@ -806,6 +817,7 @@ function jumpTo(idx){
 
 prevB.addEventListener('click',function(){jumpTo(curIdx-1);});
 nextB.addEventListener('click',function(){jumpTo(curIdx+1);});
+summaryB.addEventListener('click',function(){jumpTo(curIdx===SCENES.length-1?0:SCENES.length-1);});
 
 function loop(now){
   raf=requestAnimationFrame(loop);

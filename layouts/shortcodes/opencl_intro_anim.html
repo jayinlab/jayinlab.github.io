@@ -34,6 +34,7 @@ canvas.oclbp-cv{display:block;}
       <button class="oclbp-btn oclbp-prev">◀</button>
       <div class="oclbp-dots"></div>
       <button class="oclbp-btn oclbp-next">▶</button>
+      <button class="oclbp-btn oclbp-summary" style="margin-left:6px;font-size:11px;">📋 요약</button>
     </div>
   </div>
 </div>
@@ -52,6 +53,7 @@ var stEl=root.querySelector('.oclbp-stitle');
 var coEl=root.querySelector('.oclbp-concept');
 var prevB=root.querySelector('.oclbp-prev');
 var nextB=root.querySelector('.oclbp-next');
+var summaryB=root.querySelector('.oclbp-summary');
 var dotsEl=root.querySelector('.oclbp-dots');
 
 var W=700,H=390;
@@ -1003,6 +1005,7 @@ function updateUI(idx){
   coEl.textContent=sc.concept;
   prevB.disabled=idx===0;
   nextB.disabled=idx===SCENES.length-1;
+  summaryB.textContent=idx===SCENES.length-1?'▶ 처음':'📋 요약';
   var dots=dotsEl.querySelectorAll('.oclbp-dot');
   dots.forEach(function(d,i){d.className='oclbp-dot'+(i===idx?' active':'');});
 }
@@ -1016,6 +1019,7 @@ function jumpTo(idx){
 
 prevB.addEventListener('click',function(){jumpTo(curIdx-1);});
 nextB.addEventListener('click',function(){jumpTo(curIdx+1);});
+summaryB.addEventListener('click',function(){jumpTo(curIdx===SCENES.length-1?0:SCENES.length-1);});
 
 function loop(now){
   raf=requestAnimationFrame(loop);

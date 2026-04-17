@@ -34,6 +34,7 @@ canvas.bpfull-cv{display:block;}
       <button class="bpfull-btn bpfull-prev">◀</button>
       <div class="bpfull-dots"></div>
       <button class="bpfull-btn bpfull-next">▶</button>
+      <button class="bpfull-btn bpfull-summary" style="margin-left:6px;font-size:11px;">📋 요약</button>
     </div>
   </div>
 </div>
@@ -52,6 +53,7 @@ var stEl=root.querySelector('.bpfull-stitle');
 var coEl=root.querySelector('.bpfull-concept');
 var prevB=root.querySelector('.bpfull-prev');
 var nextB=root.querySelector('.bpfull-next');
+var summaryB=root.querySelector('.bpfull-summary');
 var dotsEl=root.querySelector('.bpfull-dots');
 
 var W=700,H=390;
@@ -235,11 +237,13 @@ function refresh(){
   actEl.textContent=s.act;snEl.textContent=(cur+1)+'/'+SCENES.length;
   stEl.textContent=s.title;coEl.textContent=s.concept;
   prevB.disabled=cur===0;nextB.disabled=cur===SCENES.length-1;
+  summaryB.textContent=cur===SCENES.length-1?'▶ 처음':'📋 요약';
   dotsEl.querySelectorAll('.bpfull-dot').forEach(function(d,i){d.classList.toggle('active',i===cur);});
   actEl.style.color=cur<9?P.orange:P.purple;
 }
 prevB.addEventListener('click',function(){jump(cur-1);});
 nextB.addEventListener('click',function(){jump(cur+1);});
+summaryB.addEventListener('click',function(){jump(cur===SCENES.length-1?0:SCENES.length-1);});
 var txSt=null;
 cv.addEventListener('touchstart',function(e){txSt=e.touches[0].clientX;},{passive:true});
 cv.addEventListener('touchend',function(e){

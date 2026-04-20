@@ -12,6 +12,13 @@
         <span class="post-badges">
           {{ if .Params.animation }}<span class="anim-badge" title="Animation 포함">▶</span>{{ end }}
           {{ with .Params.layer }}<span class="layer-badge layer-{{ . | lower }}">{{ . }}</span>{{ end }}
+          {{ $tags := .Params.tags | default (slice) }}
+          {{ if in $tags "opencl" }}<span class="layer-badge">CL</span>{{ end }}
+          {{ if in $tags "vulkan" }}<span class="layer-badge">VK</span>{{ end }}
+          {{ if in $tags "angle" }}<span class="layer-badge">ANGLE</span>{{ end }}
+          {{ if in $tags "spirv" }}<span class="layer-badge">SPV</span>{{ end }}
+          {{ if in $tags "pm4" }}<span class="layer-badge">PM4</span>{{ end }}
+          {{ if in $tags "performance" }}<span class="layer-badge">PERF</span>{{ end }}
           {{ with .Params.difficulty }}<span class="diff-badge diff-{{ . }}">{{ index $abbr . | default . }}</span>{{ end }}
         </span>
         <span class="meta post-date">{{ .Date.Format "2006-01-02" }}</span>

@@ -69,12 +69,14 @@ type: "note"      # note | wrong-note | bullet-note
 series: ""        # 연관 시리즈 이름 (예: "opencl-deep-dive", "pm4-internals")
 tags: []          # 주제 태그 (예: ["opencl", "memory", "barrier"])
 difficulty: ""    # beginner | intermediate | advanced
+animation: true   # animation shortcode가 하나라도 있으면 반드시 추가
 ---
 ```
 
 - `type`은 콘텐츠 타입을 나타내며, 목록 페이지 필터링에 사용
 - `series`는 연관 글을 묶는 단위
 - `difficulty`는 독자 수준 안내용
+- `animation: true`는 포스트에 `{{< *_anim >}}` shortcode가 하나라도 있으면 반드시 추가 — 목록 페이지에서 `▶` 배지로 표시됨
 - Glossary 파일은 `type: "glossary"`, `term: "정확한 용어명"` 추가
 
 ---

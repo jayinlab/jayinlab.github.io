@@ -119,6 +119,14 @@
       id: 'summary',
       desc: '<span class="step-num">8</span><strong>전체 granularity 계층 요약</strong><br><span style="color:#9aa6bd;font-size:12px;">work-item → work-group → wavefront → dispatch → command buffer → QueueSubmit → PM4 → CU.</span>'
     },
+    {
+      id: 'ex1280',
+      desc: '<span class="step-num">9</span><strong>예제 — GWS=1280, LWS=128 (1D)</strong><br><span style="color:#9aa6bd;font-size:12px;">숫자를 바꿔서 전체 체인을 한 번에 읽어봅니다. 공식은 같고 숫자만 다릅니다.</span>'
+    },
+    {
+      id: 'ex1280x4',
+      desc: '<span class="step-num">10</span><strong>예제 — GWS=1280×4, LWS 두 가지 비교</strong><br><span style="color:#9aa6bd;font-size:12px;">같은 총 work-item(5,120)이라도 LWS 선택에 따라 dispatch shape과 wavefront 수가 달라집니다.</span>'
+    },
   ];
 
   function renderScene(id) {
@@ -294,9 +302,9 @@
           { level:'work-group',   badge:'badge-cl',  note:'local memory 공유 단위. local_size로 결정.',            eg:'32개 × 4그룹' },
           { level:'wavefront',    badge:'badge-pm4', note:'HW 스케줄링 단위. work-group ÷ wavefront_size.',        eg:'4 wavefronts' },
           { level:'dispatch',     badge:'badge-vk',  note:'vkCmdDispatch(groupCount). group 개수를 GPU에 전달.',   eg:'dispatch(4,1,1)' },
-          { level:'command buffer',badge:'badge-vk', note:'dispatch 여러 개 + barrier를 기록하는 컨테이너.',       eg:'dispatch × N + barrier' },
-          { level:'QueueSubmit',  badge:'badge-vk',  note:'command buffer를 ring buffer 통해 GPU로 1회 전송.',     eg:'1번 submit' },
-          { level:'PM4 패킷',     badge:'badge-pm4', note:'드라이버가 변환한 GPU 기계어 명령.',                    eg:'IT_DISPATCH_DIRECT' },
+          { level:'command buffer',badge:'badge-vk', note:'dispatch 여러 개 + barrier를 기록. 아직 PM4 아님.',     eg:'dispatch × N + barrier' },
+          { level:'QueueSubmit',  badge:'badge-vk',  note:'이 시점에 드라이버가 PM4로 변환 후 ring buffer 전송.',  eg:'1번 submit' },
+          { level:'PM4 패킷',     badge:'badge-pm4', note:'GPU가 실제로 해석하는 기계어. IT_DISPATCH_DIRECT 등.',  eg:'IT_DISPATCH_DIRECT' },
         ];
         const rows = layers.map((r,i) =>
           `<tr class="${i%2===0?'hl':''}">
@@ -308,6 +316,68 @@
           <thead><tr><th>계층</th><th>역할</th><th>이 예제 (GWS=128, LWS=32)</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>`;
+        break;
+      }
+
+      case 'ex1280': {
+        function chainRow(label, badge, value, note, arrow) {
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:${arrow?'2px':'6px'};">
+            <div style="width:110px;flex-shrink:0;text-align:right;font-size:10px;"><span class="${badge}">${label}</span></div>
+            <div style="flex:1;background:#0a0e1a;border:1px solid #2a3142;border-radius:6px;padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;color:#e6ebf5;">${value}</div>
+            <div style="width:130px;flex-shrink:0;font-size:10px;color:#6b7fa3;">${note}</div>
+          </div>${arrow ? '<div style="text-align:center;color:#4f648f;font-size:14px;margin-bottom:2px;margin-left:110px;">↓</div>' : ''}`;
+        }
+        el.innerHTML = `
+          <div>
+            ${chainRow('GWS','badge-cl','1,280 work-items','전체 문제 크기',true)}
+            ${chainRow('LWS','badge-cl','local_size = 128','트럭 1대 크기',true)}
+            ${chainRow('work-groups','badge-cl','1280 ÷ 128 = <b style="color:#7ee0c6">10그룹</b>','groupCount',true)}
+            ${chainRow('wavefronts','badge-pm4','10 × (128÷64) = <b style="color:#ffc850">20 wf</b>','AMD GCN 기준',true)}
+            ${chainRow('dispatch','badge-vk','vkCmdDispatch(<b style="color:#8ab4ff">10</b>, 1, 1)','group 개수 = 10',true)}
+            ${chainRow('QueueSubmit','badge-vk','vkQueueSubmit(…)','← 이 시점에 PM4 변환',true)}
+            ${chainRow('PM4','badge-pm4','IT_DISPATCH_DIRECT { DIM_X=<b style="color:#ff9090">10</b>, DIM_Y=1, DIM_Z=1 }','GPU 기계어',false)}
+          </div>`;
+        break;
+      }
+
+      case 'ex1280x4': {
+        const opts = [
+          {
+            lbl:'옵션 A', color:'#38bdf8', dark:'rgba(56,189,248,.06)',
+            lws:'LWS = 128×1', gcx:10, gcy:4, wf:'80 wf (AMD GCN)',
+            disp:'dispatch(10, 4, 1)',
+            pm4:'IT_DISPATCH_DIRECT { DIM_X=10, DIM_Y=4, DIM_Z=1 }',
+            note:'X축으로 넓은 그룹. coalesced access에 유리할 수 있음.'
+          },
+          {
+            lbl:'옵션 B', color:'#a78bfa', dark:'rgba(167,139,250,.06)',
+            lws:'LWS = 32×4', gcx:40, gcy:1, wf:'80 wf (AMD GCN)',
+            disp:'dispatch(40, 1, 1)',
+            pm4:'IT_DISPATCH_DIRECT { DIM_X=40, DIM_Y=1, DIM_Z=1 }',
+            note:'Y를 그룹 안으로 접음. local memory 패턴이 달라짐.'
+          },
+        ];
+        let html = `<div style="font-size:11px;color:#6b7fa3;margin-bottom:10px;">
+          GWS = 1280×4 = <b style="color:#e6ebf5">5,120</b> work-items (총합 동일)
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">`;
+        for (const o of opts) {
+          html += `<div style="flex:1;min-width:220px;border:1px solid ${o.color}44;border-radius:8px;padding:12px;background:${o.dark};">
+            <div style="font-size:11px;font-weight:700;color:${o.color};margin-bottom:8px;">${o.lbl}: ${o.lws}</div>
+            <div style="font-size:10px;color:#6b7fa3;margin-bottom:6px;line-height:1.8;">
+              groupCountX = 1280 ÷ ${o.gcx === 10 ? 128 : 32} = <b style="color:${o.color};">${o.gcx}</b><br>
+              groupCountY = 4 ÷ ${o.gcy === 4 ? 1 : 4} = <b style="color:${o.color};">${o.gcy}</b><br>
+              wavefronts = ${o.gcx*o.gcy} × (${o.lws.split(' = ')[1].replace('×','×').split('×').map(Number).reduce((a,b)=>a*b)} ÷ 64) = <b style="color:#ffc850;">${o.wf}</b>
+            </div>
+            <code style="font-family:ui-monospace,monospace;font-size:10px;color:${o.color};display:block;background:#0a0e1a;border-radius:5px;padding:7px 9px;margin-bottom:6px;line-height:1.8;">${o.disp}<br>${o.pm4}</code>
+            <div style="font-size:10px;color:#9aa6bd;">${o.note}</div>
+          </div>`;
+        }
+        html += `</div>
+        <div style="margin-top:8px;background:rgba(255,200,80,.06);border:1px solid #ffc85033;border-radius:8px;padding:8px 10px;font-size:11px;color:#ffc850;">
+          총 work-item은 같아도 dispatch shape에 따라 메모리 접근 패턴·occupancy가 달라질 수 있습니다.
+        </div>`;
+        el.innerHTML = html;
         break;
       }
     }

@@ -86,6 +86,39 @@ vkQueueSubmit(queue, 1, &submitInfo, fence);
 
 ---
 
+## Vulkan API는 언제 PM4로 변환되나?
+
+ANGLE(CL) → Vulkan API → PM4 체인에서 자주 헷갈리는 타이밍:
+
+| 시점 | 무슨 일 |
+|---|---|
+| `vkCmdDispatch()` | command buffer에 Vulkan 포맷으로 **기록**만 함. PM4 아님. |
+| `vkQueueSubmit()` | 드라이버가 command buffer 전체를 PM4로 변환 후 ring buffer에 기록 |
+| GPU CP 처리 | ring buffer에서 PM4 패킷을 읽어 실제 실행 |
+
+**주의**: 모든 Vulkan API가 PM4로 내려가는 건 아니다.
+- `vkCreateBuffer`, `vkAllocateMemory` 같은 리소스 생성은 CPU-side 처리 → PM4 없음
+- `vkCmdDispatch`, `vkCmdPipelineBarrier`, `vkCmdCopyBuffer` 같은 **GPU 실행 명령만** PM4로 변환됨
+
+---
+
+## 다양한 예제로 감각 익히기
+
+{{< dispatch_granularity_anim >}} 의 Step 9~10에서 GWS=1280, GWS=1280×4 예제를 볼 수 있다.
+
+빠른 참조용:
+
+| GWS | LWS | dispatch | wavefronts (AMD GCN) | PM4 DIM |
+|---|---|---|---|---|
+| 128 | 32 | (4, 1, 1) | 4 | DIM_X=4 |
+| 1280 | 128 | (10, 1, 1) | 20 | DIM_X=10 |
+| 1280×4 | 128×1 | (10, 4, 1) | 80 | DIM_X=10, DIM_Y=4 |
+| 1280×4 | 32×4 | (40, 1, 1) | 80 | DIM_X=40 |
+
+마지막 두 줄: **총 work-item은 같아도(5,120) dispatch shape이 다르면 성능이 달라질 수 있다.**
+
+---
+
 ## 자주 하는 오해
 
 - 오해 1: `vkCmdDispatch` 호출 = GPU 즉시 실행

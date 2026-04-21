@@ -320,23 +320,25 @@
       }
 
       case 'ex1280': {
-        function chainRow(label, badge, value, note, arrow) {
-          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:${arrow?'2px':'6px'};">
-            <div style="width:110px;flex-shrink:0;text-align:right;font-size:10px;"><span class="${badge}">${label}</span></div>
-            <div style="flex:1;background:#0a0e1a;border:1px solid #2a3142;border-radius:6px;padding:6px 10px;font-family:ui-monospace,monospace;font-size:11px;color:#e6ebf5;">${value}</div>
-            <div style="width:130px;flex-shrink:0;font-size:10px;color:#6b7fa3;">${note}</div>
-          </div>${arrow ? '<div style="text-align:center;color:#4f648f;font-size:14px;margin-bottom:2px;margin-left:110px;">↓</div>' : ''}`;
-        }
-        el.innerHTML = `
-          <div>
-            ${chainRow('GWS','badge-cl','1,280 work-items','전체 문제 크기',true)}
-            ${chainRow('LWS','badge-cl','local_size = 128','트럭 1대 크기',true)}
-            ${chainRow('work-groups','badge-cl','1280 ÷ 128 = <b style="color:#7ee0c6">10그룹</b>','groupCount',true)}
-            ${chainRow('wavefronts','badge-pm4','10 × (128÷64) = <b style="color:#ffc850">20 wf</b>','AMD GCN 기준',true)}
-            ${chainRow('dispatch','badge-vk','vkCmdDispatch(<b style="color:#8ab4ff">10</b>, 1, 1)','group 개수 = 10',true)}
-            ${chainRow('QueueSubmit','badge-vk','vkQueueSubmit(…)','← 이 시점에 PM4 변환',true)}
-            ${chainRow('PM4','badge-pm4','IT_DISPATCH_DIRECT { DIM_X=<b style="color:#ff9090">10</b>, DIM_Y=1, DIM_Z=1 }','GPU 기계어',false)}
-          </div>`;
+        const ex1rows = [
+          { level:'GWS',         badge:'badge-cl',  val:'1,280 work-items',                                    note:'전체 문제 크기' },
+          { level:'LWS',         badge:'badge-cl',  val:'local_size = 128',                                    note:'트럭 1대 크기 (셰이더 고정)' },
+          { level:'work-groups', badge:'badge-cl',  val:'1280 ÷ 128 = <b style="color:#7ee0c6">10</b>그룹',   note:'groupCount' },
+          { level:'wavefronts',  badge:'badge-pm4', val:'10 × (128÷64) = <b style="color:#ffc850">20 wf</b>', note:'AMD GCN 기준' },
+          { level:'dispatch',    badge:'badge-vk',  val:'vkCmdDispatch(<b style="color:#8ab4ff">10</b>, 1, 1)','note':'command buffer에 기록' },
+          { level:'QueueSubmit', badge:'badge-vk',  val:'vkQueueSubmit(…)',                                    note:'← 이 시점에 PM4 변환' },
+          { level:'PM4',         badge:'badge-pm4', val:'IT_DISPATCH_DIRECT { DIM_X=<b style="color:#ff9090">10</b>, DIM_Y=1, DIM_Z=1 }', note:'GPU 기계어' },
+        ];
+        const ex1rows_html = ex1rows.map((r,i) =>
+          `<tr class="${i%2===0?'hl':''}">
+            <td><span class="${r.badge}">${r.level}</span></td>
+            <td style="font-family:ui-monospace,monospace;font-size:10px;">${r.val}</td>
+            <td>${r.note}</td>
+          </tr>`).join('');
+        el.innerHTML = `<table class="mapping-table">
+          <thead><tr><th>계층</th><th>값</th><th>설명</th></tr></thead>
+          <tbody>${ex1rows_html}</tbody>
+        </table>`;
         break;
       }
 

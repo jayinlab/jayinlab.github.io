@@ -3,6 +3,7 @@ title: "OpenCL GWS/LWS가 Vulkan Dispatch로 내려갈 때 (택배 비유 포함
 date: 2026-04-21
 slug: "opencl-note-gws-lws-to-vulkan-dispatch"
 draft: false
+animation: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "dispatch", "work-group", "performance"]

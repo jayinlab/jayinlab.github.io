@@ -3,6 +3,7 @@ title: "Tiny Dispatch에서 PM4가 얼마나 늘어나는지 직관적으로 보
 date: 2026-04-18
 slug: "opencl-note-tiny-dispatch-pm4-scale"
 draft: false
+animation: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4", "performance", "dispatch", "driver-backend"]

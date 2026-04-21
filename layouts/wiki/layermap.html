@@ -96,7 +96,7 @@ const LM_POSTS = {{ $data | jsonify | safeJS }};
       </button>
       <div id="${bodyId}" class="lm-body" hidden>
         ${subSection(g.b, '🟢', 'bullet-note', true)}
-        ${subSection(g.n, '📄', 'note', false)}
+        ${subSection(g.n, '📄', 'note', true)}
         ${subSection(g.w, '❌', 'wrong-note', false)}
       </div>`;
     root.appendChild(div);

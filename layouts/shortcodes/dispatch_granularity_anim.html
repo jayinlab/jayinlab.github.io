@@ -1,0 +1,349 @@
+<div id="dga-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#dga-root * { box-sizing:border-box; }
+#dga-root .dga-card { background:#0f1624; border:1px solid #2a3142; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+#dga-root .dga-title { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6b7fa3; margin-bottom:10px; }
+#dga-root .step-box { background:rgba(138,180,255,.07); border:1px solid #2a3142; border-left:3px solid #8ab4ff; border-radius:8px; padding:10px 14px; min-height:62px; line-height:1.7; margin-bottom:12px; }
+#dga-root .step-num { display:inline-block; background:#8ab4ff; color:#0b0d12; font-weight:700; font-size:11px; border-radius:999px; padding:1px 7px; margin-right:6px; }
+#dga-root .ctrl-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+#dga-root button { background:#141a26; border:1px solid #2a3142; border-radius:8px; color:#e6ebf5; padding:6px 14px; cursor:pointer; font-size:12px; transition:background .2s,border-color .2s; }
+#dga-root button:hover { background:#1e2840; border-color:#8ab4ff; }
+#dga-root button.primary { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#dga-root .step-counter { color:#6b7fa3; font-size:12px; margin-left:auto; }
+#dga-root .scene { border:1px solid #2a3142; border-radius:10px; background:#141a26; padding:14px; overflow:hidden; min-height:150px; }
+#dga-root .wi-bar { display:flex; gap:1px; border-radius:4px; overflow:hidden; margin-bottom:4px; }
+#dga-root .wi-seg { height:20px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:#0b0d12; transition:background .3s; }
+#dga-root .grp-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+#dga-root .grp-box { flex:1; border-radius:6px; padding:8px 10px; }
+#dga-root .grp-label { font-size:10px; font-weight:700; margin-bottom:4px; }
+#dga-root .grp-items { display:flex; gap:1px; flex-wrap:wrap; }
+#dga-root .item-dot { width:8px; height:8px; border-radius:2px; }
+#dga-root .mapping-table { width:100%; border-collapse:collapse; font-size:11px; }
+#dga-root .mapping-table th { background:#0a0e1a; color:#6b7fa3; padding:6px 8px; text-align:left; border:1px solid #2a3142; }
+#dga-root .mapping-table td { padding:6px 8px; border:1px solid #2a3142; color:#9aa6bd; }
+#dga-root .mapping-table tr.hl td { background:rgba(138,180,255,.07); color:#e6ebf5; }
+#dga-root .badge-cl  { display:inline-block; background:rgba(138,180,255,.18); color:#8ab4ff;  border:1px solid #8ab4ff44; border-radius:4px; padding:1px 7px; font-size:10px; font-weight:700; vertical-align:middle; }
+#dga-root .badge-vk  { display:inline-block; background:rgba(126,224,198,.18); color:#7ee0c6;  border:1px solid #7ee0c644; border-radius:4px; padding:1px 7px; font-size:10px; font-weight:700; vertical-align:middle; }
+#dga-root .badge-pm4 { display:inline-block; background:rgba(255,144,144,.15); color:#ff9090;  border:1px solid #ff909044; border-radius:4px; padding:1px 7px; font-size:10px; font-weight:700; vertical-align:middle; }
+#dga-root .badge-del { display:inline-block; background:rgba(255,200,80,.15);  color:#ffc850;  border:1px solid #ffc85044; border-radius:4px; padding:1px 7px; font-size:10px; font-weight:700; vertical-align:middle; }
+#dga-root .layer-row { display:flex; gap:8px; margin-bottom:6px; align-items:stretch; }
+#dga-root .layer-left { width:110px; flex-shrink:0; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; font-size:10px; color:#6b7fa3; text-align:right; }
+#dga-root .layer-right { flex:1; }
+#dga-root .cmd-buf { border:1px solid #4f648f; border-radius:8px; background:#0a0e1a; padding:10px 12px; }
+#dga-root .cmd-entry { border-radius:5px; padding:6px 10px; margin-bottom:5px; font-family:ui-monospace,monospace; font-size:11px; display:flex; align-items:center; gap:8px; }
+#dga-root .cmd-entry:last-child { margin-bottom:0; }
+</style>
+
+<div class="dga-card">
+  <div class="dga-title">dispatch 한 번으로 GPU 안에서 무슨 일이? — granularity 전체 계층</div>
+  <div class="ctrl-row">
+    <button id="dga-prev">← 이전</button>
+    <button id="dga-next" class="primary">다음 →</button>
+    <button id="dga-auto">▶ 자동 재생</button>
+    <button id="dga-reset">↺ 처음</button>
+    <span class="step-counter" id="dga-counter">Step 0 / 8</span>
+  </div>
+  <div class="step-box" id="dga-desc">
+    <span class="step-num">시작</span><strong>"다음"을 눌러 work-group → wavefront → dispatch → QueueSubmit 계층을 따라가세요.</strong>
+  </div>
+  <div class="scene" id="dga-scene">
+    <div style="text-align:center;padding:20px;color:#4f648f;">위 버튼을 눌러 시작하세요</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const GRP_COLORS = ['#38bdf8','#a78bfa','#34d399','#f472b6'];
+  const GRP_DARK   = ['#0c3a50','#2d1f55','#0e3a2c','#4a1030'];
+  const GWS = 128, LWS = 32, N_GRPS = 4; // GWS / LWS
+
+  function wiBar(highlightGroup) {
+    let html = '<div class="wi-bar">';
+    for (let i = 0; i < GWS; i++) {
+      const g = Math.floor(i / LWS);
+      const col = (highlightGroup === -1 || highlightGroup === g) ? GRP_COLORS[g] : '#1e2840';
+      html += `<div class="wi-seg" style="flex:1;background:${col};opacity:0.85;"></div>`;
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function grpRows(showWavefronts) {
+    let html = '';
+    for (let g = 0; g < N_GRPS; g++) {
+      const wf = showWavefronts ? `<span style="font-size:9px;color:${GRP_COLORS[g]};margin-left:6px;">→ wavefront ${g}</span>` : '';
+      let dots = '';
+      for (let i = 0; i < LWS; i++) {
+        dots += `<div class="item-dot" style="background:${GRP_COLORS[g]};opacity:.8;"></div>`;
+      }
+      html += `<div class="grp-row">
+        <div class="grp-box" style="background:${GRP_DARK[g]};border:1px solid ${GRP_COLORS[g]}44;">
+          <div class="grp-label" style="color:${GRP_COLORS[g]};">work-group ${g} (32 work-items)${wf}</div>
+          <div class="grp-items">${dots}</div>
+        </div>
+      </div>`;
+    }
+    return html;
+  }
+
+  const STEPS = [
+    {
+      id: 'confusion',
+      desc: '<span class="step-num">1</span><strong>헷갈리는 이유 — 두 숫자가 다르다</strong><br><span style="color:#9aa6bd;font-size:12px;">이 예제에서는 숫자를 다르게 씁니다: <b>local_size = 32</b> (트럭 크기), <b>dispatch(4,1,1)</b> (트럭 대수). 절대 같은 숫자가 아닙니다.</span>'
+    },
+    {
+      id: 'gws',
+      desc: '<span class="step-num">2</span><span class="badge-cl">OpenCL</span>&nbsp;<strong>GWS = 128 work-items (전체 박스)</strong><br><span style="color:#9aa6bd;font-size:12px;">처리해야 할 전체 work-item 128개. 창고에 쌓인 박스 128개입니다.</span>'
+    },
+    {
+      id: 'lws',
+      desc: '<span class="step-num">3</span><span class="badge-cl">OpenCL</span>&nbsp;<strong>LWS = 32 → 4개 work-group 생성</strong><br><span style="color:#9aa6bd;font-size:12px;">128 ÷ 32 = 4. 32개짜리 팀(work-group) 4개가 생깁니다. 각 팀은 local memory를 공유하고 독립적으로 실행됩니다.</span>'
+    },
+    {
+      id: 'dispatch',
+      desc: '<span class="step-num">4</span><span class="badge-vk">Vulkan</span>&nbsp;<strong>vkCmdDispatch(4, 1, 1) = 트럭 4대 출발 명령</strong><br><span style="color:#9aa6bd;font-size:12px;"><code>local_size = 32</code>는 셰이더에 고정, <code>dispatch(4,1,1)</code>은 group 개수입니다. 이 둘은 서로 다른 개념입니다.<br><span class="badge-del">배송 비유</span>&nbsp;트럭 크기(32박스)와 트럭 대수(4대)는 별개입니다.</span>'
+    },
+    {
+      id: 'wavefront',
+      desc: '<span class="step-num">5</span><strong>work-group → wavefront 변환</strong><br><span style="color:#9aa6bd;font-size:12px;">work-group 1개(32 work-items) ÷ wavefront_size = wavefront 수.<br>AMD(wavefront=64): 32 items < 64 → 1 wavefront (절반만 채움)<br>RDNA/NVIDIA(32): 32 items = 32 → 1 wavefront/warp<br>결국 dispatch(4,1,1) → <b>4~8개 wavefront</b> (하드웨어에 따라 다름)</span>'
+    },
+    {
+      id: 'cmdbuf',
+      desc: '<span class="step-num">6</span><span class="badge-vk">Vulkan</span>&nbsp;<strong>command buffer에 dispatch 여러 개 기록</strong><br><span style="color:#9aa6bd;font-size:12px;">vkCmdDispatch는 GPU를 직접 실행하지 않습니다. command buffer에 명령을 <b>기록</b>할 뿐입니다. 여러 dispatch + barrier를 한 buffer에 담을 수 있습니다.</span>'
+    },
+    {
+      id: 'submit',
+      desc: '<span class="step-num">7</span><span class="badge-vk">Vulkan</span>→<span class="badge-pm4">PM4</span>&nbsp;<strong>vkQueueSubmit → 한방에 GPU로</strong><br><span style="color:#9aa6bd;font-size:12px;">vkQueueSubmit 한 번으로 command buffer 전체가 ring buffer를 통해 GPU에 전달됩니다. 드라이버는 각 dispatch를 <code>IT_DISPATCH_DIRECT</code> PM4 패킷으로 변환합니다.</span>'
+    },
+    {
+      id: 'summary',
+      desc: '<span class="step-num">8</span><strong>전체 granularity 계층 요약</strong><br><span style="color:#9aa6bd;font-size:12px;">work-item → work-group → wavefront → dispatch → command buffer → QueueSubmit → PM4 → CU.</span>'
+    },
+  ];
+
+  function renderScene(id) {
+    const el = document.getElementById('dga-scene');
+    switch (id) {
+      case 'confusion':
+        el.innerHTML = `
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:160px;border:2px solid #ffa06066;border-radius:8px;padding:12px;background:rgba(255,160,96,.05);">
+              <div style="font-size:10px;font-weight:700;color:#ffa060;margin-bottom:6px;">⚠️ 헷갈리는 패턴 (피하기)</div>
+              <code style="font-family:ui-monospace,monospace;font-size:12px;color:#ffa060;display:block;line-height:1.9;">local_size(8, 8, 1)  // 크기<br>dispatch(8, 8, 1)    // 개수<br><span style="color:#6b7fa3">// 둘 다 8×8 → 헷갈림!</span></code>
+            </div>
+            <div style="display:flex;align-items:center;font-size:22px;color:#4f648f;">→</div>
+            <div style="flex:1;min-width:160px;border:2px solid #7ee0c666;border-radius:8px;padding:12px;background:rgba(126,224,198,.05);">
+              <div style="font-size:10px;font-weight:700;color:#7ee0c6;margin-bottom:6px;">✓ 이 예제 (구분하기 쉬운 숫자)</div>
+              <code style="font-family:ui-monospace,monospace;font-size:12px;color:#7ee0c6;display:block;line-height:1.9;">local_size = <b>32</b>   // 트럭 크기<br>dispatch(<b>4</b>, 1, 1)  // 트럭 대수<br><span style="color:#6b7fa3">// 32 ≠ 4 → 명확히 다름</span></code>
+            </div>
+          </div>
+          <div style="margin-top:10px;background:#0a0e1a;border:1px solid #2a3142;border-radius:8px;padding:10px;font-size:11px;color:#9aa6bd;text-align:center;">
+            GWS = <b style="color:#8ab4ff">128</b> &nbsp;|&nbsp; LWS = <b style="color:#7ee0c6">32</b> &nbsp;|&nbsp; groupCount = <b style="color:#ffc850">4</b> &nbsp;|&nbsp; 총 work-item = 128
+          </div>`;
+        break;
+
+      case 'gws':
+        el.innerHTML = `
+          <div>
+            <div style="font-size:11px;color:#8ab4ff;margin-bottom:8px;">GWS = 128 work-items (전체, 색 구분 없음)</div>
+            ${wiBar(-2)}
+            <div style="font-size:11px;color:#6b7fa3;margin-top:8px;text-align:center;">
+              128 work-items &nbsp;≡&nbsp; <span style="color:#ffc850">📦 박스 128개</span>
+            </div>
+          </div>`;
+        break;
+
+      case 'lws': {
+        let barsHtml = '';
+        for (let g = 0; g < N_GRPS; g++) {
+          let segs = '';
+          for (let i = 0; i < LWS; i++) {
+            segs += `<div class="wi-seg" style="flex:1;background:${GRP_COLORS[g]};opacity:.85;"></div>`;
+          }
+          barsHtml += `<div style="margin-bottom:6px;">
+            <div style="font-size:9px;color:${GRP_COLORS[g]};margin-bottom:2px;font-weight:700;">work-group ${g}</div>
+            <div class="wi-bar">${segs}</div>
+          </div>`;
+        }
+        el.innerHTML = `
+          <div>
+            <div style="font-size:11px;color:#8ab4ff;margin-bottom:8px;">128 ÷ 32 = <b style="color:#ffc850">4개 work-group</b> (각 32 work-items)</div>
+            ${barsHtml}
+            <div style="font-size:11px;color:#6b7fa3;margin-top:4px;text-align:center;">
+              <span style="color:#ffc850">🚛 트럭 4대</span> — 각 트럭이 박스 32개씩 담당
+            </div>
+          </div>`;
+        break;
+      }
+
+      case 'dispatch':
+        el.innerHTML = `
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;">
+            <div style="flex:1;min-width:160px;">
+              <div style="font-size:10px;font-weight:700;color:#8ab4ff;margin-bottom:8px;">셰이더 (컴파일 타임에 고정)</div>
+              <div style="background:#0a0e1a;border:1px solid #8ab4ff33;border-radius:8px;padding:10px;font-family:ui-monospace,monospace;font-size:11px;line-height:1.9;color:#e6ebf5;">
+                layout(<br>&nbsp;&nbsp;local_size_x = <b style="color:#8ab4ff">32</b>,<br>&nbsp;&nbsp;local_size_y = 1,<br>&nbsp;&nbsp;local_size_z = 1) in;<br>
+                <span style="color:#6b7fa3;font-size:10px;">// 트럭 1대 크기 = 32</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;font-size:22px;color:#4f648f;">+</div>
+            <div style="flex:1;min-width:160px;">
+              <div style="font-size:10px;font-weight:700;color:#7ee0c6;margin-bottom:8px;">Command Buffer (실행 시점)</div>
+              <div style="background:#0a0e1a;border:1px solid #7ee0c633;border-radius:8px;padding:10px;font-family:ui-monospace,monospace;font-size:12px;color:#7ee0c6;line-height:1.9;">
+                vkCmdDispatch(<b>4</b>, 1, 1)<br>
+                <span style="color:#6b7fa3;font-size:10px;">// 트럭 대수 = 4</span>
+              </div>
+              <div style="margin-top:6px;font-size:11px;color:#9aa6bd;">
+                총 work-item = 32 × 4 = <b style="color:#e6ebf5">128</b> ✓
+              </div>
+            </div>
+          </div>`;
+        break;
+
+      case 'wavefront':
+        el.innerHTML = `
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:160px;border:1px solid #a78bfa44;border-radius:8px;padding:12px;background:rgba(167,139,250,.05);">
+              <div style="font-size:10px;font-weight:700;color:#a78bfa;margin-bottom:8px;">work-group 0 (32 items)</div>
+              <div style="font-size:11px;color:#9aa6bd;line-height:1.9;">
+                AMD GCN (wavefront=64):<br>
+                &nbsp;&nbsp;32 &lt; 64 → <b style="color:#ffc850">1 wavefront</b> (절반 채움)<br><br>
+                RDNA / NVIDIA (32):<br>
+                &nbsp;&nbsp;32 = 32 → <b style="color:#7ee0c6">1 wavefront/warp</b>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;font-size:22px;color:#4f648f;">×4</div>
+            <div style="flex:1;min-width:160px;border:1px solid #34d39944;border-radius:8px;padding:12px;background:rgba(52,211,153,.05);">
+              <div style="font-size:10px;font-weight:700;color:#34d399;margin-bottom:8px;">dispatch(4,1,1) 결과</div>
+              <div style="font-size:11px;color:#9aa6bd;line-height:1.9;">
+                4 work-groups<br>
+                × 1 wavefront/group<br>
+                = <b style="color:#e6ebf5">4 wavefronts</b><br><br>
+                <span style="color:#6b7fa3;font-size:10px;">CU가 이를 스케줄링해서<br>실행합니다</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:8px;background:rgba(255,200,80,.06);border:1px solid #ffc85033;border-radius:8px;padding:10px;font-size:11px;color:#ffc850;">
+            ⚠️ wavefront 수는 local_size ÷ wavefront_size이므로 하드웨어마다 다릅니다.
+          </div>`;
+        break;
+
+      case 'cmdbuf':
+        el.innerHTML = `
+          <div>
+            <div style="font-size:10px;color:#6b7fa3;margin-bottom:8px;">vkCmdDispatch는 GPU를 즉시 실행하지 않습니다 — command buffer에 명령을 <b style="color:#e6ebf5">기록</b>만 합니다.</div>
+            <div style="border:2px solid #4f648f;border-radius:10px;padding:12px;background:#0a0e1a;">
+              <div style="font-size:10px;font-weight:700;color:#4f648f;margin-bottom:10px;">📋 Command Buffer</div>
+              <div class="cmd-entry" style="background:rgba(126,224,198,.07);border:1px solid #7ee0c633;">
+                <span style="font-size:16px;">①</span>
+                <code style="color:#7ee0c6;flex:1;">vkCmdBindPipeline(kernel_A)</code>
+              </div>
+              <div class="cmd-entry" style="background:rgba(138,180,255,.07);border:1px solid #8ab4ff33;">
+                <span style="font-size:16px;">②</span>
+                <code style="color:#8ab4ff;flex:1;">vkCmdDispatch(4, 1, 1)&nbsp;&nbsp;<span style="color:#6b7fa3">// kernel A — 128 items</span></code>
+              </div>
+              <div class="cmd-entry" style="background:rgba(167,139,250,.07);border:1px solid #a78bfa33;">
+                <span style="font-size:16px;">③</span>
+                <code style="color:#a78bfa;flex:1;">vkCmdPipelineBarrier(…)&nbsp;<span style="color:#6b7fa3">// 의존성 동기화</span></code>
+              </div>
+              <div class="cmd-entry" style="background:rgba(126,224,198,.07);border:1px solid #7ee0c633;">
+                <span style="font-size:16px;">④</span>
+                <code style="color:#7ee0c6;flex:1;">vkCmdBindPipeline(kernel_B)</code>
+              </div>
+              <div class="cmd-entry" style="background:rgba(138,180,255,.07);border:1px solid #8ab4ff33;">
+                <span style="font-size:16px;">⑤</span>
+                <code style="color:#8ab4ff;flex:1;">vkCmdDispatch(16, 1, 1)&nbsp;<span style="color:#6b7fa3">// kernel B — 다른 크기</span></code>
+              </div>
+            </div>
+            <div style="font-size:11px;color:#6b7fa3;margin-top:8px;text-align:center;">기록만 했을 뿐 — GPU는 아직 아무것도 모릅니다</div>
+          </div>`;
+        break;
+
+      case 'submit':
+        el.innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;">
+              <div style="flex:1;min-width:140px;border:2px solid #4f648f;border-radius:8px;padding:10px;background:#0a0e1a;">
+                <div style="font-size:10px;font-weight:700;color:#4f648f;margin-bottom:6px;">📋 Command Buffer</div>
+                <div style="font-size:10px;color:#6b7fa3;line-height:1.8;">dispatch(4,1,1)<br>barrier<br>dispatch(16,1,1)<br>…</div>
+              </div>
+              <div style="display:flex;align-items:center;font-size:22px;color:#7ee0c6;flex-direction:column;justify-content:center;gap:4px;">
+                <div style="font-size:10px;color:#7ee0c6;font-weight:700;">vkQueueSubmit</div>
+                <div>→</div>
+              </div>
+              <div style="flex:1;min-width:140px;border:1px solid #ff909033;border-radius:8px;padding:10px;background:rgba(255,144,144,.04);">
+                <div style="font-size:10px;font-weight:700;color:#ff9090;margin-bottom:6px;">PM4 Ring Buffer</div>
+                <div style="font-family:ui-monospace,monospace;font-size:9px;color:#ff9090;line-height:1.9;">IT_DISPATCH_DIRECT {DIM_X=4}<br>IT_EVENT_WRITE (barrier)<br>IT_DISPATCH_DIRECT {DIM_X=16}<br>…</div>
+              </div>
+              <div style="display:flex;align-items:center;font-size:22px;color:#4f648f;">→</div>
+              <div style="flex:0 0 90px;border:1px solid #2a3142;border-radius:8px;padding:10px;background:#0a0e1a;text-align:center;">
+                <div style="font-size:10px;color:#6b7fa3;margin-bottom:4px;">GPU CP</div>
+                <div style="font-size:26px;">⚙️</div>
+                <div style="font-size:9px;color:#7ee0c6;margin-top:4px;">CU에<br>wavefront 배분</div>
+              </div>
+            </div>
+            <div style="background:rgba(126,224,198,.06);border:1px solid #7ee0c633;border-radius:8px;padding:10px;font-size:11px;color:#7ee0c6;text-align:center;">
+              ✓ Submit 1번으로 모든 dispatch가 GPU에 전달됩니다. 개별 dispatch는 CPU-GPU 왕복 없음.
+            </div>
+          </div>`;
+        break;
+
+      case 'summary': {
+        const layers = [
+          { level:'work-item',    badge:'badge-cl',  note:'기본 실행 단위. 1 thread.',                             eg:'128개' },
+          { level:'work-group',   badge:'badge-cl',  note:'local memory 공유 단위. local_size로 결정.',            eg:'32개 × 4그룹' },
+          { level:'wavefront',    badge:'badge-pm4', note:'HW 스케줄링 단위. work-group ÷ wavefront_size.',        eg:'4 wavefronts' },
+          { level:'dispatch',     badge:'badge-vk',  note:'vkCmdDispatch(groupCount). group 개수를 GPU에 전달.',   eg:'dispatch(4,1,1)' },
+          { level:'command buffer',badge:'badge-vk', note:'dispatch 여러 개 + barrier를 기록하는 컨테이너.',       eg:'dispatch × N + barrier' },
+          { level:'QueueSubmit',  badge:'badge-vk',  note:'command buffer를 ring buffer 통해 GPU로 1회 전송.',     eg:'1번 submit' },
+          { level:'PM4 패킷',     badge:'badge-pm4', note:'드라이버가 변환한 GPU 기계어 명령.',                    eg:'IT_DISPATCH_DIRECT' },
+        ];
+        const rows = layers.map((r,i) =>
+          `<tr class="${i%2===0?'hl':''}">
+            <td><span class="${r.badge}">${r.level}</span></td>
+            <td>${r.note}</td>
+            <td style="font-family:ui-monospace,monospace;font-size:10px;">${r.eg}</td>
+          </tr>`).join('');
+        el.innerHTML = `<table class="mapping-table">
+          <thead><tr><th>계층</th><th>역할</th><th>이 예제 (GWS=128, LWS=32)</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+        break;
+      }
+    }
+  }
+
+  let step = 0, autoTimer = null;
+  const total = STEPS.length;
+
+  function render() {
+    document.getElementById('dga-counter').textContent = 'Step ' + step + ' / ' + total;
+    if (step === 0) {
+      document.getElementById('dga-desc').innerHTML = '<span class="step-num">시작</span><strong>"다음"을 눌러 work-group → wavefront → dispatch → QueueSubmit 계층을 따라가세요.</strong>';
+      document.getElementById('dga-scene').innerHTML = '<div style="text-align:center;padding:20px;color:#4f648f;">위 버튼을 눌러 시작하세요</div>';
+      return;
+    }
+    const s = STEPS[step - 1];
+    document.getElementById('dga-desc').innerHTML = s.desc;
+    renderScene(s.id);
+  }
+
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('dga-auto').textContent = '▶ 자동 재생';
+  }
+
+  document.getElementById('dga-next').addEventListener('click',  () => { stopAuto(); if (step < total)  { step++; render(); } });
+  document.getElementById('dga-prev').addEventListener('click',  () => { stopAuto(); if (step > 0)      { step--; render(); } });
+  document.getElementById('dga-reset').addEventListener('click', () => { stopAuto(); step = 0; render(); });
+  document.getElementById('dga-auto').addEventListener('click',  () => {
+    if (autoTimer) { stopAuto(); return; }
+    document.getElementById('dga-auto').textContent = '⏸ 일시정지';
+    if (step === 0) { step = 1; render(); }
+    autoTimer = setInterval(() => { if (step >= total) { stopAuto(); return; } step++; render(); }, 2800);
+  });
+
+  render();
+})();
+</script>
+</div>

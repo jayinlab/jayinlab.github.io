@@ -1,114 +1,262 @@
-<div id="gws-lws-anim" style="border:1px solid #2a3142;border-radius:12px;padding:12px;background:#0f1624;margin:12px 0;">
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
-    <button id="play-gws" style="padding:6px 10px;">▶ Play</button>
-    <button id="reset-gws" style="padding:6px 10px;">↺ Reset</button>
-    <label>GWS X <input id="gwsx" type="number" value="64" min="1" max="256" style="width:64px;"></label>
-    <label>GWS Y <input id="gwsy" type="number" value="64" min="1" max="256" style="width:64px;"></label>
-    <label>LWS X <input id="lwsx" type="number" value="8" min="1" max="64" style="width:64px;"></label>
-    <label>LWS Y <input id="lwsy" type="number" value="8" min="1" max="64" style="width:64px;"></label>
-    <button id="apply-gws" style="padding:6px 10px;">Apply</button>
-    <button id="auto-gws" style="padding:6px 10px;">LWS=NULL (Auto)</button>
+<div id="gwd-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#gwd-root * { box-sizing:border-box; }
+#gwd-root .gwd-card { background:#0f1624; border:1px solid #2a3142; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+#gwd-root .gwd-title { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6b7fa3; margin-bottom:10px; }
+#gwd-root .step-box { background:rgba(138,180,255,.07); border:1px solid #2a3142; border-left:3px solid #8ab4ff; border-radius:8px; padding:10px 14px; min-height:62px; line-height:1.7; margin-bottom:12px; }
+#gwd-root .step-num { display:inline-block; background:#8ab4ff; color:#0b0d12; font-weight:700; font-size:11px; border-radius:999px; padding:1px 7px; margin-right:6px; }
+#gwd-root .ctrl-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+#gwd-root button { background:#141a26; border:1px solid #2a3142; border-radius:8px; color:#e6ebf5; padding:6px 14px; cursor:pointer; font-size:12px; transition:background .2s,border-color .2s; }
+#gwd-root button:hover { background:#1e2840; border-color:#8ab4ff; }
+#gwd-root button.primary { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#gwd-root .step-counter { color:#6b7fa3; font-size:12px; margin-left:auto; }
+#gwd-root .scene { border:1px solid #2a3142; border-radius:10px; background:#141a26; padding:14px; overflow:hidden; min-height:140px; }
+#gwd-root .mapping-table { width:100%; border-collapse:collapse; font-size:11px; }
+#gwd-root .mapping-table th { background:#0a0e1a; color:#6b7fa3; padding:6px 8px; text-align:left; border:1px solid #2a3142; }
+#gwd-root .mapping-table td { padding:6px 8px; border:1px solid #2a3142; color:#9aa6bd; }
+#gwd-root .mapping-table tr.hl td { background:rgba(138,180,255,.07); color:#e6ebf5; }
+#gwd-root .badge-cl  { display:inline-block; background:rgba(138,180,255,.18); color:#8ab4ff;  border:1px solid #8ab4ff44; border-radius:4px; padding:1px 7px; font-size:10px; font-weight:700; vertical-align:middle; }
+#gwd-root .badge-vk  { display:inline-block; background:rgba(126,224,198,.18); color:#7ee0c6;  border:1px solid #7ee0c644; border-radius:4px; padding:1px 7px; font-size:10px; font-weight:700; vertical-align:middle; }
+#gwd-root .badge-pm4 { display:inline-block; background:rgba(255,144,144,.15); color:#ff9090;  border:1px solid #ff909044; border-radius:4px; padding:1px 7px; font-size:10px; font-weight:700; vertical-align:middle; }
+#gwd-root .badge-del { display:inline-block; background:rgba(255,200,80,.15);  color:#ffc850;  border:1px solid #ffc85044; border-radius:4px; padding:1px 7px; font-size:10px; font-weight:700; vertical-align:middle; }
+</style>
+
+<div class="gwd-card">
+  <div class="gwd-title">GWS / LWS → Vulkan Dispatch → PM4 (택배 비유 포함)</div>
+  <div class="ctrl-row">
+    <button id="gwd-prev">← 이전</button>
+    <button id="gwd-next" class="primary">다음 →</button>
+    <button id="gwd-auto">▶ 자동 재생</button>
+    <button id="gwd-reset">↺ 처음</button>
+    <span class="step-counter" id="gwd-counter">Step 0 / 7</span>
   </div>
-
-  <div id="gws-msg" style="margin:8px 0;font-size:13px;color:#c7d2fe"></div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-    <div style="border:1px solid #334155;border-radius:10px;padding:10px;background:#111827;">
-      <div style="font-weight:600;margin-bottom:8px;">OpenCL View (문제 공간)</div>
-      <div id="gws-grid" style="display:grid;gap:1px;background:#1f2937;border:1px solid #374151;"></div>
-    </div>
-    <div style="border:1px solid #334155;border-radius:10px;padding:10px;background:#111827;">
-      <div style="font-weight:600;margin-bottom:8px;">Vulkan View (groupCount)</div>
-      <div id="dispatch-grid" style="display:grid;gap:2px;background:#1f2937;border:1px solid #374151;"></div>
-    </div>
+  <div class="step-box" id="gwd-desc">
+    <span class="step-num">시작</span><strong>"다음"을 눌러 GWS/LWS가 Vulkan dispatch → PM4로 내려가는 과정을 따라가세요.</strong>
   </div>
-
-  <div style="margin-top:10px;font-size:12px;color:#9ca3af">
-    공식: <code>groupCountX = ceil(GWSX / LWSX)</code>, <code>groupCountY = ceil(GWSY / LWSY)</code><br>
-    총 work-item = <code>groupCountX*LWSX × groupCountY*LWSY</code>
+  <div class="scene" id="gwd-scene">
+    <div style="text-align:center;padding:20px;color:#4f648f;">위 버튼을 눌러 시작하세요</div>
   </div>
 </div>
 
 <script>
-(() => {
-  const root = document.getElementById('gws-lws-anim');
-  if (!root) return;
-  const $ = (id) => document.getElementById(id);
+(function(){
+  const GRP_PALETTE = [
+    '#38bdf8','#22d3ee','#818cf8','#a78bfa',
+    '#34d399','#6ee7b7','#f472b6','#fbbf24',
+  ];
 
-  const el = {
-    play: $('play-gws'), reset: $('reset-gws'), apply: $('apply-gws'), auto: $('auto-gws'),
-    gwsx: $('gwsx'), gwsy: $('gwsy'), lwsx: $('lwsx'), lwsy: $('lwsy'),
-    msg: $('gws-msg'), grid: $('gws-grid'), dgrid: $('dispatch-grid')
-  };
+  function makeGroupGrid(showGroups) {
+    const GX = 8, GY = 8, SZ = 26;
+    let cells = '';
+    for (let y = 0; y < GY; y++) {
+      for (let x = 0; x < GX; x++) {
+        const col = showGroups ? GRP_PALETTE[(x + y * 3) % GRP_PALETTE.length] : '#38bdf8';
+        const label = showGroups ? `<span style="font-size:7px;color:#0b0d12;font-weight:700;line-height:1;">${x},${y}</span>` : '';
+        cells += `<div style="width:${SZ}px;height:${SZ}px;border-radius:3px;background:${col};opacity:.88;display:flex;align-items:center;justify-content:center;">${label}</div>`;
+      }
+    }
+    return `<div style="display:inline-grid;grid-template-columns:repeat(${GX},${SZ}px);gap:2px;">${cells}</div>`;
+  }
 
-  function ceilDiv(a,b){ return Math.floor((a+b-1)/b); }
+  const STEPS = [
+    {
+      id: 'gws',
+      desc: '<span class="step-num">1</span><span class="badge-cl">OpenCL</span>&nbsp;<strong>GWS = 전체 work-item 공간</strong><br><span style="color:#9aa6bd;font-size:12px;">GWS = 64×64 = 4,096개 work-item. 처리해야 할 문제 전체 크기입니다.<br><span class="badge-del">배송 비유</span>&nbsp;오늘 배송할 <b>전체 박스 4,096개</b> — 창고에 쌓인 박스들.</span>'
+    },
+    {
+      id: 'lws',
+      desc: '<span class="step-num">2</span><span class="badge-cl">OpenCL</span>&nbsp;<strong>LWS = 한 work-group 크기 (팀 단위)</strong><br><span style="color:#9aa6bd;font-size:12px;">LWS = 8×8. GWS를 LWS 크기로 나누면 8×8 = 64개 work-group이 생깁니다.<br><span class="badge-del">배송 비유</span>&nbsp;트럭 1대가 한 번에 처리하는 <b>8×8 박스 블록</b>. 같은 그룹은 local memory 공유.</span>'
+    },
+    {
+      id: 'groupcount',
+      desc: '<span class="step-num">3</span><span class="badge-cl">OpenCL</span>→<span class="badge-vk">Vulkan</span>&nbsp;<strong>groupCount = ceil(GWS / LWS)</strong><br><span style="color:#9aa6bd;font-size:12px;">X: 64÷8=8, Y: 64÷8=8 → <code>dispatch(8, 8, 1)</code>. Vulkan에서는 group 개수를 넘깁니다.<br><span class="badge-del">배송 비유</span>&nbsp;오늘 필요한 <b>트럭 대수 = 8×8 = 64대</b>.</span>'
+    },
+    {
+      id: 'null_lws',
+      desc: '<span class="step-num">4</span><span class="badge-cl">OpenCL</span>&nbsp;<strong>LWS = NULL이면?</strong><br><span style="color:#9aa6bd;font-size:12px;">NULL = 팀 크기 미지정. 런타임/드라이버가 하드웨어 제약을 보고 내부적으로 결정합니다. 실행 전에는 반드시 숫자로 확정됩니다.<br><span class="badge-del">배송 비유</span>&nbsp;"트럭 크기는 센터 규칙대로" — 어떤 크기를 고르냐에 따라 성능이 달라집니다.</span>'
+    },
+    {
+      id: 'vulkan',
+      desc: '<span class="step-num">5</span><span class="badge-vk">Vulkan</span>&nbsp;<strong>shader local_size + vkCmdDispatch로 분리</strong><br><span style="color:#9aa6bd;font-size:12px;">LWS는 SPIR-V 셰이더에 <code>local_size</code>로 고정되고, groupCount는 <code>vkCmdDispatch(8,8,1)</code>로 넘어갑니다.<br>총 work-item = local(8×8) × groups(8×8) = 4,096 ✓</span>'
+    },
+    {
+      id: 'pm4',
+      desc: '<span class="step-num">6</span><span class="badge-pm4">PM4</span>&nbsp;<strong>드라이버 → IT_DISPATCH_DIRECT 패킷</strong><br><span style="color:#9aa6bd;font-size:12px;">vkCmdDispatch가 PM4 <code>IT_DISPATCH_DIRECT</code> 패킷으로 변환됩니다. DIM_X/Y/Z = groupCount.<br><span class="badge-del">배송 비유</span>&nbsp;"신호실에 트럭 8×8 출발 명령 전송"</span>'
+    },
+    {
+      id: 'table',
+      desc: '<span class="step-num">7</span><strong>전체 매핑표 — 비유 ↔ OpenCL ↔ Vulkan ↔ PM4</strong><br><span style="color:#9aa6bd;font-size:12px;">지금까지 본 모든 개념의 대응표입니다.</span>'
+    },
+  ];
+
+  function renderScene(id) {
+    const el = document.getElementById('gwd-scene');
+    switch (id) {
+      case 'gws':
+        el.innerHTML = `
+          <div style="text-align:center;">
+            <div style="font-size:11px;color:#8ab4ff;margin-bottom:8px;">
+              GWS = 64×64 &nbsp;|&nbsp; 각 셀 = work-item 그룹 블록(8×8) &nbsp;|&nbsp; 총 64개 블록 표시
+            </div>
+            ${makeGroupGrid(false)}
+            <div style="font-size:11px;color:#6b7fa3;margin-top:10px;">총 <b style="color:#e6ebf5">4,096</b> work-items &nbsp;≡&nbsp; <span style="color:#ffc850">📦 박스 4,096개</span></div>
+          </div>`;
+        break;
+
+      case 'lws':
+        el.innerHTML = `
+          <div style="text-align:center;">
+            <div style="font-size:11px;color:#8ab4ff;margin-bottom:4px;">GWS 64×64를 LWS 8×8로 나누면 → 8×8 = <b>64개 work-group</b></div>
+            <div style="font-size:11px;color:#9aa6bd;margin-bottom:8px;">각 색상 블록 = work-group 1개 (64 work-items 포함)</div>
+            ${makeGroupGrid(true)}
+            <div style="font-size:11px;color:#6b7fa3;margin-top:10px;"><span style="color:#ffc850">🚛 트럭 64대 필요</span> — 각 트럭이 8×8 박스 블록 1개 담당</div>
+          </div>`;
+        break;
+
+      case 'groupcount':
+        el.innerHTML = `
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+            <div style="flex:1;min-width:180px;">
+              <div style="font-size:10px;font-weight:700;color:#8ab4ff;margin-bottom:8px;">OpenCL → Vulkan 수식</div>
+              <div style="background:#0a0e1a;border:1px solid #2a3142;border-radius:8px;padding:12px;font-family:ui-monospace,monospace;font-size:12px;line-height:2;color:#e6ebf5;">
+                groupCountX&nbsp;= 64 ÷ 8 = <span style="color:#7ee0c6;font-weight:700;">8</span><br>
+                groupCountY&nbsp;= 64 ÷ 8 = <span style="color:#7ee0c6;font-weight:700;">8</span><br>
+                groupCountZ&nbsp;= <span style="color:#6b7fa3">1</span>
+              </div>
+              <div style="margin-top:8px;background:rgba(126,224,198,.08);border:1px solid #7ee0c633;border-radius:8px;padding:10px;font-family:ui-monospace,monospace;font-size:14px;color:#7ee0c6;font-weight:700;text-align:center;">
+                vkCmdDispatch(8, 8, 1)
+              </div>
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <div style="font-size:10px;font-weight:700;color:#ffc850;margin-bottom:8px;">배송 비유</div>
+              <div style="background:#0a0e1a;border:1px solid #2a3142;border-radius:8px;padding:12px;font-size:11px;color:#9aa6bd;line-height:2;">
+                🚛 X방향 트럭 <b style="color:#ffc850">8대</b><br>
+                🚛 Y방향 트럭 <b style="color:#ffc850">8대</b><br>
+                📦 트럭 1대: 8×8 = 64 박스<br>
+                📊 합계: 64대 × 64박스 = <b style="color:#e6ebf5">4,096개</b>
+              </div>
+            </div>
+          </div>`;
+        break;
+
+      case 'null_lws':
+        el.innerHTML = `
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="flex:1;min-width:150px;border:1px solid #ffa06033;border-radius:8px;padding:12px;background:rgba(255,160,96,.05);">
+              <div style="font-size:11px;font-weight:700;color:#ffa060;margin-bottom:8px;">LWS = NULL (미지정)</div>
+              <div style="font-size:11px;color:#9aa6bd;line-height:1.9;">사용자: "팀 크기는 알아서"<br>런타임: 하드웨어 제약 확인<br>→ 내부에서 결정 (예: 8×8)</div>
+            </div>
+            <div style="display:flex;align-items:center;font-size:22px;color:#4f648f;">→</div>
+            <div style="flex:1;min-width:150px;border:1px solid #7ee0c633;border-radius:8px;padding:12px;background:rgba(126,224,198,.05);">
+              <div style="font-size:11px;font-weight:700;color:#7ee0c6;margin-bottom:8px;">확정 후 예시</div>
+              <div style="font-size:11px;color:#9aa6bd;line-height:1.9;">8×8 선택 → dispatch(8, 8, 1)<br>16×4 선택 → dispatch(4, 16, 1)<br><span style="color:#ffc850">총 work-item은 같아도<br>성능은 달라질 수 있음</span></div>
+            </div>
+          </div>
+          <div style="background:rgba(255,144,144,.07);border:1px solid #ff909033;border-radius:8px;padding:10px;font-size:11px;color:#ff9090;">
+            ⚠️ NULL은 "불필요"가 아닙니다. 실행 직전에 반드시 숫자로 확정됩니다.
+          </div>`;
+        break;
+
+      case 'vulkan':
+        el.innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;">
+              <div style="flex:1;min-width:160px;border:1px solid #8ab4ff33;border-radius:8px;padding:12px;background:rgba(138,180,255,.04);">
+                <div style="font-size:10px;font-weight:700;color:#8ab4ff;margin-bottom:6px;">SPIR-V 셰이더 (컴파일 타임에 고정)</div>
+                <code style="font-family:ui-monospace,monospace;font-size:11px;color:#7ee0c6;line-height:1.9;display:block;">layout(<br>&nbsp;&nbsp;local_size_x = 8,<br>&nbsp;&nbsp;local_size_y = 8,<br>&nbsp;&nbsp;local_size_z = 1) in;</code>
+                <div style="font-size:10px;color:#6b7fa3;margin-top:6px;">← LWS가 셰이더에 박힌다</div>
+              </div>
+              <div style="display:flex;align-items:center;font-size:24px;color:#4f648f;">+</div>
+              <div style="flex:1;min-width:160px;border:1px solid #7ee0c633;border-radius:8px;padding:12px;background:rgba(126,224,198,.04);">
+                <div style="font-size:10px;font-weight:700;color:#7ee0c6;margin-bottom:6px;">Command Buffer (실행 시점)</div>
+                <code style="font-family:ui-monospace,monospace;font-size:12px;color:#7ee0c6;display:block;line-height:1.9;">vkCmdDispatch(8, 8, 1)</code>
+                <div style="font-size:10px;color:#6b7fa3;margin-top:6px;">← groupCount = ceil(GWS / LWS)</div>
+              </div>
+            </div>
+            <div style="background:#0a0e1a;border:1px solid #2a3142;border-radius:8px;padding:10px;font-size:12px;color:#9aa6bd;text-align:center;">
+              총 work-item = local_size(8×8) × groupCount(8×8) = <b style="color:#7ee0c6;">4,096</b> ✓
+            </div>
+          </div>`;
+        break;
+
+      case 'pm4':
+        el.innerHTML = `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;">
+            <div style="flex:1;min-width:140px;border:1px solid #7ee0c633;border-radius:8px;padding:12px;background:rgba(126,224,198,.04);">
+              <div style="font-size:10px;font-weight:700;color:#7ee0c6;margin-bottom:8px;">Vulkan API</div>
+              <code style="font-family:ui-monospace,monospace;font-size:11px;color:#7ee0c6;line-height:1.8;display:block;">vkCmdDispatch(8, 8, 1)</code>
+              <div style="font-size:10px;color:#6b7fa3;margin-top:6px;">드라이버가 패킷으로 변환</div>
+            </div>
+            <div style="display:flex;align-items:center;font-size:22px;color:#4f648f;">→</div>
+            <div style="flex:1;min-width:190px;border:1px solid #ff909033;border-radius:8px;padding:12px;background:rgba(255,144,144,.04);">
+              <div style="font-size:10px;font-weight:700;color:#ff9090;margin-bottom:8px;">PM4 패킷</div>
+              <code style="font-family:ui-monospace,monospace;font-size:10px;color:#ff9090;display:block;line-height:1.9;">IT_DISPATCH_DIRECT {<br>&nbsp;&nbsp;DIM_X = 8,&nbsp; // groupCountX<br>&nbsp;&nbsp;DIM_Y = 8,&nbsp; // groupCountY<br>&nbsp;&nbsp;DIM_Z = 1,&nbsp; // groupCountZ<br>&nbsp;&nbsp;DISPATCH_INITIATOR<br>}</code>
+            </div>
+            <div style="display:flex;align-items:center;font-size:22px;color:#4f648f;">→</div>
+            <div style="flex:0 0 100px;border:1px solid #2a3142;border-radius:8px;padding:12px;background:#0a0e1a;text-align:center;">
+              <div style="font-size:10px;color:#6b7fa3;margin-bottom:6px;">GPU CP</div>
+              <div style="font-size:30px;">⚙️</div>
+              <div style="font-size:10px;color:#7ee0c6;margin-top:6px;">CU에<br>wavefront 배분</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:#6b7fa3;text-align:center;">
+            <span style="color:#ffc850">🚛</span>&nbsp;"신호실 출발 명령" = IT_DISPATCH_DIRECT (DIM_X=8, DIM_Y=8, DIM_Z=1)
+          </div>`;
+        break;
+
+      case 'table': {
+        const rows = [
+          ['📦 전체 박스 수',       'GWS (64×64 = 4,096)',       '—',                                   '—'],
+          ['🚛 트럭 1대 처리 단위', 'LWS (8×8 = 64)',             'local_size(8,8,1) in shader',         '—'],
+          ['🚚 필요한 트럭 대수',   'ceil(GWS/LWS) = 8×8 = 64',  'vkCmdDispatch(8, 8, 1)',              'IT_DISPATCH_DIRECT DIM_X/Y/Z'],
+          ['❓ 트럭 크기 자동결정', 'LWS = NULL',                 '드라이버/런타임이 내부 결정',         '—'],
+          ['⚙️ 신호실 출발 명령',   '(내부)',                      '(드라이버 변환)',                     'IT_DISPATCH_DIRECT'],
+        ];
+        el.innerHTML = `<table class="mapping-table">
+          <thead><tr>
+            <th><span class="badge-del">배송 비유</span></th>
+            <th><span class="badge-cl">OpenCL</span></th>
+            <th><span class="badge-vk">Vulkan</span></th>
+            <th><span class="badge-pm4">PM4</span></th>
+          </tr></thead>
+          <tbody>${rows.map((r,i)=>`<tr class="${i%2===0?'hl':''}">${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>`;
+        break;
+      }
+    }
+  }
+
+  let step = 0, autoTimer = null;
+  const total = STEPS.length;
 
   function render() {
-    let gxs = Math.max(1, +el.gwsx.value|0), gys = Math.max(1, +el.gwsy.value|0);
-    let lxs = Math.max(1, +el.lwsx.value|0), lys = Math.max(1, +el.lwsy.value|0);
-
-    const gcx = ceilDiv(gxs, lxs), gcy = ceilDiv(gys, lys);
-
-    el.grid.style.gridTemplateColumns = `repeat(${Math.min(gxs,32)}, 10px)`;
-    el.grid.innerHTML = '';
-    const drawX = Math.min(gxs, 32), drawY = Math.min(gys, 32);
-    for (let y=0; y<drawY; y++) {
-      for (let x=0; x<drawX; x++) {
-        const bx = Math.floor(x/lxs), by = Math.floor(y/lys);
-        const c = document.createElement('div');
-        c.style.width='10px'; c.style.height='10px';
-        c.style.background = ((bx+by)%2===0)?'#38bdf8':'#22d3ee';
-        c.style.opacity='0.9';
-        el.grid.appendChild(c);
-      }
+    document.getElementById('gwd-counter').textContent = 'Step ' + step + ' / ' + total;
+    if (step === 0) {
+      document.getElementById('gwd-desc').innerHTML = '<span class="step-num">시작</span><strong>"다음"을 눌러 GWS/LWS가 Vulkan dispatch → PM4로 내려가는 과정을 따라가세요.</strong>';
+      document.getElementById('gwd-scene').innerHTML = '<div style="text-align:center;padding:20px;color:#4f648f;">위 버튼을 눌러 시작하세요</div>';
+      return;
     }
-
-    el.dgrid.style.gridTemplateColumns = `repeat(${Math.min(gcx,24)}, 14px)`;
-    el.dgrid.innerHTML = '';
-    const dX = Math.min(gcx,24), dY = Math.min(gcy,24);
-    for (let y=0; y<dY; y++) {
-      for (let x=0; x<dX; x++) {
-        const c = document.createElement('div');
-        c.style.width='14px'; c.style.height='14px';
-        c.style.background='#a78bfa';
-        c.style.border='1px solid #7c3aed';
-        c.style.boxSizing='border-box';
-        el.dgrid.appendChild(c);
-      }
-    }
-
-    el.msg.innerHTML = `GWS=${gxs}×${gys}, LWS=${lxs}×${lys} → dispatch(groupCount)=<b>${gcx}×${gcy}×1</b> | 총 work-item(계산상)=${gcx*lxs}×${gcy*lys}`;
+    const s = STEPS[step - 1];
+    document.getElementById('gwd-desc').innerHTML = s.desc;
+    renderScene(s.id);
   }
 
-  function autoLws() {
-    const gx = +el.gwsx.value|0, gy = +el.gwsy.value|0;
-    // simple heuristic for demo
-    if (gx % 8 === 0 && gy % 8 === 0) { el.lwsx.value = 8; el.lwsy.value = 8; }
-    else if (gx % 16 === 0 && gy % 4 === 0) { el.lwsx.value = 16; el.lwsy.value = 4; }
-    else { el.lwsx.value = 4; el.lwsy.value = 4; }
-    render();
-    el.msg.innerHTML += ' <span style="color:#fbbf24">(LWS=NULL 가정 자동 선택 예시)</span>';
+  function stopAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    document.getElementById('gwd-auto').textContent = '▶ 자동 재생';
   }
 
-  let t;
-  function play() {
-    const seq = [[64,64,8,8],[64,64,16,4],[100,100,8,8],[100,100,16,8]];
-    let i=0;
-    clearInterval(t);
-    t = setInterval(() => {
-      const [gx,gy,lx,ly] = seq[i%seq.length];
-      el.gwsx.value=gx; el.gwsy.value=gy; el.lwsx.value=lx; el.lwsy.value=ly;
-      render();
-      i++;
-      if (i===seq.length) clearInterval(t);
-    }, 900);
-  }
-
-  el.apply.addEventListener('click', render);
-  el.auto.addEventListener('click', autoLws);
-  el.reset.addEventListener('click', () => { el.gwsx.value=64; el.gwsy.value=64; el.lwsx.value=8; el.lwsy.value=8; render(); });
-  el.play.addEventListener('click', play);
+  document.getElementById('gwd-next').addEventListener('click',  () => { stopAuto(); if (step < total)  { step++; render(); } });
+  document.getElementById('gwd-prev').addEventListener('click',  () => { stopAuto(); if (step > 0)      { step--; render(); } });
+  document.getElementById('gwd-reset').addEventListener('click', () => { stopAuto(); step = 0; render(); });
+  document.getElementById('gwd-auto').addEventListener('click',  () => {
+    if (autoTimer) { stopAuto(); return; }
+    document.getElementById('gwd-auto').textContent = '⏸ 일시정지';
+    if (step === 0) { step = 1; render(); }
+    autoTimer = setInterval(() => { if (step >= total) { stopAuto(); return; } step++; render(); }, 2800);
+  });
 
   render();
 })();
 </script>
+</div>

@@ -20,7 +20,7 @@ difficulty: "beginner"
 - PM4: 간접
 - PERF: 직접
 
-## 직관 애니메이션
+## 단계별 시각화 — GWS → LWS → Dispatch → PM4
 
 {{< gws_lws_dispatch_anim >}}
 

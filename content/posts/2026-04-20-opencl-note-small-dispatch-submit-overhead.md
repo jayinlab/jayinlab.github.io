@@ -20,17 +20,6 @@ Host API 호출 → driver validation/state 준비 → command buffer 기록/sub
 - 불필요한 `clFinish`/강한 동기화를 줄여 queue가 비지 않게 유지
 - 프로파일링에서 GPU kernel time과 CPU submit time을 분리해서 해석
 
-## 분류체계 (CL/VK/ANGLE/SPV/PM4/PERF)
-
-- **CL:** 간접 — OpenCL API 패턴(`enqueue`, 동기화)이 submit 고정비에 직접 영향
-- **VK:** 직접 — command buffer 기록/submit 재사용 전략이 핵심
-- **ANGLE:** 참고 — OpenCL 직접 경로는 아니지만 abstraction 계층 오버헤드 해석에 유사성 있음
-- **SPV:** 참고 — IR 자체보다 submit/driver 경로가 이번 병목의 중심
-- **PM4:** 직접 — 최종적으로 dispatch/state packet이 큐에 쌓이는 비용 모델과 연결
-- **PERF:** 직접 — tiny workload latency 최적화의 1순위 관점
-
----
-
 ## 관련 글
 
 - [OpenCL 노트 — Tiny Dispatch에서 PM4 스케일로 성능 보기]({{< relref "2026-04-18-opencl-note-tiny-dispatch-pm4-scale.md" >}})

@@ -12,15 +12,6 @@ difficulty: "beginner"
 작은 커널을 매우 자주 dispatch할 때,
 "PM4가 도대체 얼마나 많이 생기나?"를 직관적으로 보는 노트.
 
-## 분류체계 (CL/VK/ANGLE/SPV/PM4/PERF)
-
-- CL: 간접
-- VK: 직접
-- ANGLE: 참고
-- SPV: 참고
-- PM4: 직접
-- PERF: 직접
-
 ## 한 줄 핵심
 
 **dispatch 1회 = PM4 1개가 아니라, 보통 여러 패킷 묶음**이다.

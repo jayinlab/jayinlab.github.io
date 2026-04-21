@@ -11,15 +11,6 @@ difficulty: "beginner"
 
 오늘 목표: 네가 헷갈린 딱 그 지점, **GWS/LWS와 Vulkan dispatch xyz의 관계**를 숫자로 고정한다.
 
-## 분류체계 (CL/VK/ANGLE/SPV/PM4/PERF)
-
-- CL: 직접
-- VK: 직접
-- ANGLE: 간접
-- SPV: 참고
-- PM4: 간접
-- PERF: 직접
-
 ## 단계별 시각화 — GWS → LWS → Dispatch → PM4
 
 {{< gws_lws_dispatch_anim >}}

@@ -58,17 +58,6 @@ difficulty: "intermediate"
 
 > 프로파일링의 첫 단계는 "빠르게 만드는 것"이 아니라, 시간을 Host/Queue/GPU로 분해해 책임 구간을 확정하는 것이다.
 
-## 분류체계 (CL/VK/ANGLE/SPV/PM4/PERF)
-
-- CL: **간접** — OpenCL API 사용 패턴이 측정 결과에 영향
-- VK: **직접** — submit/queue/barrier 타임라인 분석의 핵심 계층
-- ANGLE: **간접** — 상위 호출이 Vulkan 제출 구조로 변환되는 경로
-- SPV: **참고** — 코드 생성 품질에 영향은 있으나 이번 글의 중심은 아님
-- PM4: **간접** — 최종 패킷 제출/스케줄링 결과가 타임라인에 반영
-- PERF: **직접** — 병목 분해와 튜닝 의사결정의 중심
-
----
-
 ## 관련 글
 
 - [Dispatch Granularity: tiny dispatch가 느린 이유](/opencl-note-dispatch-granularity/)

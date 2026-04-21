@@ -32,17 +32,6 @@ difficulty: "intermediate"
 - `clFinish`를 루프 밖으로 밀 수 있는지 확인한다.
 - kernel time과 frame/loop total time을 반드시 같이 기록한다.
 
-## 분류체계 (CL/VK/ANGLE/SPV/PM4/PERF)
-
-- **CL:** 직접 — OpenCL API 호출/동기화 패턴 분석이 출발점
-- **VK:** 간접 — RGP 해석은 Vulkan queue/submit 모델 이해가 필요
-- **ANGLE:** 참고 — abstraction 계층의 submit 지연 해석에 개념적으로 유사
-- **SPV:** 참고 — 이번 주제의 핵심 병목은 IR보다 런타임 타임라인
-- **PM4:** 간접 — 최종 dispatch packet 흐름을 시간축으로 역추적할 때 중요
-- **PERF:** 직접 — CPU/GPU 병목 분리를 가장 먼저 수행하는 성능 실무 항목
-
----
-
 ## 관련 글
 
 - [OpenCL 노트 — GPU Profiling 기초]({{< relref "2026-04-19-opencl-note-gpu-profiling-basics.md" >}})

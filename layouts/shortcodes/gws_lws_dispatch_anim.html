@@ -1,0 +1,114 @@
+<div id="gws-lws-anim" style="border:1px solid #2a3142;border-radius:12px;padding:12px;background:#0f1624;margin:12px 0;">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+    <button id="play-gws" style="padding:6px 10px;">▶ Play</button>
+    <button id="reset-gws" style="padding:6px 10px;">↺ Reset</button>
+    <label>GWS X <input id="gwsx" type="number" value="64" min="1" max="256" style="width:64px;"></label>
+    <label>GWS Y <input id="gwsy" type="number" value="64" min="1" max="256" style="width:64px;"></label>
+    <label>LWS X <input id="lwsx" type="number" value="8" min="1" max="64" style="width:64px;"></label>
+    <label>LWS Y <input id="lwsy" type="number" value="8" min="1" max="64" style="width:64px;"></label>
+    <button id="apply-gws" style="padding:6px 10px;">Apply</button>
+    <button id="auto-gws" style="padding:6px 10px;">LWS=NULL (Auto)</button>
+  </div>
+
+  <div id="gws-msg" style="margin:8px 0;font-size:13px;color:#c7d2fe"></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div style="border:1px solid #334155;border-radius:10px;padding:10px;background:#111827;">
+      <div style="font-weight:600;margin-bottom:8px;">OpenCL View (문제 공간)</div>
+      <div id="gws-grid" style="display:grid;gap:1px;background:#1f2937;border:1px solid #374151;"></div>
+    </div>
+    <div style="border:1px solid #334155;border-radius:10px;padding:10px;background:#111827;">
+      <div style="font-weight:600;margin-bottom:8px;">Vulkan View (groupCount)</div>
+      <div id="dispatch-grid" style="display:grid;gap:2px;background:#1f2937;border:1px solid #374151;"></div>
+    </div>
+  </div>
+
+  <div style="margin-top:10px;font-size:12px;color:#9ca3af">
+    공식: <code>groupCountX = ceil(GWSX / LWSX)</code>, <code>groupCountY = ceil(GWSY / LWSY)</code><br>
+    총 work-item = <code>groupCountX*LWSX × groupCountY*LWSY</code>
+  </div>
+</div>
+
+<script>
+(() => {
+  const root = document.getElementById('gws-lws-anim');
+  if (!root) return;
+  const $ = (id) => document.getElementById(id);
+
+  const el = {
+    play: $('play-gws'), reset: $('reset-gws'), apply: $('apply-gws'), auto: $('auto-gws'),
+    gwsx: $('gwsx'), gwsy: $('gwsy'), lwsx: $('lwsx'), lwsy: $('lwsy'),
+    msg: $('gws-msg'), grid: $('gws-grid'), dgrid: $('dispatch-grid')
+  };
+
+  function ceilDiv(a,b){ return Math.floor((a+b-1)/b); }
+
+  function render() {
+    let gxs = Math.max(1, +el.gwsx.value|0), gys = Math.max(1, +el.gwsy.value|0);
+    let lxs = Math.max(1, +el.lwsx.value|0), lys = Math.max(1, +el.lwsy.value|0);
+
+    const gcx = ceilDiv(gxs, lxs), gcy = ceilDiv(gys, lys);
+
+    el.grid.style.gridTemplateColumns = `repeat(${Math.min(gxs,32)}, 10px)`;
+    el.grid.innerHTML = '';
+    const drawX = Math.min(gxs, 32), drawY = Math.min(gys, 32);
+    for (let y=0; y<drawY; y++) {
+      for (let x=0; x<drawX; x++) {
+        const bx = Math.floor(x/lxs), by = Math.floor(y/lys);
+        const c = document.createElement('div');
+        c.style.width='10px'; c.style.height='10px';
+        c.style.background = ((bx+by)%2===0)?'#38bdf8':'#22d3ee';
+        c.style.opacity='0.9';
+        el.grid.appendChild(c);
+      }
+    }
+
+    el.dgrid.style.gridTemplateColumns = `repeat(${Math.min(gcx,24)}, 14px)`;
+    el.dgrid.innerHTML = '';
+    const dX = Math.min(gcx,24), dY = Math.min(gcy,24);
+    for (let y=0; y<dY; y++) {
+      for (let x=0; x<dX; x++) {
+        const c = document.createElement('div');
+        c.style.width='14px'; c.style.height='14px';
+        c.style.background='#a78bfa';
+        c.style.border='1px solid #7c3aed';
+        c.style.boxSizing='border-box';
+        el.dgrid.appendChild(c);
+      }
+    }
+
+    el.msg.innerHTML = `GWS=${gxs}×${gys}, LWS=${lxs}×${lys} → dispatch(groupCount)=<b>${gcx}×${gcy}×1</b> | 총 work-item(계산상)=${gcx*lxs}×${gcy*lys}`;
+  }
+
+  function autoLws() {
+    const gx = +el.gwsx.value|0, gy = +el.gwsy.value|0;
+    // simple heuristic for demo
+    if (gx % 8 === 0 && gy % 8 === 0) { el.lwsx.value = 8; el.lwsy.value = 8; }
+    else if (gx % 16 === 0 && gy % 4 === 0) { el.lwsx.value = 16; el.lwsy.value = 4; }
+    else { el.lwsx.value = 4; el.lwsy.value = 4; }
+    render();
+    el.msg.innerHTML += ' <span style="color:#fbbf24">(LWS=NULL 가정 자동 선택 예시)</span>';
+  }
+
+  let t;
+  function play() {
+    const seq = [[64,64,8,8],[64,64,16,4],[100,100,8,8],[100,100,16,8]];
+    let i=0;
+    clearInterval(t);
+    t = setInterval(() => {
+      const [gx,gy,lx,ly] = seq[i%seq.length];
+      el.gwsx.value=gx; el.gwsy.value=gy; el.lwsx.value=lx; el.lwsy.value=ly;
+      render();
+      i++;
+      if (i===seq.length) clearInterval(t);
+    }, 900);
+  }
+
+  el.apply.addEventListener('click', render);
+  el.auto.addEventListener('click', autoLws);
+  el.reset.addEventListener('click', () => { el.gwsx.value=64; el.gwsy.value=64; el.lwsx.value=8; el.lwsy.value=8; render(); });
+  el.play.addEventListener('click', play);
+
+  render();
+})();
+</script>

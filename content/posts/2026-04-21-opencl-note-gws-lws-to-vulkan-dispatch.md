@@ -20,6 +20,10 @@ difficulty: "beginner"
 - PM4: 간접
 - PERF: 직접
 
+## 직관 애니메이션
+
+{{< gws_lws_dispatch_anim >}}
+
 ## 한 줄 핵심
 
 - **GWS** = 전체 문제 크기

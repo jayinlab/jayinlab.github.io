@@ -1,0 +1,154 @@
+{{ define "main" }}
+<h2>{{ .Title }}</h2>
+<p class="meta" style="margin-bottom:18px">레이어를 클릭해 펼치세요. 🟢 <b>bullet-note</b>가 복습 진입점입니다.</p>
+
+<div id="lmap"></div>
+
+<script>
+{{- $data := slice -}}
+{{- range where .Site.RegularPages "Section" "posts" -}}
+  {{- $post := dict
+      "t" .Title
+      "u" .RelPermalink
+      "tp" (.Params.type | default "note")
+      "d"  (.Params.difficulty | default "")
+      "g"  (.Params.tags | default (slice))
+      "a"  (eq .Params.animation true) -}}
+  {{- $data = $data | append $post -}}
+{{- end -}}
+const LM_POSTS = {{ $data | jsonify | safeJS }};
+</script>
+
+<script>
+(function () {
+  const LAYERS = [
+    { id: 'opencl', label: 'OpenCL', col: '#22d3ee', desc: 'Memory · Execution · Lifecycle · SPIR-V' },
+    { id: 'angle',  label: 'ANGLE',  col: '#a3e635', desc: 'OpenCL → Vulkan 변환 레이어' },
+    { id: 'vulkan', label: 'Vulkan', col: '#fb923c', desc: 'Pipeline · Descriptor · Barrier · Sync' },
+    { id: 'pm4',    label: 'PM4',    col: '#d946ef', desc: 'Command 제출 · 패킷 구조 · Ring Buffer' },
+    { id: 'hw',     label: 'HW',     col: '#facc15', desc: 'Wavefront · Occupancy · Roofline · Profiling' },
+    { id: 'cli',    label: 'CLI',    col: '#9aa6bd', desc: 'CLI 도구 사용기' },
+  ];
+
+  function classify(tags) {
+    const t = tags || [];
+    if (t.includes('angle')) return 'angle';
+    if (['wavefront','roofline','lds','bank-conflict','occupancy','profiling','rgp','rocm'].some(x => t.includes(x))) return 'hw';
+    if (t.includes('pm4')) return 'pm4';
+    if (['vulkan','barrier','sync'].some(x => t.includes(x))) return 'vulkan';
+    if (['opencl','spirv','clspv','execution','lifecycle','ndrange','memory','cache','setup'].some(x => t.includes(x))) return 'opencl';
+    if (['cli','tools','ubuntu'].some(x => t.includes(x))) return 'cli';
+    return 'opencl';
+  }
+
+  const G = {};
+  LAYERS.forEach(l => G[l.id] = { b: [], n: [], w: [] });
+
+  LM_POSTS.forEach(p => {
+    const lid = classify(p.g);
+    const g = G[lid] || G.opencl;
+    if (p.tp === 'bullet-note') g.b.push(p);
+    else if (p.tp === 'wrong-note') g.w.push(p);
+    else g.n.push(p);
+  });
+
+  const DIFF = {
+    beginner:     ['BEG', 'diff-beginner'],
+    intermediate: ['MID', 'diff-intermediate'],
+    advanced:     ['ADV', 'diff-advanced'],
+  };
+
+  function postHTML(p) {
+    const [dl, dc] = DIFF[p.d] || ['', ''];
+    return `<li class="lm-item">
+      <span class="lm-badges">${dl ? `<span class="diff-badge ${dc}">${dl}</span>` : ''}${p.a ? '<span class="anim-badge">▶</span>' : ''}</span>
+      <a class="lm-link" href="${p.u}">${p.t}</a>
+    </li>`;
+  }
+
+  function subSection(items, icon, label, open) {
+    if (!items.length) return '';
+    const id = 'lmsub' + Math.random().toString(36).slice(2, 8);
+    return `<div class="lm-sub">
+      <button class="lm-sub-btn" data-target="${id}">
+        <span class="lm-schev">${open ? '▾' : '▸'}</span>${icon} <b>${label}</b> <span class="lm-cnt">(${items.length})</span>
+      </button>
+      <ul id="${id}" class="lm-list"${open ? '' : ' hidden'}>${items.map(postHTML).join('')}</ul>
+    </div>`;
+  }
+
+  const root = document.getElementById('lmap');
+
+  LAYERS.forEach(l => {
+    const g = G[l.id];
+    const total = g.b.length + g.n.length + g.w.length;
+    if (!total) return;
+    const bodyId = 'lmlyr' + l.id;
+    const div = document.createElement('div');
+    div.className = 'lm-layer';
+    div.innerHTML = `
+      <button class="lm-hdr" data-target="${bodyId}" data-kind="layer">
+        <span class="lm-dot" style="background:${l.col}"></span>
+        <b class="lm-lbl">${l.label}</b>
+        <span class="lm-ldesc">${l.desc}</span>
+        <span class="lm-ltotal">${total}개</span>
+        <span class="lm-lchev">▸</span>
+      </button>
+      <div id="${bodyId}" class="lm-body" hidden>
+        ${subSection(g.b, '🟢', 'bullet-note', true)}
+        ${subSection(g.n, '📄', 'note', false)}
+        ${subSection(g.w, '❌', 'wrong-note', false)}
+      </div>`;
+    root.appendChild(div);
+  });
+
+  root.addEventListener('click', e => {
+    const btn = e.target.closest('[data-target]');
+    if (!btn) return;
+    const el = document.getElementById(btn.dataset.target);
+    if (!el) return;
+    el.hidden = !el.hidden;
+    if (btn.dataset.kind === 'layer') {
+      btn.querySelector('.lm-lchev').textContent = el.hidden ? '▸' : '▾';
+    } else {
+      btn.querySelector('.lm-schev').textContent = el.hidden ? '▸' : '▾';
+    }
+  });
+})();
+</script>
+
+<style>
+#lmap { display: grid; gap: 8px; }
+.lm-layer { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.lm-hdr {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; background: var(--card); border: none;
+  cursor: pointer; color: var(--text); text-align: left;
+}
+.lm-hdr:hover { background: var(--bg-soft); }
+.lm-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.lm-lbl { font-size: 1rem; min-width: 68px; }
+.lm-ldesc { color: var(--muted); font-size: .84rem; flex: 1; }
+.lm-ltotal { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+.lm-lchev { color: var(--muted); font-size: .85rem; }
+.lm-body { padding: 10px 14px 14px; display: grid; gap: 6px; }
+.lm-sub-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: none; cursor: pointer;
+  color: var(--brand); font-size: .88rem; padding: 3px 0;
+}
+.lm-sub-btn:hover { color: var(--text); }
+.lm-schev { font-size: .82rem; }
+.lm-cnt { color: var(--muted); font-weight: 400; }
+.lm-list { list-style: none; padding: 0; margin: 5px 0 2px 16px; display: grid; gap: 4px; }
+.lm-item {
+  display: flex; align-items: baseline; gap: 7px;
+  padding: 6px 10px; border: 1px solid var(--line);
+  background: var(--bg-soft); border-radius: 7px; font-size: .86rem;
+}
+.lm-badges { display: flex; gap: 3px; flex-shrink: 0; }
+.lm-link { color: var(--text); flex: 1; }
+.lm-link:hover { color: var(--brand); text-decoration: underline; }
+@media (max-width: 600px) { .lm-ldesc { display: none; } }
+</style>
+{{ end }}

@@ -22,13 +22,30 @@ difficulty: "beginner"
 
 즉 OpenCL은 커널 내부 barrier 범위를 **group 내부**로 제한한다.
 
+## API 연결: `barrier()` vs `clFinish()` vs 이벤트 wait
+
+헷갈리기 쉬운 포인트를 API 기준으로 분리하면:
+
+- `barrier()`
+  - 커널 코드 내부에서 사용
+  - 같은 work-group 내부 work-item 동기화
+
+- `clFinish(queue)`
+  - 호스트 API
+  - **해당 queue에 이미 들어간 작업이 전부 끝날 때까지 CPU가 기다림**
+  - 즉 "group 간 barrier"가 아니라 "커널 경계에서 전체 완료를 기다리는 방식"
+
+- event wait (`clWaitForEvents`, enqueue wait list)
+  - `clFinish`보다 더 정밀하게 특정 작업 의존성만 걸 수 있음
+  - 실무에서는 전체 stall을 줄이기 위해 event 기반 동기화를 선호하는 경우가 많다
+
 ## 그럼 group 간 동기화는 어떻게 하나
 
 1. 커널 A 실행
-2. 이벤트/큐 완료 대기 (`clFinish` 또는 event wait)
+2. 이벤트/큐 완료 대기 (`clWaitForEvents` 또는 필요 시 `clFinish`)
 3. 커널 B 실행
 
-이렇게 **커널 경계**로 단계 분리해서 동기화한다.
+즉 **커널 경계 + 이벤트 의존성**으로 단계 동기화를 만든다.
 
 ## 기억 문장
 

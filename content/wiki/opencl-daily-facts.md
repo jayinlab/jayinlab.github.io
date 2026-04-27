@@ -60,6 +60,9 @@ difficulty: "intermediate"
 - command buffer는 "무엇을 실행할지"를 기록한 목록이고, queue submit은 그 목록을 실행 스케줄에 올리는 단계다.
 - tiny dispatch 워크로드에서는 기록 재사용과 제출 전략이 CPU 오버헤드를 크게 좌우한다.
 
+- `clFinish(queue)`는 "디바이스 전체 idle" 보장이 아니라, **해당 command queue에 enqueue된 작업 완료**를 기다리는 동기화다.
+- 여러 queue를 쓰는 경우 완료 판단은 queue 단위로 분리해 보는 습관이 필요하다.
+
 ---
 
 ## 운영 규칙 (누적 방식)

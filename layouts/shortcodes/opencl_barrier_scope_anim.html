@@ -1,71 +1,158 @@
-<div id="barrier-scope-anim" style="border:1px solid #2a3142;border-radius:12px;padding:12px;background:#0f1624;margin:12px 0;">
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
-    <button id="play-barrier-scope" style="padding:6px 10px;">▶ Play</button>
-    <button id="reset-barrier-scope" style="padding:6px 10px;">↺ Reset</button>
-    <span style="font-size:13px;color:#c7d2fe">같은 work-group 내부에서만 barrier 동기화</span>
+<div id="obs-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<style>
+#obs-root * { box-sizing:border-box; }
+#obs-root .obs-card { background:#0f1624; border:1px solid #2a3142; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+#obs-root .obs-title { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6b7fa3; margin-bottom:10px; }
+#obs-root .step-box { background:rgba(138,180,255,.07); border:1px solid #2a3142; border-left:3px solid #8ab4ff; border-radius:8px; padding:10px 14px; min-height:52px; line-height:1.7; margin-bottom:12px; }
+#obs-root .step-num { display:inline-block; background:#8ab4ff; color:#0b0d12; font-weight:700; font-size:11px; border-radius:999px; padding:1px 7px; margin-right:6px; }
+#obs-root .ctrl-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+#obs-root button { background:#141a26; border:1px solid #2a3142; border-radius:8px; color:#e6ebf5; padding:6px 14px; cursor:pointer; font-size:12px; transition:background .2s,border-color .2s; }
+#obs-root button:hover { background:#1e2840; border-color:#8ab4ff; }
+#obs-root button.primary { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
+#obs-root .step-counter { color:#6b7fa3; font-size:12px; margin-left:auto; }
+#obs-root .lanes { display:flex; flex-direction:column; gap:6px; }
+#obs-root .lane { display:flex; align-items:stretch; gap:0; border-radius:8px; overflow:hidden; border:1px solid #2a3142; }
+#obs-root .lane-label { width:96px; min-width:96px; background:#0a0e1a; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#6b7fa3; padding:10px 6px; text-align:center; border-right:1px solid #2a3142; }
+#obs-root .lane-body { flex:1; background:#141a26; padding:8px 10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-height:44px; }
+#obs-root .tag { display:inline-block; padding:3px 9px; border-radius:6px; font-size:11px; font-weight:600; border:1px solid; white-space:nowrap; }
+#obs-root .tag-idle { background:rgba(107,127,163,.1); border-color:#2a3142; color:#6b7fa3; }
+#obs-root .tag-active { background:rgba(138,180,255,.2); border-color:#8ab4ff; color:#8ab4ff; }
+#obs-root .tag-wait { background:rgba(255,200,80,.12); border-color:#ffc850; color:#ffc850; }
+#obs-root .tag-done { background:rgba(126,224,198,.15); border-color:#7ee0c6; color:#7ee0c6; }
+#obs-root .tag-warn { background:rgba(255,144,144,.12); border-color:#ff9090; color:#ff9090; }
+#obs-root .arrow-down { text-align:center; color:#4f648f; font-size:16px; line-height:1; margin:2px 0; }
+</style>
+
+<div class="obs-card">
+  <div class="obs-title">OpenCL barrier 범위 + API 연결 시뮬레이터</div>
+  <div class="ctrl-row">
+    <button id="obs-prev">← 이전</button>
+    <button id="obs-next" class="primary">다음 단계 →</button>
+    <button id="obs-auto">▶ 자동 재생</button>
+    <button id="obs-reset">↺ 처음</button>
+    <span class="step-counter" id="obs-counter">Step 0 / 6</span>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-    <div style="border:1px solid #334155;border-radius:10px;padding:10px;background:#111827;">
-      <div style="font-weight:600;margin-bottom:8px;">Work-group A</div>
-      <div id="groupA" style="display:grid;grid-template-columns:repeat(4,28px);gap:6px;"></div>
-    </div>
-    <div style="border:1px solid #334155;border-radius:10px;padding:10px;background:#111827;">
-      <div style="font-weight:600;margin-bottom:8px;">Work-group B</div>
-      <div id="groupB" style="display:grid;grid-template-columns:repeat(4,28px);gap:6px;"></div>
-    </div>
+  <div class="step-box" id="obs-desc">
+    <span class="step-num">시작</span>
+    <strong>다음 단계</strong>를 눌러 barrier의 실제 범위와 clFinish/event wait의 역할을 구분해서 보세요.
   </div>
 
-  <div id="barrier-msg" style="margin-top:10px;font-size:13px;color:#e5e7eb"></div>
+  <div class="lanes">
+    <div class="lane">
+      <div class="lane-label">Work-group A</div>
+      <div class="lane-body" id="obs-l0"><span class="tag tag-idle">idle</span></div>
+    </div>
+    <div class="arrow-down">↕</div>
+    <div class="lane">
+      <div class="lane-label">Work-group B</div>
+      <div class="lane-body" id="obs-l1"><span class="tag tag-idle">idle</span></div>
+    </div>
+    <div class="arrow-down">↕</div>
+    <div class="lane">
+      <div class="lane-label">Kernel 내부<br>barrier</div>
+      <div class="lane-body" id="obs-l2"><span class="tag tag-idle">아직 없음</span></div>
+    </div>
+    <div class="arrow-down">↕</div>
+    <div class="lane">
+      <div class="lane-label">Host API</div>
+      <div class="lane-body" id="obs-l3"><span class="tag tag-idle">enqueue</span></div>
+    </div>
+  </div>
+</div>
 </div>
 
 <script>
-(() => {
-  const mk = (rootId, prefix) => {
-    const root = document.getElementById(rootId);
-    const cells = [];
-    for (let i=0;i<8;i++) {
-      const c = document.createElement('div');
-      c.textContent = prefix + i;
-      c.style.width='28px'; c.style.height='28px';
-      c.style.display='grid'; c.style.placeItems='center';
-      c.style.border='1px solid #475569'; c.style.borderRadius='6px';
-      c.style.background='#1f2937'; c.style.color='#cbd5e1'; c.style.fontSize='11px';
-      root.appendChild(c); cells.push(c);
+(function(){
+  const STEPS = [
+    {
+      desc:'<span class="step-num">1</span><strong>커널 실행 시작</strong><br><span style="color:#9aa6bd;font-size:12px;">A/B 두 work-group이 각자 독립적으로 실행됩니다.</span>',
+      lanes:[
+        '<span class="tag tag-active">A 일부 work-item 진행</span>',
+        '<span class="tag tag-active">B 일부 work-item 진행</span>',
+        '<span class="tag tag-idle">미도달</span>',
+        '<span class="tag tag-active">clEnqueueNDRangeKernel 호출됨</span>'
+      ]
+    },
+    {
+      desc:'<span class="step-num">2</span><strong>A가 barrier 도달</strong><br><span style="color:#9aa6bd;font-size:12px;">A 내부 work-item은 barrier에서 서로 기다립니다.</span>',
+      lanes:[
+        '<span class="tag tag-wait">A group 내부 대기</span>',
+        '<span class="tag tag-active">B는 계속 진행 가능</span>',
+        '<span class="tag tag-active">barrier(CLK_LOCAL_MEM_FENCE)</span>',
+        '<span class="tag tag-idle">호스트는 별도 동작 없음</span>'
+      ]
+    },
+    {
+      desc:'<span class="step-num">3</span><strong>핵심: B는 barrier에 막히지 않음</strong><br><span style="color:#9aa6bd;font-size:12px;">같은 커널 내부여도 barrier 범위는 work-group 내부입니다.</span>',
+      lanes:[
+        '<span class="tag tag-wait">A 내부 동기화 중</span>',
+        '<span class="tag tag-done">B 일부 wave 선행 완료</span>',
+        '<span class="tag tag-warn">group 간 barrier 아님</span>',
+        '<span class="tag tag-idle">호스트는 모름</span>'
+      ]
+    },
+    {
+      desc:'<span class="step-num">4</span><strong>group 간 동기화가 필요하면 커널 경계 사용</strong><br><span style="color:#9aa6bd;font-size:12px;">커널 A 완료를 이벤트/큐 동기화로 기다린 뒤 커널 B를 실행합니다.</span>',
+      lanes:[
+        '<span class="tag tag-done">Kernel A 종료 대기</span>',
+        '<span class="tag tag-done">Kernel A 종료 대기</span>',
+        '<span class="tag tag-idle">barrier 역할 종료</span>',
+        '<span class="tag tag-active">clWaitForEvents / queue wait</span>'
+      ]
+    },
+    {
+      desc:'<span class="step-num">5</span><strong>clFinish는 queue 단위 완료 대기</strong><br><span style="color:#9aa6bd;font-size:12px;">device 전체 idle을 강제하는 의미가 아니라, 해당 queue의 기등록 명령 완료를 기다립니다.</span>',
+      lanes:[
+        '<span class="tag tag-done">queue 내 명령 완료</span>',
+        '<span class="tag tag-done">queue 내 명령 완료</span>',
+        '<span class="tag tag-idle">커널 내부 barrier와 별개</span>',
+        '<span class="tag tag-wait">clFinish(queue) 블로킹</span>'
+      ]
+    },
+    {
+      desc:'<span class="step-num">6</span><strong>정리</strong><br><span style="color:#9aa6bd;font-size:12px;">barrier() = group 내부 동기화, group 간 동기화 = 이벤트/커널 경계, clFinish = queue 완료 대기.</span>',
+      lanes:[
+        '<span class="tag tag-done">A 내부 정합 OK</span>',
+        '<span class="tag tag-done">B 내부 정합 OK</span>',
+        '<span class="tag tag-active">scope: intra-group</span>',
+        '<span class="tag tag-active">host sync: event/finish</span>'
+      ]
     }
-    return cells;
-  };
+  ];
 
-  const A = mk('groupA','A');
-  const B = mk('groupB','B');
-  const msg = document.getElementById('barrier-msg');
+  const descEl = document.getElementById('obs-desc');
+  const counterEl = document.getElementById('obs-counter');
+  const laneEls = [
+    document.getElementById('obs-l0'),
+    document.getElementById('obs-l1'),
+    document.getElementById('obs-l2'),
+    document.getElementById('obs-l3')
+  ];
 
-  function reset() {
-    [...A,...B].forEach(c=>{c.style.background='#1f2937'; c.style.borderColor='#475569'; c.style.color='#cbd5e1';});
-    msg.textContent = '초기 상태: 두 group이 독립적으로 실행 중';
+  let idx = -1;
+  let timer = null;
+
+  function render(){
+    if (idx < 0) {
+      counterEl.textContent = `Step 0 / ${STEPS.length}`;
+      return;
+    }
+    const s = STEPS[idx];
+    descEl.innerHTML = s.desc;
+    laneEls.forEach((el,i)=> el.innerHTML = s.lanes[i]);
+    counterEl.textContent = `Step ${idx+1} / ${STEPS.length}`;
   }
 
-  function mark(cells, idxs, color, text='') {
-    idxs.forEach(i=>{cells[i].style.background=color; cells[i].style.color='#0b1020'; cells[i].style.borderColor=color;});
-    if (text) msg.textContent=text;
-  }
+  function next(){ if (idx < STEPS.length-1) { idx++; render(); } }
+  function prev(){ if (idx > 0) { idx--; render(); } }
+  function reset(){ idx=-1; clearInterval(timer); timer=null; descEl.innerHTML='<span class="step-num">시작</span><strong>다음 단계</strong>를 눌러 barrier의 실제 범위와 clFinish/event wait의 역할을 구분해서 보세요.'; laneEls.forEach(el=>el.innerHTML='<span class="tag tag-idle">idle</span>'); counterEl.textContent=`Step 0 / ${STEPS.length}`; }
+  function auto(){ clearInterval(timer); if (idx>=STEPS.length-1) idx=-1; timer=setInterval(()=>{ if (idx>=STEPS.length-1){ clearInterval(timer); timer=null; return;} next(); }, 1200); }
 
-  let timers=[];
-  function play() {
-    timers.forEach(clearTimeout); timers=[];
-    reset();
-    timers.push(setTimeout(()=>mark(A,[0,1,2],'#34d399','A group 일부 work-item이 barrier 도달'), 500));
-    timers.push(setTimeout(()=>mark(A,[3,4,5,6,7],'#f59e0b','A group 나머지가 아직 barrier 전'), 1200));
-    timers.push(setTimeout(()=>mark(B,[0,1,2,3,4,5,6,7],'#60a5fa','B group은 barrier와 무관하게 계속 진행 가능'), 2000));
-    timers.push(setTimeout(()=>mark(A,[3,4,5,6,7],'#34d399','A group 전원이 barrier 도달 → A 내부 동기화 완료'), 2800));
-    timers.push(setTimeout(()=>{
-      mark(A,[0,1,2,3,4,5,6,7],'#22d3ee','A는 barrier 이후 단계 진행');
-      msg.textContent='결론: barrier는 같은 work-group 내부에서만 유효. group 간 동기화는 커널 경계/이벤트로 처리.';
-    }, 3600));
-  }
-
-  document.getElementById('play-barrier-scope').addEventListener('click', play);
-  document.getElementById('reset-barrier-scope').addEventListener('click', reset);
+  document.getElementById('obs-next').addEventListener('click', next);
+  document.getElementById('obs-prev').addEventListener('click', prev);
+  document.getElementById('obs-reset').addEventListener('click', reset);
+  document.getElementById('obs-auto').addEventListener('click', auto);
   reset();
 })();
 </script>

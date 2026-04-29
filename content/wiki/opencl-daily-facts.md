@@ -63,6 +63,9 @@ difficulty: "intermediate"
 - `clFinish(queue)`는 "디바이스 전체 idle" 보장이 아니라, **해당 command queue에 enqueue된 작업 완료**를 기다리는 동기화다.
 - 여러 queue를 쓰는 경우 완료 판단은 queue 단위로 분리해 보는 습관이 필요하다.
 
+- GPU occupancy는 보통 "wave 수를 많이 올릴수록 무조건 좋다"가 아니라, register pressure와의 균형 문제다.
+- occupancy를 과도하게 올리려다 spill이 늘면, 오히려 메모리 트래픽이 증가해 커널이 느려질 수 있다.
+
 ---
 
 ## 운영 규칙 (누적 방식)

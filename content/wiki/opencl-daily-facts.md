@@ -66,6 +66,9 @@ difficulty: "intermediate"
 - GPU occupancy는 보통 "wave 수를 많이 올릴수록 무조건 좋다"가 아니라, register pressure와의 균형 문제다.
 - occupancy를 과도하게 올리려다 spill이 늘면, 오히려 메모리 트래픽이 증가해 커널이 느려질 수 있다.
 
+- OpenCL에서 이벤트 의존 체인은 host가 만든 "완료 조건 그래프"에 가깝고, GPU가 큐 내부 순서를 자동으로 재배열하는 기능이 아니다.
+- 즉 `clEnqueueNDRangeKernel(..., wait_list=...)`는 실행 순서를 명시적으로 잠그는 장치이며, 잘못 묶으면 병렬성이 줄어든다.
+
 ---
 
 ## 운영 규칙 (누적 방식)

@@ -69,6 +69,9 @@ difficulty: "intermediate"
 - OpenCL에서 이벤트 의존 체인은 host가 만든 "완료 조건 그래프"에 가깝고, GPU가 큐 내부 순서를 자동으로 재배열하는 기능이 아니다.
 - 즉 `clEnqueueNDRangeKernel(..., wait_list=...)`는 실행 순서를 명시적으로 잠그는 장치이며, 잘못 묶으면 병렬성이 줄어든다.
 
+- GPU가 버퍼를 안전하게 접근하려면 descriptor가 맞는 것만으로 부족하고, 해당 BO가 GPU VA에 bind되어 resident 상태여야 한다.
+- GPU fault triage에서는 stale data 문제(cache visibility)와 접근 불가 문제(VM bind/residency/lifetime)를 먼저 분리해서 봐야 한다.
+
 ---
 
 ## 운영 규칙 (누적 방식)

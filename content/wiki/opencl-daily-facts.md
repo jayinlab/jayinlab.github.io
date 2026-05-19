@@ -72,6 +72,9 @@ difficulty: "intermediate"
 - GPU가 버퍼를 안전하게 접근하려면 descriptor가 맞는 것만으로 부족하고, 해당 BO가 GPU VA에 bind되어 resident 상태여야 한다.
 - GPU fault triage에서는 stale data 문제(cache visibility)와 접근 불가 문제(VM bind/residency/lifetime)를 먼저 분리해서 봐야 한다.
 
+- GPU-backed OpenCL event의 COMPLETE 전이는 보통 fence sequence 완료 관찰을 OpenCL command/event 객체에 다시 귀속하는 과정이다.
+- 모든 OpenCL event가 GPU fence에서 태어나는 것은 아니며, user event와 marker처럼 host-side 상태 전이로 해결되는 event도 분리해서 봐야 한다.
+
 ---
 
 ## 운영 규칙 (누적 방식)

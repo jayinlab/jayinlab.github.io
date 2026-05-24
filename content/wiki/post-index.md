@@ -74,6 +74,7 @@ difficulty: "beginner"
 | [PM4 Indirect Buffer](/pm4-indirect-buffer/) | Main Ring → IB 점프 → 실행 → 복귀 | animation |
 | [clFinish 내부](/clfinish-internals/) | Fence/Semaphore/Event, IT_EVENT_WRITE | mermaid |
 | [PM4 IB chain과 checkpoint](/opencl-note-ib-chain-checkpoint-observability/) | IB call stack과 checkpoint로 command stream 진행률 해석 | — |
+| [OpenCL address space는 어떻게 descriptor 계약이 되나](/opencl-note-address-space-descriptor-contract/) | address space→SPIR-V→descriptor→PM4 state 계약 추적 | — |
 
 ---
 

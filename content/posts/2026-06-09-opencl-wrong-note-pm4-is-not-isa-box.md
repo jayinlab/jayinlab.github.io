@@ -293,6 +293,7 @@ CPU driver:
 
 여기서 ring buffer의 내용은 CP가 소비할 command stream이다.
 ISA code BO와 ring buffer는 역할이 다르다.
+위 pseudo-code의 packet/register 이름은 개념 설명용이다. 실제 AMD 세대별 PM4에서는 program address나 resource state가 여러 register write와 dispatch packet 조합으로 나타날 수 있다.
 
 ### 6. CP가 PM4를 읽고 dispatch를 시작한다
 

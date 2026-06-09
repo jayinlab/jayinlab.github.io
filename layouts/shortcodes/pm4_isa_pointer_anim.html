@@ -1,0 +1,207 @@
+{{- $id := printf "pm4isa-%d" now.UnixNano -}}
+<style>
+#{{ $id }}{max-width:940px;margin:2rem auto;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:#e8edf7}
+#{{ $id }} *{box-sizing:border-box}
+#{{ $id }} .pm4isa-shell{background:#0b1220;border:1px solid #26334c;border-radius:8px;overflow:hidden}
+#{{ $id }} .pm4isa-controls{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#111a2c;border-bottom:1px solid #26334c;flex-wrap:wrap}
+#{{ $id }} button{background:#172238;border:1px solid #34435f;color:#e8edf7;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer;min-width:44px}
+#{{ $id }} button:hover{border-color:#7db0ff;background:#1d2b45}
+#{{ $id }} button.pm4isa-primary{background:#203a61;border-color:#7db0ff;color:#ffffff;font-weight:700}
+#{{ $id }} button:disabled{opacity:.45;cursor:not-allowed}
+#{{ $id }} .pm4isa-count{margin-left:auto;color:#9aa9bf;font-size:12px}
+#{{ $id }} .pm4isa-stage{padding:14px}
+#{{ $id }} .pm4isa-desc{min-height:92px;background:#101a2d;border:1px solid #26334c;border-left:3px solid #7db0ff;border-radius:7px;padding:12px 14px;margin-bottom:12px;line-height:1.55}
+#{{ $id }} .pm4isa-desc b{color:#ffffff}
+#{{ $id }} .pm4isa-tag{display:inline-block;background:#7db0ff;color:#07101d;font-size:11px;font-weight:800;border-radius:999px;padding:1px 8px;margin-right:6px}
+#{{ $id }} .pm4isa-board{position:relative}
+#{{ $id }} .pm4isa-flow{display:grid;grid-template-columns:1.05fr .9fr 1.1fr 1fr .78fr .78fr;gap:8px;align-items:stretch}
+#{{ $id }} .pm4isa-node{min-height:118px;border:1px solid #26334c;border-radius:7px;background:#111a2c;padding:10px;position:relative;overflow:hidden;transition:border-color .22s,background .22s,box-shadow .22s,opacity .22s,transform .22s}
+#{{ $id }} .pm4isa-node.dim{opacity:.42}
+#{{ $id }} .pm4isa-node.active{border-color:var(--accent);background:var(--active-bg);box-shadow:0 0 0 1px var(--accent-soft),0 0 18px var(--glow)}
+#{{ $id }} .pm4isa-node.done{border-color:#6ed8b7;background:rgba(110,216,183,.08)}
+#{{ $id }} .pm4isa-ribbon{height:4px;position:absolute;top:0;left:0;right:0;background:var(--accent)}
+#{{ $id }} .pm4isa-k{font-size:10px;color:#91a1ba;text-transform:uppercase;margin-bottom:6px}
+#{{ $id }} .pm4isa-v{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;font-weight:800;color:#f5f8ff;line-height:1.25}
+#{{ $id }} .pm4isa-note{font-size:11px;color:#aab7cc;line-height:1.36;margin-top:6px}
+#{{ $id }} .src{--accent:#79a7ff;--accent-soft:rgba(121,167,255,.55);--active-bg:rgba(121,167,255,.13);--glow:rgba(121,167,255,.22)}
+#{{ $id }} .compiler{--accent:#d4a0ff;--accent-soft:rgba(212,160,255,.55);--active-bg:rgba(212,160,255,.13);--glow:rgba(212,160,255,.2)}
+#{{ $id }} .memory{--accent:#70d7b2;--accent-soft:rgba(112,215,178,.55);--active-bg:rgba(112,215,178,.12);--glow:rgba(112,215,178,.2)}
+#{{ $id }} .pm4{--accent:#f2c96d;--accent-soft:rgba(242,201,109,.58);--active-bg:rgba(242,201,109,.13);--glow:rgba(242,201,109,.2)}
+#{{ $id }} .cp{--accent:#ff9a7a;--accent-soft:rgba(255,154,122,.58);--active-bg:rgba(255,154,122,.12);--glow:rgba(255,154,122,.2)}
+#{{ $id }} .cu{--accent:#82d9ff;--accent-soft:rgba(130,217,255,.58);--active-bg:rgba(130,217,255,.12);--glow:rgba(130,217,255,.2)}
+#{{ $id }} .pm4isa-arrow-row{display:grid;grid-template-columns:1.05fr .9fr 1.1fr 1fr .78fr .78fr;gap:8px;margin:8px 0 0}
+#{{ $id }} .pm4isa-arrow{height:28px;display:flex;align-items:center;justify-content:center;color:#53627c;font-size:18px;transition:color .22s}
+#{{ $id }} .pm4isa-arrow.active{color:#f2c96d}
+#{{ $id }} .pm4isa-memory-map{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+#{{ $id }} .pm4isa-chip{border:1px solid #34435f;border-radius:6px;background:#0c1424;padding:6px;font-size:10px;color:#aab7cc;min-height:42px}
+#{{ $id }} .pm4isa-chip strong{display:block;color:#f5f8ff;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;margin-bottom:2px}
+#{{ $id }} .pm4isa-chip.hot{border-color:#70d7b2;background:rgba(112,215,178,.1)}
+#{{ $id }} .pm4isa-ring{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+#{{ $id }} .pm4isa-slot{border:1px solid #34435f;border-radius:6px;background:#0c1424;min-height:38px;padding:5px;font-size:10px;color:#aab7cc;text-align:center}
+#{{ $id }} .pm4isa-slot.hot{border-color:#f2c96d;background:rgba(242,201,109,.12);color:#f6e2aa}
+#{{ $id }} .pm4isa-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;color:#9aa9bf;font-size:11px}
+#{{ $id }} .pm4isa-pill{display:inline-flex;align-items:center;gap:5px;border:1px solid #26334c;border-radius:999px;padding:4px 8px;background:#101a2d}
+#{{ $id }} .pm4isa-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+#{{ $id }} .pm4isa-desktop-note{display:block;color:#9aa9bf;font-size:11px;margin-bottom:8px}
+#{{ $id }} .pm4isa-mobile-note{display:none;color:#9aa9bf;font-size:11px;margin-bottom:8px}
+
+@media(min-width:721px){
+  #{{ $id }} .pm4isa-node.active{transform:translateY(-2px)}
+}
+
+@media(max-width:720px){
+  #{{ $id }}{margin:1.25rem 0}
+  #{{ $id }} .pm4isa-stage{padding:12px}
+  #{{ $id }} .pm4isa-desc{min-height:118px}
+  #{{ $id }} .pm4isa-flow{display:flex;flex-direction:column;gap:8px}
+  #{{ $id }} .pm4isa-node{min-height:96px}
+  #{{ $id }} .pm4isa-arrow-row{display:none}
+  #{{ $id }} .pm4isa-desktop-note{display:none}
+  #{{ $id }} .pm4isa-mobile-note{display:block}
+  #{{ $id }} .pm4isa-count{width:100%;margin-left:0}
+  #{{ $id }} button{flex:1 1 80px}
+}
+</style>
+
+<div id="{{ $id }}">
+  <div class="pm4isa-shell">
+    <div class="pm4isa-controls">
+      <button class="pm4isa-prev">이전</button>
+      <button class="pm4isa-next pm4isa-primary">다음</button>
+      <button class="pm4isa-auto">자동 재생</button>
+      <button class="pm4isa-reset">처음</button>
+      <span class="pm4isa-count"></span>
+    </div>
+    <div class="pm4isa-stage">
+      <div class="pm4isa-desktop-note">데스크톱에서는 왼쪽에서 오른쪽으로 실행 준비 흐름을 읽습니다.</div>
+      <div class="pm4isa-mobile-note">모바일에서는 위에서 아래로 실행 준비 흐름을 읽습니다.</div>
+      <div class="pm4isa-desc"></div>
+      <div class="pm4isa-board">
+        <div class="pm4isa-flow">
+          <div class="pm4isa-node src" data-key="src">
+            <span class="pm4isa-ribbon"></span>
+            <div class="pm4isa-k">Source</div>
+            <div class="pm4isa-v">OpenCL C</div>
+            <div class="pm4isa-note">사람이 작성한 kernel source. 아직 GPU가 직접 실행할 수 있는 ISA가 아니다.</div>
+          </div>
+          <div class="pm4isa-node compiler" data-key="compiler">
+            <span class="pm4isa-ribbon"></span>
+            <div class="pm4isa-k">Compiler</div>
+            <div class="pm4isa-v">ISA binary</div>
+            <div class="pm4isa-note">컴파일 결과. .pipe에서 보는 <code>v_lshl_add_u32</code> 같은 disassembly는 이 binary를 사람이 읽은 형태에 가깝다.</div>
+          </div>
+          <div class="pm4isa-node memory" data-key="memory">
+            <span class="pm4isa-ribbon"></span>
+            <div class="pm4isa-k">GPU-accessible memory</div>
+            <div class="pm4isa-v">BO in VRAM/GTT</div>
+            <div class="pm4isa-note">실제 ISA bytes는 GPU가 접근 가능한 Buffer Object에 올라간다.</div>
+            <div class="pm4isa-memory-map">
+              <div class="pm4isa-chip hot"><strong>0xA10000</strong> kernel ISA</div>
+              <div class="pm4isa-chip"><strong>0xB00000</strong> kernarg</div>
+            </div>
+          </div>
+          <div class="pm4isa-node pm4" data-key="pm4">
+            <span class="pm4isa-ribbon"></span>
+            <div class="pm4isa-k">Ring buffer</div>
+            <div class="pm4isa-v">PM4 packets</div>
+            <div class="pm4isa-note">PM4는 ISA를 담는 상자가 아니라 program address와 dispatch 조건을 담은 CP용 명령이다.</div>
+            <div class="pm4isa-ring">
+              <div class="pm4isa-slot hot">SET<br>PGM_ADDR</div>
+              <div class="pm4isa-slot hot">SET<br>RESOURCE</div>
+              <div class="pm4isa-slot hot">DISPATCH</div>
+              <div class="pm4isa-slot">EVENT</div>
+            </div>
+          </div>
+          <div class="pm4isa-node cp" data-key="cp">
+            <span class="pm4isa-ribbon"></span>
+            <div class="pm4isa-k">Consumer 1</div>
+            <div class="pm4isa-v">CP</div>
+            <div class="pm4isa-note">Command Processor가 ring의 PM4를 해석하고 compute state와 dispatch를 세팅한다.</div>
+          </div>
+          <div class="pm4isa-node cu" data-key="cu">
+            <span class="pm4isa-ribbon"></span>
+            <div class="pm4isa-k">Consumer 2</div>
+            <div class="pm4isa-v">CU</div>
+            <div class="pm4isa-note">Compute Unit은 PM4 안을 여는 것이 아니라, 설정된 program address에서 ISA를 fetch해 실행한다.</div>
+          </div>
+        </div>
+        <div class="pm4isa-arrow-row">
+          <div class="pm4isa-arrow" data-arrow="src">→</div>
+          <div class="pm4isa-arrow" data-arrow="compiler">→</div>
+          <div class="pm4isa-arrow" data-arrow="memory">→</div>
+          <div class="pm4isa-arrow" data-arrow="pm4">→</div>
+          <div class="pm4isa-arrow" data-arrow="cp">→</div>
+          <div class="pm4isa-arrow" data-arrow="cu"></div>
+        </div>
+      </div>
+      <div class="pm4isa-legend">
+        <span class="pm4isa-pill memory"><span class="pm4isa-dot"></span>ISA: CU가 실행</span>
+        <span class="pm4isa-pill pm4"><span class="pm4isa-dot"></span>PM4: CP가 해석</span>
+        <span class="pm4isa-pill cp"><span class="pm4isa-dot"></span>Doorbell 이후 ring 소비</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root=document.getElementById("{{ $id }}");
+  if(!root)return;
+  var prev=root.querySelector(".pm4isa-prev");
+  var next=root.querySelector(".pm4isa-next");
+  var auto=root.querySelector(".pm4isa-auto");
+  var reset=root.querySelector(".pm4isa-reset");
+  var count=root.querySelector(".pm4isa-count");
+  var desc=root.querySelector(".pm4isa-desc");
+  var timer=null;
+  var step=0;
+  var steps=[
+    {tag:"시작",title:"PM4와 ISA는 같은 박스 안에 있지 않다",body:"아래 흐름은 OpenCL C가 컴파일되어 ISA binary가 되고, 그 ISA가 GPU memory에 올라간 뒤, PM4가 그 주소와 실행 조건을 CP에게 전달하는 과정을 보여준다.",active:["src"],arrows:[]},
+    {tag:"1",title:"OpenCL C를 컴파일한다",body:"UMD/compiler는 OpenCL C kernel을 GPU가 이해하는 ISA binary와 metadata로 바꾼다. 이 단계의 결과가 실행할 실제 code다.",active:["src","compiler"],arrows:["src"]},
+    {tag:"2",title:"ISA binary를 GPU-accessible BO에 올린다",body:"실제 ISA bytes는 VRAM/GTT 같은 GPU-accessible memory의 BO에 저장된다. .pipe disassembly는 이 binary를 사람이 읽기 좋게 풀어 본 형태에 가깝다.",active:["compiler","memory"],done:["src"],arrows:["compiler"]},
+    {tag:"3",title:"PM4 packet에는 주소와 실행 조건을 쓴다",body:"PM4 packet은 ISA 자체를 복사해 담지 않는다. shader program address, resource 설정, dispatch size, workgroup size 같은 실행 조건을 ring buffer에 기록한다.",active:["memory","pm4"],done:["src","compiler"],arrows:["memory"]},
+    {tag:"4",title:"Doorbell로 GPU에게 ring을 보라고 알린다",body:"UMD/KMD가 ring buffer에 PM4를 기록한 뒤 doorbell을 울리면, GPU의 CP가 새 command stream이 있다는 사실을 알게 된다.",active:["pm4","cp"],done:["src","compiler","memory"],arrows:["pm4"]},
+    {tag:"5",title:"CP는 PM4를 해석한다",body:"CP는 PM4 packet을 읽고 compute state를 설정한다. 이때 program address는 GPU memory 안의 ISA 위치를 가리킨다.",active:["cp","pm4"],done:["src","compiler","memory"],arrows:["pm4","cp"]},
+    {tag:"6",title:"CU는 program address에서 ISA를 fetch한다",body:"CU는 PM4 안에서 ISA를 꺼내는 것이 아니라, CP가 설정한 program address를 따라 GPU memory의 ISA binary를 fetch해서 실행한다.",active:["cu","memory"],done:["src","compiler","pm4","cp"],arrows:["cp"]},
+    {tag:"정리",title:"소비하는 하드웨어가 다르다",body:"PM4는 CP가 읽는 command stream이고, ISA는 CU가 실행하는 machine code다. 둘 다 GPU로 전달되는 binary처럼 보일 수 있지만 역할과 소비자가 다르다.",active:["pm4","cp","memory","cu"],done:["src","compiler"],arrows:["memory","pm4","cp"]}
+  ];
+  function render(){
+    var s=steps[step];
+    desc.innerHTML='<span class="pm4isa-tag">'+s.tag+'</span><b>'+s.title+'</b><br>'+s.body;
+    count.textContent="Step "+step+" / "+(steps.length-1);
+    root.querySelectorAll(".pm4isa-node").forEach(function(el){
+      var key=el.getAttribute("data-key");
+      var isActive=s.active.indexOf(key)>=0;
+      var isDone=s.done && s.done.indexOf(key)>=0;
+      el.classList.toggle("active",isActive);
+      el.classList.toggle("done",!!isDone && !isActive);
+      el.classList.toggle("dim",s.active.length>0 && !isActive && !isDone);
+    });
+    root.querySelectorAll(".pm4isa-arrow").forEach(function(el){
+      var key=el.getAttribute("data-arrow");
+      el.classList.toggle("active",s.arrows.indexOf(key)>=0);
+    });
+    prev.disabled=step===0;
+    next.disabled=step===steps.length-1;
+  }
+  function stopAuto(){
+    if(timer){clearInterval(timer);timer=null;}
+    auto.textContent="자동 재생";
+  }
+  function go(n){
+    step=Math.max(0,Math.min(steps.length-1,n));
+    render();
+    if(step===steps.length-1)stopAuto();
+  }
+  prev.addEventListener("click",function(){stopAuto();go(step-1);});
+  next.addEventListener("click",function(){stopAuto();go(step+1);});
+  reset.addEventListener("click",function(){stopAuto();go(0);});
+  auto.addEventListener("click",function(){
+    if(timer){stopAuto();return;}
+    auto.textContent="일시정지";
+    timer=setInterval(function(){go(step+1);},1900);
+  });
+  render();
+})();
+</script>

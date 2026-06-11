@@ -285,6 +285,7 @@ needed for B:
 
 최근 어려웠던 지점이 바로 여기다.
 semaphore/fence/event는 progress나 ordering의 증거가 될 수 있지만, resource access visibility까지 자동으로 설명하지는 않는다.
+정확히는 Vulkan semaphore wait도 올바른 stage/access scope와 함께 memory dependency에 참여할 수 있지만, 로그에 "semaphore signaled"만 보인다고 shader write가 다음 shader read에 보인다고 결론낼 수는 없다.
 descriptor row correctness도 마찬가지다.
 “어느 buffer를 읽는가”와 “그 buffer의 최신 write가 보이는가”는 별도 축이다.
 

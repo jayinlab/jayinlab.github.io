@@ -173,6 +173,7 @@ split submit:
 B가 A보다 먼저 실행되지 않는다는 증거를 만든다.
 
 하지만 그것만으로는 B가 A의 최신 memory write를 읽는다고 말할 수 없다.
+Vulkan에서는 semaphore wait나 barrier도 올바른 stage/access/scope와 연결될 때 memory dependency에 참여할 수 있으므로, 여기서의 구분은 "순서 신호만 확인했는가"와 "memory visibility 범위까지 확인했는가"를 나누기 위한 디버깅 관점이다.
 
 ## 4. barrier는 execution과 memory를 따로 봐야 한다
 

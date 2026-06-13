@@ -185,8 +185,8 @@ submit_id=803:
 ~~~
 
 여기서 semaphore/fence wait는 execution ordering을 만든다.  
-barrier/cache action은 memory visibility를 만든다.  
-둘은 같이 필요할 수 있지만 같은 증거는 아니다.
+Vulkan에서는 semaphore wait도 올바른 stage/access scope의 barrier와 연결될 때 memory dependency의 일부가 될 수 있지만, 그 자체만으로 모든 shader write/read visibility를 설명했다고 보면 위험하다.  
+따라서 trace에서는 progress signal과 resource별 visibility action을 따로 확인해야 한다.
 
 ## 4. PM4-visible 관찰: packet 순서가 semantic edge를 반영하는가
 
@@ -247,7 +247,7 @@ intended:
 wait_events[0] 다음에 wait_events[1]을 처리한다고 해서 A 뒤에 B edge를 만들면 안 된다.  
 이렇게 되면 A와 B가 독립이어도 B가 A를 기다리는 형태가 되고, 작은 kernel 여러 개에서는 submit/queue latency가 바로 보인다.
 
-두 번째 실수는 semaphore wait만 넣고 memory dependency를 빠뜨리는 것이다.
+두 번째 실수는 semaphore wait를 넣고도 resource별 memory dependency를 충분히 표현하지 않는 것이다.
 
 ~~~text
 submit C:
@@ -256,7 +256,7 @@ submit C:
   dispatch C
 ~~~
 
-이 trace는 ordering은 있어 보이지만 A/B의 shader write가 C의 shader read에서 보이도록 하는 visibility rule이 빠져 있을 수 있다.
+이 trace는 ordering은 있어 보이지만 A/B의 shader write가 C의 shader read에서 보이도록 하는 stage/access/resource scope가 빠져 있을 수 있다.
 
 세 번째 실수는 모든 fan-in마다 submit을 쪼개는 것이다.
 
@@ -299,4 +299,4 @@ local-size sweep이나 작은 dispatch 반복 테스트에서는 clFinish를 매
 
 ## 관련 용어
 
-- [[command-queue]], [[event]], [[command-buffer]], [[pm4-packet]]
+- [[command-queue]], event, [[command-buffer]], [[pm4-packet]]

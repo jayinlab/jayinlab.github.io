@@ -74,6 +74,7 @@ PM4-visible intent:
 ~~~
 
 실제 packet 이름과 위치는 GPU/driver마다 다르지만, debug trace에서 봐야 하는 축은 비슷하다.
+여기서도 semaphore wait은 실행 순서/progress의 증거이고, shader-write → shader-read memory dependency는 올바른 stage/access/resource scope가 붙을 때 의미가 생긴다고 분리해서 읽어야 한다.
 
 | 축 | 증명하는 것 | 증명하지 않는 것 |
 |---|---|---|

@@ -137,6 +137,8 @@ PM4-visible submit:
   DISPATCH_DIRECT
 ~~~
 
+여기서 PM4-visible 이름들은 trace에서 확인하고 싶은 역할을 드러내기 위한 개념적 표기다. 실제 packet/register 이름과 VMID/page-table-root programming 방식은 GPU 세대와 driver stack마다 달라질 수 있다.
+
 descriptor row가 맞다는 말은 shader가 어떤 VA range를 접근할지를 정확히 기록했다는 뜻이다. 하지만 그 VA가 dispatch VMID에서 새 translation으로 보이는지는 KMD/VM ordering 쪽 질문이다.
 
 반대로 VMID와 TLB invalidate가 정확해도 descriptor row가 binding 1 대신 binding 0에 들어갔다면 shader는 여전히 잘못된 buffer를 쓴다. 두 검사는 서로를 고쳐 주지 않는다.
@@ -197,4 +199,4 @@ mapped/pinned path:
 
 ## 관련 용어
 
-- [[descriptor-set]], [[command-buffer]], [[pm4-packet]], [[event]]
+- [[descriptor-set]], [[command-buffer]], [[pm4-packet]], event

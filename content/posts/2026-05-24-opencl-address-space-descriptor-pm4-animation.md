@@ -8,7 +8,7 @@ series: "opencl-deep-dive"
 tags: ["opencl", "clspv", "spir-v", "vulkan", "descriptor", "pm4", "animation"]
 difficulty: "intermediate"
 animation: true
-layer: "OpenCL -> Vulkan -> PM4"
+layer: "CL"
 ---
 
 OpenCL C에서 <code>__global</code>, <code>__local</code>, <code>private</code>은 그냥 문법 장식이 아니다. 이 세 단어는 뒤쪽 계층으로 내려가면서 <strong>서로 다른 실행 계약</strong>이 된다.

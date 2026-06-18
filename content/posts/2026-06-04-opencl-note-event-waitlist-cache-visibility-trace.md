@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "event", "synchronization", "cache", "pm4", "vulkan", "driver-dev", "optimization"]
 difficulty: "advanced"
+layer: "CL"
 ---
 
 OpenCL의 event wait-list는 API 표면에서는 단순히 “이 command는 저 event 뒤에 실행한다”는 조건처럼 보인다.  

@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "event", "queue", "vulkan", "submission", "synchronization", "pm4", "driver-dev", "trace-walkthrough", "optimization"]
 difficulty: "advanced"
-layer: "OpenCL -> ANGLE -> Vulkan -> UMD/KMD -> PM4"
+layer: "CL"
 ---
 
 OpenCL의 event wait-list는 API에서는 작은 배열 하나로 보인다.

@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "driver", "descriptor", "pm4", "cache", "fence", "vm-fault", "debugging"]
 difficulty: "advanced"
-layer: "OpenCL -> Vulkan -> PM4"
+layer: "CL"
 ---
 
 최근 며칠 동안 같은 dispatch 주변의 문제를 세 축으로 나눴다.

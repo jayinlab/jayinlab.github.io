@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "angle", "clspv", "spirv", "vulkan", "descriptor", "pipeline-layout", "driver-dev", "trace-walkthrough", "optimization"]
 difficulty: "advanced"
-layer: "OpenCL -> ANGLE -> clspv/SPIR-V -> Vulkan -> UMD"
+layer: "CL"
 ---
 
 OpenCL 앱에서는 `clSetKernelArg`로 buffer 하나를 넣고 `clEnqueueNDRangeKernel`을 호출한다.  

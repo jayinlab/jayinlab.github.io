@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "vulkan", "driver-dev", "kmd", "pm4", "ring-buffer", "wptr", "rptr", "fence", "cond-exec", "hang", "debugging"]
 difficulty: "advanced"
-layer: "OpenCL -> Vulkan -> UMD/KMD -> PM4"
+layer: "CL"
 ---
 
 OpenCL kernel enqueue가 끝났는데 event가 계속 완료되지 않는다고 가정하자. 이때 `ring wptr`, `ring rptr`, 마지막 완료 `fence`, checkpoint를 함께 보면 GPU가 **아예 새 command를 받지 못했는지**, **받고도 특정 구간에서 멈췄는지**, **끝까지 갔지만 completion 관찰이 끊겼는지**를 나눌 수 있다.
@@ -192,4 +192,3 @@ fault가 잡히면 같은 submit에 fault VA, VMID, BO, PTE 상태를 연결한�
 ## 관련 용어
 
 - [[command-queue]], [[pm4-packet]], [[ring-buffer]], [[event]]
-

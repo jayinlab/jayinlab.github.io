@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "vulkan", "driver-dev", "gpu-vm", "pte", "tlb", "pm4", "cond-exec", "mapped-buffer", "debugging"]
 difficulty: "advanced"
-layer: "OpenCL -> Vulkan -> UMD/KMD -> PM4"
+layer: "CL"
 ---
 
 GPU page table의 PTE를 올바르게 고쳤다고 해서 다음 dispatch가 곧바로 새 mapping을 쓰는 것은 아니다. GPU의 address translation cache가 이전 translation을 기억하고 있다면 page walker는 새 PTE를 다시 읽지 않을 수 있다.
@@ -185,4 +185,3 @@ staging path
 ## 관련 용어
 
 - [[command-queue]], [[descriptor-set]], [[pm4-packet]], [[event]]
-

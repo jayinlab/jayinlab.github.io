@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "vulkan", "driver-dev", "gpu-vm", "vmid", "tlb", "descriptor", "pm4", "context-switch", "mapped-buffer", "trace-walkthrough"]
 difficulty: "advanced"
-layer: "OpenCL -> Vulkan -> UMD/KMD -> PM4"
+layer: "CL"
 ---
 
 어제까지는 `__global` buffer argument가 descriptor row로 내려가고, PTE update 뒤에는 TLB invalidate가 필요하다는 흐름을 따로 봤다. 오늘은 그 둘 사이의 더 낮은 질문을 본다.

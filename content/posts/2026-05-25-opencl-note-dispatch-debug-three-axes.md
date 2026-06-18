@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "driver", "descriptor", "pm4", "cache", "fence", "vm-fault", "debugging"]
 difficulty: "advanced"
-layer: "OpenCL -> Vulkan -> PM4"
+layer: "CL"
 ---
 
 OpenCL 커널이 깨졌을 때 증상은 비슷해 보인다.

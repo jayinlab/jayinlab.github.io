@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "vulkan", "driver-dev", "gpu-vm", "residency", "pm4", "descriptor", "debugging"]
 difficulty: "advanced"
-layer: "OpenCL -> Vulkan -> UMD/KMD -> PM4"
+layer: "CL"
 ---
 
 최근 노트에서는 한 dispatch 주변의 문제를 여러 축으로 나눴다.
@@ -214,4 +214,3 @@ driver dev 관점에서 page table/residency ordering은 dispatch 준비 단계�
 - 같은 kernel이라도 buffer 재사용과 비동기 queue 사용이 많아질수록 driver가 descriptor, residency, visibility를 동시에 맞춰야 하므로 문제가 더 미묘해진다.
 
 최적화할 때 pinned/mapped buffer, staging copy, out-of-order queue, 여러 command queue를 섞는 선택은 성능뿐 아니라 이런 증상 분류도 어렵게 만든다. 빠른 경로를 쓰되, event wait와 buffer lifetime은 명확하게 유지하는 편이 좋다.
-

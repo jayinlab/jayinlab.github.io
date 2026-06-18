@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "queue", "event", "vulkan", "barrier", "synchronization", "descriptor", "driver-dev", "trace-walkthrough", "optimization"]
 difficulty: "advanced"
-layer: "OpenCL -> ANGLE -> Vulkan -> UMD/KMD -> PM4"
+layer: "CL"
 ---
 
 OpenCL에서 `clEnqueueNDRangeKernel`은 단순한 실행 요청처럼 보인다.

@@ -7,6 +7,7 @@ type: "wrong-note"
 series: "opencl-driver-internals"
 tags: ["opencl", "amd", "gpu", "pm4", "isa", "driver", "umd", "kmd", "dispatch", "wrong-note"]
 difficulty: "beginner"
+layer: "CL"
 animation: true
 ---
 

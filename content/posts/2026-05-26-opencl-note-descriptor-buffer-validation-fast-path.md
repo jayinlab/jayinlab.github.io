@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "descriptor", "driver", "validation", "pm4", "debugging"]
 difficulty: "advanced"
-layer: "OpenCL -> SPIR-V -> PM4"
+layer: "CL"
 ---
 
 어제 노트에서는 하나의 OpenCL dispatch 문제를 세 축으로 나눴다.
@@ -230,4 +230,3 @@ Descriptor buffer validation fast path는 dispatch 전에 shader interface와 de
 
 - [OpenCL dispatch 디버깅: stale data, invalid descriptor, VM fault를 먼저 나누기]({{< relref "2026-05-25-opencl-note-dispatch-debug-three-axes.md" >}})
 - [OpenCL address space -> descriptor -> PM4 state 계약 추적]({{< relref "2026-05-24-opencl-note-address-space-descriptor-contract.md" >}})
-

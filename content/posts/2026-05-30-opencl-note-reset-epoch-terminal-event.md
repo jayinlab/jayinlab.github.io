@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "vulkan", "driver-dev", "kmd", "reset", "event", "timeline-semaphore", "fence", "pm4", "debugging"]
 difficulty: "advanced"
-layer: "OpenCL -> Vulkan -> UMD/KMD -> PM4"
+layer: "CL"
 ---
 
 GPU fault나 hang 뒤에 engine reset이 일어나면 driver는 단순히 queue를 다시 실행 가능하게 만드는 것만으로는 부족하다. reset 전에 제출된 작업의 성공 여부를 앱이 잘못 해석하지 않도록 정리해야 한다.
@@ -217,4 +217,3 @@ reset 범위에 따라 실패 전파 범위도 달라진다.
 ## 관련 용어
 
 - [[command-queue]], [[pm4-packet]], [[ring-buffer]], [[descriptor-set]]
-

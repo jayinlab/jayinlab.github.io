@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "clspv", "spirv", "vulkan", "descriptor", "pipeline-layout", "pm4", "cond-exec", "cache-visibility", "driver-dev", "trace-walkthrough"]
 difficulty: "advanced"
-layer: "OpenCL -> clspv/SPIR-V -> Vulkan -> UMD -> PM4"
+layer: "CL"
 ---
 
 OpenCL C의 `__global float *out`은 GPU 주소 하나로 곧바로 바뀌지 않는다. 먼저 shader가 요구하는 resource interface가 되고, runtime이 실행마다 실제 buffer를 연결하고, driver가 그 연결을 GPU가 읽을 state로 기록한 뒤 dispatch한다.
@@ -225,4 +225,3 @@ t4 PM4-visible command stream
 ## 관련 용어
 
 - [[descriptor-set]], [[pipeline-layout]], [[SPIR-V]], [[command-buffer]], [[pm4-packet]]
-

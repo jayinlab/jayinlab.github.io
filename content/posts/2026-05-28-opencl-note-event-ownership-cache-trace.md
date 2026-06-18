@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "vulkan", "event", "queue", "synchronization", "cache", "pm4", "driver-dev"]
 difficulty: "advanced"
-layer: "OpenCL -> Vulkan -> PM4"
+layer: "CL"
 ---
 
 OpenCL 앱에서 아래 코드는 평범해 보인다.

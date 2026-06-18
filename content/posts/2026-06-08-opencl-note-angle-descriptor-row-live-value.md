@@ -7,7 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "angle", "clspv", "spirv", "vulkan", "descriptor", "pipeline-layout", "driver-dev", "trace-walkthrough", "optimization"]
 difficulty: "advanced"
-layer: "OpenCL -> ANGLE -> clspv/SPIR-V -> Vulkan -> UMD"
+layer: "CL"
 ---
 
 어제는 `clEnqueueNDRangeKernel`이 argument snapshot과 barrier visibility를 어떻게 고정해야 하는지 봤다.

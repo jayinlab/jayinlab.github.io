@@ -7,6 +7,7 @@ type: "note"
 series: "opencl-driver-internals"
 tags: ["opencl", "clspv", "spirv", "vulkan", "descriptor", "driver", "pm4", "memory"]
 difficulty: "advanced"
+layer: "CL"
 ---
 
 OpenCL C에서 __global, __local, private, constant는 문법 장식처럼 보일 수 있다.

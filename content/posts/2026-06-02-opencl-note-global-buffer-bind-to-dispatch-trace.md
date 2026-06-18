@@ -50,6 +50,7 @@ clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &global, &local,
 ~~~
 
 `producer_event`는 이전 command가 `src_buf`에 쓴 결과를 기다리기 위한 dependency다. 이 wait-list와 `out_buf` argument는 둘 다 필요하지만 역할은 다르다.
+특히 Vulkan/driver 쪽으로 내려가면 wait-list는 실행 순서의 근거이고, 실제 shader read에 최신 값이 보이는지는 stage/access scope와 cache action 같은 별도 visibility 근거까지 맞아야 한다.
 
 ## 1. build 시점: `__global`은 shader interface 계약이 된다
 

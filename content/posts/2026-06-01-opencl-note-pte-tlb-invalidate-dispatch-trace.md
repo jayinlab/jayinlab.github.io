@@ -84,6 +84,7 @@ BO bind / PTE write
 ~~~
 
 실제 GPU와 KMD마다 packet 이름과 invalidate 범위는 다르다. 중요한 것은 특정 packet 이름을 외우는 일이 아니라, 새 translation이 dispatch보다 먼저 관찰 가능해야 한다는 계약이다.
+위 trace의 `WAIT_VM_UPDATE`, `SET_DESCRIPTOR_BASE` 같은 이름도 실제 세대별 PM4 packet명을 고정한 것이 아니라, 로그에서 찾아야 할 역할을 붙인 개념적 label로 읽는 편이 안전하다.
 
 ## 누락 trace: PTE는 맞는데 여전히 fault가 난다
 
@@ -184,4 +185,4 @@ staging path
 
 ## 관련 용어
 
-- [[command-queue]], [[descriptor-set]], [[pm4-packet]], [[event]]
+- [[command-queue]], [[descriptor-set]], [[pm4-packet]], event

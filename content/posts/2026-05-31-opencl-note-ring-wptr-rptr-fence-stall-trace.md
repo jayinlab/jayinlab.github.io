@@ -191,4 +191,4 @@ fault가 잡히면 같은 submit에 fault VA, VMID, BO, PTE 상태를 연결한�
 
 ## 관련 용어
 
-- [[command-queue]], [[pm4-packet]], [[ring-buffer]], [[event]]
+- [[command-queue]], [[pm4-packet]], [[ring-buffer]], event

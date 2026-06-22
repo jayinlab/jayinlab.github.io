@@ -107,6 +107,8 @@ pm4:
   fence_write seq=991 packet=88
 ~~~
 
+여기서 `pm4:` 아래 이름과 packet 번호는 실제 ASIC 세대의 정확한 packet명을 뜻하기보다, trace에서 분리해 보고 싶은 driver-visible 단계의 개념적 label로 보는 편이 안전하다.
+
 여기서 driver가 확인하고 싶은 invariant는 아래다.
 
 ~~~text

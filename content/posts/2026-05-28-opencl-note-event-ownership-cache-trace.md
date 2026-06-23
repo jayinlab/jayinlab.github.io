@@ -146,6 +146,8 @@ execution wait: 다음 작업이 이전 작업 뒤에 실행되는가
 
 PM4 수준으로 내려오면 질문은 더 구체적이다.
 
+아래 PM4 이름과 packet 번호는 trace에서 확인해야 할 순서를 보여주는 개념적 label이다. 실제 packet/register 이름과 cache action 표현은 GPU 세대와 driver 구현마다 달라질 수 있다.
+
 producer submit 안에서:
 
 ~~~text

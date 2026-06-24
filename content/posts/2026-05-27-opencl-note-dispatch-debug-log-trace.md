@@ -94,6 +94,8 @@ pm4:
   fence_write seq=3104 packet=223
 ~~~
 
+여기서 PM4 packet 이름과 번호는 trace에서 보고 싶은 의미를 드러내는 개념적 label이다. 실제 packet 이름, register, cache op 조합은 GPU 세대와 driver 구현에 따라 달라질 수 있다.
+
 이 정도가 있으면 로그를 읽는 사람이 적어도 네 가지를 연결할 수 있다.
 
 - OpenCL arg index와 SPIR-V/Vulkan binding의 대응
@@ -265,4 +267,4 @@ AND required visibility action precedes the completion fence
 
 ## 관련 용어
 
-[[descriptor-set]], [[pipeline-layout]], [[SPIR-V]], [[pm4-packet]], [[fence]], [[GPU-VM]], [[cache]], [[command-queue]]
+[[descriptor-set]], [[pipeline-layout]], [[SPIR-V]], [[pm4-packet]], [[command-queue]]

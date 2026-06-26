@@ -223,4 +223,4 @@ OpenCL dispatch 디버깅은 먼저 세 축으로 나눈다. 최신 값이 안 �
 
 ## 관련 용어
 
-[[descriptor-set]], [[pipeline-layout]], [[SPIR-V]], [[pm4-packet]], [[fence]], [[GPU-VM]], [[cache]]
+[[descriptor-set]], [[pipeline-layout]], [[clspv]], [[pm4-packet]], [[command-queue]], [[barrier]]

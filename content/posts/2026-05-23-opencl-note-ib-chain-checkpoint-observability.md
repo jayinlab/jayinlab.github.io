@@ -68,6 +68,8 @@ IB at 0x7000:
   EVENT_WRITE ...
 ~~~
 
+여기서 packet/register 이름은 세대별 ISA/PM4 문서의 정확한 encoding을 고정하려는 것이 아니라, command stream 구조를 설명하기 위한 개념적 label이다.
+
 Command processor 입장에서는 INDIRECT_BUFFER packet을 만나면 PC가 IB 주소로 이동하고, IB 범위를 처리한 뒤 다시 caller stream으로 돌아온다.
 그래서 IB chain을 읽을 때는 packet 순서뿐 아니라 **현재 실행 PC가 어느 stream에 있는지**도 봐야 한다.
 

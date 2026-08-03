@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jayinlab-claps",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-03",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://jayinlab.github.io"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "jayinlab-claps",
+      "database_id": "PASTE_D1_DATABASE_ID_HERE",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

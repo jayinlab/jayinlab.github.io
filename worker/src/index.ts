@@ -3,15 +3,19 @@ export interface Env {
   ALLOWED_ORIGIN: string;
 }
 
+const corsHeaders = (origin: string) => ({
+  'access-control-allow-origin': origin,
+  'access-control-allow-methods': 'GET, POST, OPTIONS',
+  'access-control-allow-headers': 'content-type',
+});
+
 const json = (body: unknown, status = 200, origin = '*') =>
   new Response(JSON.stringify(body), {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      'access-control-allow-origin': origin,
-      'access-control-allow-methods': 'GET, POST, OPTIONS',
-      'access-control-allow-headers': 'content-type',
       'cache-control': 'no-store',
+      ...corsHeaders(origin),
     },
   });
 
@@ -29,7 +33,9 @@ export default {
     const allowedOrigin = env.ALLOWED_ORIGIN || 'https://jayinlab.github.io';
     const requestOrigin = request.headers.get('origin');
 
-    if (request.method === 'OPTIONS') return json({}, 204, allowedOrigin);
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: corsHeaders(allowedOrigin) });
+    }
 
     const url = new URL(request.url);
     if (url.pathname === '/health') return json({ ok: true }, 200, allowedOrigin);

@@ -11,6 +11,7 @@
         </span>
         <span class="post-badges">
           {{ if .Params.animation }}<span class="anim-badge" title="Animation 포함">▶</span>{{ end }}
+          {{ if eq .Params.series "gpu-fun-facts" }}<span class="clap-card" data-clap-key="{{ .RelPermalink }}" title="이 브라우저에서 보낸 박수">👏 <span class="clap-value">0</span></span>{{ end }}
           {{ $class := "" }}
           {{ with .Params.layer }}
             {{ $class = . }}

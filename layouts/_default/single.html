@@ -2,6 +2,8 @@
   <article>
     <h2>{{ .Title }}</h2>
     <div class="meta">{{ .Date.Format "2006-01-02" }}</div>
+    {{ if eq .Params.series "gpu-fun-facts" }}{{ partial "clap.html" . }}{{ end }}
     {{ .Content }}
+    {{ if eq .Params.series "gpu-fun-facts" }}{{ partial "clap.html" . }}{{ end }}
   </article>
 {{ end }}

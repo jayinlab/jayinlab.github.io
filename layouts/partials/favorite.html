@@ -1,0 +1,8 @@
+{{- $favorite := int (.Params.favorite | default 0) -}}
+{{- if gt $favorite 0 -}}
+<span class="favorite-badge" title="Favorite {{ $favorite }}" aria-label="Favorite {{ $favorite }}">
+  {{- if ge $favorite 1 }}👍{{ end -}}
+  {{- if ge $favorite 2 }}👍{{ end -}}
+  {{- if ge $favorite 3 }}👍{{ end -}}
+</span>
+{{- end -}}

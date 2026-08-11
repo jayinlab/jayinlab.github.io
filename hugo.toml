@@ -12,8 +12,6 @@ enableGitInfo = true
 
 [params]
   description = 'jayinlab blog (Hugo)'
-  # Set this after the Cloudflare Worker is deployed.
-  # clapApiBase = 'https://jayinlab-claps.example.workers.dev'
 
 [outputs]
   home = ['HTML', 'RSS']

@@ -10,6 +10,7 @@
           <a href="{{ .RelPermalink }}">{{ .Title }}</a>
         </span>
         <span class="post-badges">
+          {{ partial "favorite.html" . }}
           {{ if .Params.animation }}<span class="anim-badge" title="Animation 포함">▶</span>{{ end }}
           {{ $class := "" }}
           {{ with .Params.layer }}

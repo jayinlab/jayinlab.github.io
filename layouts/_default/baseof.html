@@ -113,8 +113,15 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      order: -1;           /* desktop: 제목 왼쪽에 배치 */
+      order: -1;
       flex-shrink: 0;
+    }
+
+    .favorite-badge {
+      display: inline-block;
+      font-size: .78rem;
+      line-height: 1.6;
+      white-space: nowrap;
     }
 
     .diff-badge {
@@ -150,7 +157,7 @@
       font-weight: 700;
       letter-spacing: .04em;
       padding: 1px 6px;
-      border-radius: 5px;   /* pill 아닌 사각형으로 diff와 구분 */
+      border-radius: 5px;
       line-height: 1.6;
     }
     .layer-cl    { background: rgba(34,211,238,.12);  color: #22d3ee; border: 1px solid rgba(34,211,238,.32); }
@@ -163,46 +170,6 @@
     .post-date {
       order: 1;
       flex-shrink: 0;
-    }
-
-    .clap-card {
-      color: #fbbf24;
-      font-size: .78rem;
-      white-space: nowrap;
-    }
-
-    .clap-box {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin: 14px 0;
-      padding: 9px 12px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: rgba(251,191,36,.06);
-    }
-
-    .clap-button {
-      min-width: 40px;
-      min-height: 36px;
-      border: 1px solid #46516a;
-      border-radius: 999px;
-      color: var(--text);
-      background: var(--bg-soft);
-      cursor: pointer;
-      font-size: 1.05rem;
-    }
-
-    .clap-button:hover { border-color: #fbbf24; }
-    .clap-button:active { transform: scale(.94); }
-
-    .clap-value {
-      min-width: 2.4em;
-      color: #fbbf24;
-      font-weight: 700;
-      text-align: center;
-      font-variant-numeric: tabular-nums;
     }
 
     /* ── mobile: grid — 제목이 왼쪽 크게, 배지+날짜는 오른쪽 스택 ── */
@@ -239,7 +206,6 @@
       }
     }
 
-    /* mobile-safe tables */
     table {
       width: 100%;
       display: block;
@@ -266,7 +232,6 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
 
-    /* inline code */
     :not(pre) > code {
       padding: 2px 6px;
       font-size: .92em;
@@ -275,7 +240,6 @@
       word-break: break-word;
     }
 
-    /* fenced code block container */
     pre {
       padding: 14px;
       overflow: auto;
@@ -283,7 +247,6 @@
       font-size: 13px;
     }
 
-    /* reset nested code inside pre to avoid double styling/size mismatch */
     pre code {
       background: transparent;
       border: 0;
@@ -294,7 +257,6 @@
       white-space: pre;
     }
 
-    /* wikilink styling */
     a.wikilink {
       color: var(--brand-2);
       border-bottom: 1px dotted var(--brand-2);
@@ -308,7 +270,6 @@
       cursor: help;
     }
 
-    /* Hugo/Chroma highlight normalization */
     .highlight pre,
     .highlight code,
     .highlight span,
@@ -388,42 +349,6 @@
   </script>
 
   <script>
-    (function setupClaps() {
-      const prefix = 'jayinlab:claps:';
-
-      function readCount(key) {
-        const value = Number.parseInt(localStorage.getItem(prefix + key) || '0', 10);
-        return Number.isFinite(value) && value > 0 ? value : 0;
-      }
-
-      function writeCount(key, value) {
-        const count = Math.max(0, value);
-        localStorage.setItem(prefix + key, String(count));
-        document.querySelectorAll('[data-clap-key="' + CSS.escape(key) + '"] .clap-value')
-          .forEach((node) => { node.textContent = count; });
-      }
-
-      function initialize() {
-        document.querySelectorAll('[data-clap-key]').forEach((root) => {
-          const key = root.dataset.clapKey;
-          const value = root.querySelector('.clap-value');
-          if (value) value.textContent = readCount(key);
-
-          root.querySelectorAll('[data-clap-delta]').forEach((button) => {
-            button.addEventListener('click', () => {
-              writeCount(key, readCount(key) + Number(button.dataset.clapDelta));
-            });
-          });
-        });
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize);
-      } else {
-        initialize();
-      }
-    })();
-
     // [[wikilink]] 및 [[wikilink|표시 텍스트]] → <a href="/glossary/slug/"> 변환
     (function renderWikilinks() {
       function toSlug(s) {
@@ -456,7 +381,6 @@
           a.className = 'wikilink';
           a.title = term;
 
-          // 존재하지 않는 용어는 시각적으로 구분 (선택적 — fetch 없이 일단 동일 스타일)
           frag.appendChild(a);
           last = m.index + m[0].length;
         }
@@ -475,7 +399,6 @@
           {
             acceptNode(node) {
               const tag = node.parentNode && node.parentNode.nodeName;
-              // 코드 블록, 스크립트, 스타일, 이미 처리된 링크 안은 건너뜀
               if (['CODE', 'PRE', 'SCRIPT', 'STYLE', 'A'].includes(tag)) {
                 return NodeFilter.FILTER_REJECT;
               }

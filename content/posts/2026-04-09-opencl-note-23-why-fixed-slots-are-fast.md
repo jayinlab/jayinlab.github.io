@@ -2,7 +2,7 @@
 title: "OpenCL Note #23 — 왜 고정 슬롯/디스크립터 규칙이 빠른가 (장황 비유)"
 date: 2026-04-09
 slug: "opencl-note-23-why-fixed-slots-are-fast"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "descriptor", "performance"]

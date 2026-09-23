@@ -2,7 +2,7 @@
 title: "OpenCL Note #22 — Vulkan 관점 10줄 타임라인"
 date: 2026-04-09
 slug: "opencl-note-22-vulkan-10-line-timeline"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "execution", "timeline"]

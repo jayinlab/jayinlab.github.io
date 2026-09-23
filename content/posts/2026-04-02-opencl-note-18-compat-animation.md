@@ -2,7 +2,7 @@
 title: "OpenCL Note #18 — 애니메이션 실험 #1 (JS v3): Pipeline-Descriptor 호환/비호환"
 date: 2026-04-02
 slug: "opencl-note-18-compat-animation"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "pipeline", "descriptor", "animation"]

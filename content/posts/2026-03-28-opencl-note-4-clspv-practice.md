@@ -2,7 +2,7 @@
 title: "OpenCL Note #04 — clspv 실전: OpenCL C 하나를 SPIR-V로 읽어보기"
 date: 2026-03-28
 slug: "opencl-note-4-clspv-practice"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["clspv", "spirv", "opencl"]

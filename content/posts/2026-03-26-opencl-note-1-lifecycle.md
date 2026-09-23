@@ -2,7 +2,7 @@
 title: "OpenCL Note #01 — 객체 라이프사이클과 컴파일/디스패치 시점"
 date: 2026-03-26
 slug: "opencl-note-1-lifecycle"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "execution", "lifecycle"]

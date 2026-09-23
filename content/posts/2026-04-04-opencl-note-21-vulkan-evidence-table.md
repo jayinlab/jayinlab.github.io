@@ -2,7 +2,7 @@
 title: "OpenCL Note #21 — D3 시작: Vulkan 객체 생성 근거 표(채우는 법)"
 date: 2026-04-04
 slug: "opencl-note-21-vulkan-evidence-table"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "pipeline", "descriptor"]

@@ -2,7 +2,7 @@
 title: "OpenCL Note #02 — Build/Compile 경계, Binary Path, 캐시, clspv 관여 시점"
 date: 2026-03-26
 slug: "opencl-note-2-build-and-cache"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "clspv", "spirv"]

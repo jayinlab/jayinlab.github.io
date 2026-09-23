@@ -2,7 +2,7 @@
 title: "OpenCL Note #17 — D1 초안: ANGLE 함수 체인 표(compile vs submit)"
 date: 2026-04-02
 slug: "opencl-note-17-angle-chain-table-draft"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["angle", "vulkan", "pipeline"]

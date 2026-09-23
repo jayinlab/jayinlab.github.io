@@ -2,7 +2,7 @@
 title: "OpenCL 오답노트 #02 — 부분정답/부분오답 포함 복습"
 date: 2026-04-09
 slug: "opencl-wrong-note-02"
-draft: false
+draft: true
 type: "wrong-note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "barrier"]

@@ -2,7 +2,7 @@
 title: "OpenCL Note #16 — Pipeline/Layout/Descriptor 호환성 그림으로 이해하기"
 date: 2026-04-01
 slug: "opencl-note-16-layout-compatibility-mermaid"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "pipeline", "descriptor", "mermaid"]

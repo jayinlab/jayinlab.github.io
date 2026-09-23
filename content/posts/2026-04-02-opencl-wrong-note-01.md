@@ -2,7 +2,7 @@
 title: "OpenCL 오답노트 #01 — DescriptorSet/Binding 매핑과 PM4 계층"
 date: 2026-04-02
 slug: "opencl-wrong-note-01"
-draft: false
+draft: true
 type: "wrong-note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4", "descriptor"]

@@ -2,7 +2,7 @@
 title: "OpenCL Note #13 — 종합 다이어그램 + 최종 체크리스트 (S9)"
 date: 2026-03-30
 slug: "opencl-note-10-final-map-checklist"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4"]

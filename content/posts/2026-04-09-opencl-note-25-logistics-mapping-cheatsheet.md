@@ -2,7 +2,7 @@
 title: "OpenCL Note #25 — 물류센터 비유로 외우는 전체 매핑 치트시트"
 date: 2026-04-09
 slug: "opencl-note-25-logistics-mapping-cheatsheet"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4"]

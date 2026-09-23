@@ -137,9 +137,9 @@ clEnqueueNDRangeKernel
 
 ## 관련 글
 
-- [AMD PM4 개요: Type3와 Dispatch 패킷 패밀리](/opencl-note-9-amd-pm4-overview/)
-- [Vulkan 관점 10줄 타임라인](/opencl-note-22-vulkan-10-line-timeline/)
-- [ANGLE 코드 추적 2차: SPIR-V에서 Vulkan Pipeline/Layout으로](/opencl-note-7-angle-trace-phase2/)
+- [AMD PM4 개요: Type3와 Dispatch 패킷 패밀리](/opencl-note-pm4-overview/)
+- [Vulkan 관점 10줄 타임라인](/opencl-note-vulkan-timeline/)
+- [ANGLE 코드 추적 2차: SPIR-V에서 Vulkan Pipeline/Layout으로](/opencl-note-angle-phase2/)
 
 ## 관련 용어
 

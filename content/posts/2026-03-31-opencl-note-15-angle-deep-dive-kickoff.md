@@ -2,7 +2,7 @@
 title: "OpenCL Note #15 — 심화 시작: ANGLE 함수 체인 추적 킥오프"
 date: 2026-03-31
 slug: "opencl-note-15-angle-deep-dive-kickoff"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["angle", "opencl", "vulkan"]

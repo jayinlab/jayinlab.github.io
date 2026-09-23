@@ -2,7 +2,7 @@
 title: "OpenCL Note #19 — 애니메이션 실험 #2 (JS v3): Compile Chain vs Submit Chain"
 date: 2026-04-02
 slug: "opencl-note-19-chain-animation"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["angle", "vulkan", "animation"]

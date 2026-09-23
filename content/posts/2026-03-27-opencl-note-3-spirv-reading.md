@@ -2,7 +2,7 @@
 title: "OpenCL Note #03 — SPIR-V 최소 읽기법 (clspv 산출물 해석 시작)"
 date: 2026-03-27
 slug: "opencl-note-3-spirv-reading"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["spirv", "opencl", "clspv"]

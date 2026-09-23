@@ -2,7 +2,7 @@
 title: "OpenCL Note #06 — Vulkan 용어 직관: Descriptor Set/Layout, Pipeline Layout (비유로 이해)"
 date: 2026-03-29
 slug: "opencl-note-5a-vulkan-terms-intuition"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["vulkan", "descriptor", "pipeline"]

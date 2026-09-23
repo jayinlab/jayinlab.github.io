@@ -2,7 +2,7 @@
 title: "OpenCL Quiz Problem Bank #01 — ANGLE→clspv→SPIR-V→Vulkan→PM4"
 date: 2026-04-06
 slug: "opencl-quiz-problem-bank-01"
-draft: false
+draft: true
 type: "bullet-note"
 series: "opencl-deep-dive"
 tags: ["opencl", "vulkan", "pm4", "quiz"]

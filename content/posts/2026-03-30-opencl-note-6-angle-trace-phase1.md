@@ -2,7 +2,7 @@
 title: "OpenCL Note #08 — ANGLE 코드 추적 1차: Entry → Build/Enqueue 경로 분리"
 date: 2026-03-30
 slug: "opencl-note-6-angle-trace-phase1"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["angle", "opencl", "clspv"]

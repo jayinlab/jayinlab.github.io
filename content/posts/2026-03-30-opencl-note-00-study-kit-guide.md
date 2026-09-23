@@ -2,7 +2,7 @@
 title: "OpenCL Note #00 — 실습 키트 운용법 (노트 번호 연동)"
 date: 2026-03-30
 slug: "opencl-note-00-study-kit-guide"
-draft: false
+draft: true
 type: "note"
 series: "opencl-deep-dive"
 tags: ["opencl", "tools"]

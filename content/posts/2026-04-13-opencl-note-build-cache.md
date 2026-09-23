@@ -20,11 +20,11 @@ layer: "COMP"
 ```mermaid
 flowchart TD
     A[OpenCL C 소스 문자열] -->|clCreateProgramWithSource| B[Program 객체\n소스 등록만, 컴파일 아님]
-    B -->|clBuildProgram| C[clspv 관여\nSPIR-V 생성 + Vulkan 파이프라인 준비]
-    C -->|clEnqueueNDRangeKernel| D[실행 명령 큐에 제출\nvkCmdDispatch]
+    B -->|clBuildProgram| C[clspv 관여\nSPIR-V 생성까지]
+    C -->|clEnqueueNDRangeKernel| D[local size 확정 → VkPipeline 생성\n그다음 vkCmdDispatch로 제출]
 
     E[저장된 Binary] -->|clCreateProgramWithBinary| F[Program 객체\n재컴파일 없음]
-    F -->|clBuildProgram| G[파이프라인 준비만\n소스 컴파일 생략]
+    F -->|clBuildProgram| G[SPIR-V 재사용\n소스 컴파일 생략]
     G -->|clEnqueueNDRangeKernel| D
 
     style C fill:#ffe0b2

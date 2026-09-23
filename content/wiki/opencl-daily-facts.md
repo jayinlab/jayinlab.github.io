@@ -35,7 +35,7 @@ difficulty: "intermediate"
 - SPIR-V는 소스코드가 아니라 IR이다.
 - 같은 SPIR-V라도 벤더 드라이버에 따라 최종 기계코드는 달라질 수 있다.
 
-- AMD의 wavefront(보통 64 lanes)는 같은 명령을 동시 실행한다.
+- AMD의 wavefront는 같은 명령을 동시 실행한다. 폭은 아키텍처마다 다르다 — GCN 64, RDNA는 wave32가 native.
 - 분기(divergence)가 크면 일부 lane이 유휴 상태가 되어 효율이 떨어진다.
 
 - 드라이버 백엔드는 고수준 dispatch를 커맨드 스트림으로 직렬화해 GPU 큐에 넣는다.

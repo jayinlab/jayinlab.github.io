@@ -40,10 +40,10 @@ GPU는 하나의 Compute Unit(CU) 안에 **여러 wavefront를 동시에 올려�
 
 ### Wavefront란?
 
-[[wavefront]]는 AMD GPU에서 **같은 명령을 동시에 실행하는 64개 work-item의 묶음**이다. CU의 SIMD 유닛이 64 lanes를 동시에 처리한다.
+[[wavefront]]는 AMD GPU에서 **같은 명령을 동시에 실행하는 work-item 묶음**이다. **묶음 크기는 아키텍처마다 다르다** — GCN은 64, RDNA는 32가 native다(NVIDIA warp는 32). 아래 예시와 숫자는 전부 **GCN 기준(wave64)**이고, RDNA에서는 wavefront 수와 레지스터 계산이 달라진다.
 
 ```
-work-group (예: 256 work-item)
+work-group (예: 256 work-item), wave64 기준
   └── wavefront #0: work-item 0–63
   └── wavefront #1: work-item 64–127
   └── wavefront #2: work-item 128–191
@@ -74,16 +74,16 @@ GPU wavefront는 다르다. **각 wavefront는 CU 레지스터 파일에 자신�
 
 ### Occupancy와의 관계
 
-"얼마나 많은 wavefront를 CU에 올릴 수 있는가" = [[gpu-occupancy]].
+"얼마나 많은 wavefront를 CU에 올릴 수 있는가" = [[occupancy]].
 
 wavefront를 많이 올릴수록 latency hiding 능력이 올라간다. 하지만 레지스터와 LDS 사용량이 크면 올릴 수 있는 wavefront 수가 줄어든다.
 
 ```
-레지스터를 64개 쓰는 커널:
-  레지스터 파일 256KB / (64 lanes × 64 regs × 4 bytes) = 최대 16 wavefronts
+레지스터를 64개 쓰는 커널 (wave64, 레지스터 파일 256KB 가정):
+  256KB / (64 lanes × 64 regs × 4 bytes) = 최대 16 wavefronts
 
 레지스터를 128개 쓰는 커널:
-  레지스터 파일 256KB / (64 lanes × 128 regs × 4 bytes) = 최대 8 wavefronts
+  256KB / (64 lanes × 128 regs × 4 bytes) = 최대 8 wavefronts
   → latency hiding 능력 절반
 ```
 
@@ -121,4 +121,4 @@ wavefront를 많이 올릴수록 latency hiding 능력이 올라간다. 하지�
 
 ## 관련 용어
 
-[[wavefront]], [[work-group]], [[NDRange]], [[local-memory]], [[gpu-occupancy]]
+[[wavefront]], [[work-group]], [[NDRange]], [[local-memory]], [[occupancy]]

@@ -10,6 +10,8 @@ related: ["work-group", "work-item", "barrier"]
 
 **같은 [[work-group]] 안의 work-item들이 공유하는 고속 메모리**. GPU 하드웨어의 Shared Memory / LDS(Local Data Store)에 매핑된다.
 
+> **CUDA의 `local memory`와 이름만 같고 정반대다.** OpenCL `__local` = work-group 공유 · on-chip · 빠름. CUDA `local memory` = thread 전용 · device memory · 느림. CUDA에서 이것에 해당하는 건 `__shared__`다 → [CUDA쪽 설명](/gpu-fun-fact-local-memory/)
+
 ## 상세 설명
 
 GPU 메모리 계층:

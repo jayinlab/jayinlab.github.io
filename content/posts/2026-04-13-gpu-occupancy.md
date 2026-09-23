@@ -23,13 +23,15 @@ layer: "HW"
 
 ```
 최대 wavefront 수 = MIN(
-  레지스터 파일 크기 / (레지스터/WF × 64 lanes × 4B),
+  레지스터 파일 크기 / (레지스터/WF × wave 폭 × 4B),
   LDS 크기 / (LDS/WG × WG당 WF 수),
-  하드웨어 WF 한도  ← 보통 16~32
+  하드웨어 wave slot 한도
 )
 ```
 
 세 제약 중 **가장 작은 값**이 실제 occupancy를 결정한다.
+
+> **wave 폭부터 확인할 것.** 아래 숫자는 전부 **GCN 기준(wave64)**이다. RDNA는 wave32가 native라 wavefront 하나가 쓰는 레지스터가 절반이고, **같은 kernel이라도 결론이 2배 달라진다.** 레지스터 파일 크기·LDS 크기·wave slot 한도도 세대마다 다르니 자기 GPU 값으로 바꿔 넣어야 한다 → [[wavefront]]
 
 ---
 
@@ -45,7 +47,7 @@ layer: "HW"
 
 ### 레지스터 파일 제한
 
-AMD RDNA 기준 CU당 레지스터 파일 = ~256 KB.
+예시로 **CU당 레지스터 파일 256 KB · wave64 · wave slot 16개**를 가정한다(GCN 계열의 대략값).
 
 ```
 커널이 레지스터 32개 사용:
@@ -61,12 +63,12 @@ AMD RDNA 기준 CU당 레지스터 파일 = ~256 KB.
 
 ### LDS 제한
 
-CU당 LDS = 64 KB (AMD RDNA 기준).
+CU당 LDS = 64 KB로 가정한다.
 
 ```
 work-group당 LDS 32 KB 사용:
   64 KB ÷ 32 KB = 2 work-group만 CU에 올라감
-  work-group = 64 work-item = 1 wavefront 라면 → 2 WF만 가능!
+  work-group = 64 work-item = 1 wavefront(wave64)라면 → 2 WF만 가능!
 ```
 
 LDS를 많이 쓰는 커널(reduction, matrix tiling 등)은 이 한도에 잘 걸린다.

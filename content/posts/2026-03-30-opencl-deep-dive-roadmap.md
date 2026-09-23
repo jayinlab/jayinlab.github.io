@@ -1,7 +1,7 @@
 ---
 title: "OpenCL Note #14 — 심화 로드맵 Overview (다음 라운드)"
 date: 2026-03-30
-slug: "opencl-deep-dive-roadmap"
+slug: "opencl-note-14-deep-dive-roadmap"
 draft: false
 type: "note"
 series: "opencl-deep-dive"

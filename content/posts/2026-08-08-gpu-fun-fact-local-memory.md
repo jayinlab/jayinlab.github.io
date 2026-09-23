@@ -1,5 +1,5 @@
 ---
-title: "GPU의 local memory는 왜 멀리 있을까"
+title: "CUDA의 local memory는 왜 멀리 있을까 (OpenCL __local과 정반대다)"
 date: 2026-08-08
 slug: "gpu-fun-fact-local-memory"
 draft: false
@@ -8,6 +8,15 @@ series: "gpu-fun-facts"
 tags: ["gpu", "cuda", "memory", "compiler", "performance"]
 difficulty: "beginner"
 ---
+
+> **먼저 갈라놓고 읽을 것 — 같은 단어가 정반대를 뜻한다.**
+>
+> | | 누가 보나 | 어디 있나 | 빠른가 |
+> |---|---|---|---|
+> | **CUDA `local memory`** (이 글) | thread 하나만 | **device memory** (global과 같은 곳) | **느리다** |
+> | **OpenCL `__local`** ([[local-memory]]) | work-group 전체가 공유 | **LDS / on-chip** | **빠르다** |
+>
+> CUDA에서 OpenCL `__local`에 해당하는 건 `__shared__`다. 이 글은 **CUDA 쪽 이야기**이고, OpenCL `__local`을 찾아왔다면 [용어집](/glossary/local-memory/)으로 갈 것.
 
 CUDA code에서 `local memory`라는 말을 만나면 아주 가까운 작은 창고를 떠올리기 쉽다. CPU의 stack처럼 각 thread 바로 옆에 있을 것 같지만, 실제 뜻은 위치가 아니라 **주인**이다. 다른 thread와 공유하지 않고 한 thread에만 보이는 memory라는 뜻이며, 물리적으로는 global memory와 같은 device memory 쪽에 놓인다.
 

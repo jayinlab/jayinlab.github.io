@@ -1,7 +1,7 @@
 ---
 title: "GPU에는 왜 복사 전용 engine이 있을까"
 date: 2026-08-01
-slug: "gpu-fun-fact-copy-engine"
+slug: "gpu-fun-fact-copy-engine-dma"
 draft: false
 type: "note"
 series: "gpu-fun-facts"

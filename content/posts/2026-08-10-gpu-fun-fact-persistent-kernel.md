@@ -1,7 +1,7 @@
 ---
 title: "GPU kernel은 왜 퇴근하지 않고 기다릴까"
 date: 2026-08-10
-slug: "gpu-fun-fact-persistent-kernel"
+slug: "gpu-fun-fact-persistent-kernel-queue"
 draft: false
 type: "note"
 series: "gpu-fun-facts"

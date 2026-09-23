@@ -1,7 +1,7 @@
 ---
 title: "GPU 작업은 왜 잠깐 멈추기도 어려울까"
 date: 2026-08-22
-slug: "gpu-fun-fact-preemption-granularity"
+slug: "gpu-fun-fact-preemption-granularity-intro"
 draft: false
 type: "note"
 series: "gpu-fun-facts"

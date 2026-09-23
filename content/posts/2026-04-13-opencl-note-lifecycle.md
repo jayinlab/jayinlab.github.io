@@ -37,12 +37,14 @@ sequenceDiagram
     Note over Driver: 소스 등록 (컴파일 아직 안 함)
 
     App->>Driver: clBuildProgram()
-    Note over Driver: 컴파일/파이프라인 준비 ← 여기서 clspv 관여
+    Note over Driver: clspv가 SPIR-V 생성 ← 컴파일은 여기
+    Note over Driver: work-group 크기는 spec constant로 남겨둔다
 
     App->>Driver: clCreateKernel() + clSetKernelArg()
     Note over Driver: 실행 엔트리 + 인자 바인딩
 
     App->>Driver: clEnqueueNDRangeKernel()
+    Note over Driver: local size가 정해짐 → 여기서 VkPipeline 생성
     Note over Driver: 명령 큐에 제출 (즉시 실행 아님)
     Driver->>GPU: vkCmdDispatch (실제 제출)
     Note over GPU: 이 시점에 GPU가 실제로 일한다
@@ -68,7 +70,7 @@ sequenceDiagram
 ## 핵심 오해 3가지
 
 **오해 1**: `clEnqueueNDRangeKernel`을 부르면 그때 컴파일된다?  
-→ 아니다. 컴파일은 `clBuildProgram` 단계에서 일어난다. Enqueue는 실행 제출이다.
+→ **반은 맞다.** OpenCL C → SPIR-V 컴파일은 `clBuildProgram`에서 끝난다. 하지만 **VkPipeline은 enqueue에서 만들어진다** — clspv가 work-group 크기를 specialization constant로 남기는데, 그 값은 `clEnqueueNDRangeKernel`의 local size로만 정해지기 때문이다. 그래서 **local size가 달라지면 pipeline이 새로 생긴다** → [ANGLE의 VkPipeline 증식](/vkpipeline-specialization-constants-proliferation/)
 
 **오해 2**: `clFinish`가 결과를 받아오는 API다?  
 → 아니다. `clFinish`는 "큐에 제출된 모든 명령이 완료될 때까지 CPU가 기다리는" 동기화 API다.
@@ -86,7 +88,7 @@ sequenceDiagram
 |---------------|-------------|
 | 코드 변환/준비 경로 | 실행 명령 기록/제출 경로 |
 | clCreateProgram → clBuildProgram | clEnqueueNDRangeKernel → clFinish |
-| clspv → SPIR-V → 파이프라인 생성 | vkCmdDispatch → queue submit |
+| clspv → SPIR-V (spec constant 남김) | **VkPipeline 생성** → vkCmdDispatch → queue submit |
 
 ---
 

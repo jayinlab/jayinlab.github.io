@@ -1,6 +1,7 @@
 ---
 title: "Occupancy — CU 슬롯을 얼마나 채웠나"
 date: 2026-04-13
+lastmod: 2026-09-25
 slug: "gpu-occupancy"
 draft: false
 type: "note"
@@ -23,15 +24,17 @@ layer: "HW"
 
 ```
 최대 wavefront 수 = MIN(
-  레지스터 파일 크기 / (레지스터/WF × wave 폭 × 4B),
-  LDS 크기 / (LDS/WG × WG당 WF 수),
+  floor(레지스터 파일 크기 / wavefront당 레지스터 사용량),
+  floor(LDS 크기 / WG당 LDS) × WG당 WF 수,
   하드웨어 wave slot 한도
 )
 ```
 
 세 제약 중 **가장 작은 값**이 실제 occupancy를 결정한다.
 
-> **wave 폭부터 확인할 것.** 아래 숫자는 전부 **GCN 기준(wave64)**이다. RDNA는 wave32가 native라 wavefront 하나가 쓰는 레지스터가 절반이고, **같은 kernel이라도 결론이 2배 달라진다.** 레지스터 파일 크기·LDS 크기·wave slot 한도도 세대마다 다르니 자기 GPU 값으로 바꿔 넣어야 한다 → [[wavefront]]
+> **2026-09-25 정정:** 이전 식은 LDS 항에서 `WG당 WF 수`를 분모에 넣어 단위와 계산 방향이 틀렸다. 먼저 LDS로 상주 가능한 work-group 수를 구한 뒤, work-group당 wavefront 수를 곱해야 한다.
+
+> **아래 수치는 원리를 보여주기 위한 단순화된 wave64 가상 CU 예시다.** 실제 하드웨어에서는 VGPR/SGPR 구분과 할당 granularity, SIMD별 register file, CU당 최대 work-group/work-item 수 등도 함께 제한한다. RDNA도 wave32와 wave64를 모두 지원할 수 있으므로 실행 wave size와 해당 GPU의 자원 한도를 확인해야 한다 → [[wavefront]]
 
 ---
 
@@ -47,7 +50,7 @@ layer: "HW"
 
 ### 레지스터 파일 제한
 
-예시로 **CU당 레지스터 파일 256 KB · wave64 · wave slot 16개**를 가정한다(GCN 계열의 대략값).
+예시로 **CU당 레지스터 파일 256 KB · wave64 · wave slot 16개**인 단순화된 가상 CU를 가정한다.
 
 ```
 커널이 레지스터 32개 사용:
@@ -56,7 +59,7 @@ layer: "HW"
 
 커널이 레지스터 128개 사용:
   128 regs × 64 lanes × 4 bytes = 32 KB per wavefront
-  256 KB ÷ 32 KB = 8 WF 가능 → occupancy 8/16 = 50%
+  256 KB ÷ 32 KB = 8 WF 가능 → occupancy 상한 8/16 = 50%
 ```
 
 레지스터를 많이 쓸수록 wavefront 수가 줄어든다.
@@ -69,6 +72,9 @@ CU당 LDS = 64 KB로 가정한다.
 work-group당 LDS 32 KB 사용:
   64 KB ÷ 32 KB = 2 work-group만 CU에 올라감
   work-group = 64 work-item = 1 wavefront(wave64)라면 → 2 WF만 가능!
+
+work-group = 256 work-item = 4 wavefront(wave64)라면:
+  2 work-group × 4 WF/WG = 8 WF 가능
 ```
 
 LDS를 많이 쓰는 커널(reduction, matrix tiling 등)은 이 한도에 잘 걸린다.
@@ -101,7 +107,7 @@ Occupancy 낮음 + compute-heavy 커널:
 
 | 상황 | 권장 |
 |------|------|
-| 메모리를 많이 읽는 커널 | occupancy 최대화 (레지스터/LDS 줄이기) |
+| 메모리를 많이 읽는 커널 | latency를 숨길 만큼의 occupancy를 확보하고 측정 |
 | 복잡한 수학 연산 위주 | occupancy보다 ILP(명령 병렬성) 집중 |
 | LDS tiling으로 성능 최적화 | LDS 증가 → occupancy 하락 trade-off 확인 |
 

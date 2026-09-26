@@ -17,4 +17,4 @@ CUDA Driver API의 모습은 이 장면을 꽤 솔직하게 드러낸다. 각 ke
 
 왜 중요할까? Kernel launch가 단순한 함수 호출이 아니라는 사실은, 많은 작은 kernel에서 launch overhead가 눈에 띄는 이유와 pointer만 넘겼는데 data까지 전송됐다고 착각하는 버그를 함께 설명한다. 화면의 괄호는 같아도 CPU call stack을 건너가는 호출이 아니라, **실행 명령과 인자를 GPU 쪽 우편함에 넣는 일**에 더 가깝다.
 
-Source note: [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/03-advanced/driver-api.html#kernel-execution)는 `cuLaunchKernel()`의 parameter가 각 원본 영역에서 복사되거나, device-side alignment에 맞춘 단일 parameter buffer로 전달된다고 설명한다. [CUDA Driver API](https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXEC.html)는 `kernelParams`의 각 항목이 실제 parameter를 복사할 memory 영역을 가리킨다고 명시한다.
+Source note: [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/03-advanced/driver-api.html#kernel-execution)는 `cuLaunchKernel()`의 parameter가 각 원본 영역에서 복사되거나, device-side alignment에 맞춘 단일 parameter buffer로 전달된다고 설명한다. [CUDA Driver API](https://docs.nvidia.com/cuda/cuda-driver-api/cuda_driver_api/group__CUDA__EXEC.html)는 `kernelParams`의 각 항목이 실제 parameter를 복사할 memory 영역을 가리킨다고 명시한다.

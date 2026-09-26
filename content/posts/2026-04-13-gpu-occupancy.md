@@ -97,7 +97,7 @@ Occupancy가 높다고 무조건 빠른 것은 아니다. 하지만 **메모리 
 ```
 Occupancy 낮음 + memory latency 긴 커널:
   wavefront A가 VRAM 기다릴 때 교체할 WF가 없음 → CU 유휴
-  → [[wavefront-scheduling-latency-hiding]] 참고
+  → wavefront 스케줄링 / latency hiding 노트 참고 (아래 「관련 글」)
 
 Occupancy 낮음 + compute-heavy 커널:
   영향 적음 — 메모리 기다리는 시간 자체가 짧기 때문

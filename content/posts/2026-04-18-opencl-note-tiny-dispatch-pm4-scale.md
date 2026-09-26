@@ -76,4 +76,4 @@ difficulty: "beginner"
 
 ## 관련 용어
 
-- [[pm4]], [[dispatch]], [[command-buffer]], [[driver-backend]], [[submit-overhead]], [[tiny-dispatch]]
+- [[pm4-packet]], [[dispatch]], [[command-buffer]], [[driver-backend]], [[submit-overhead]], [[tiny-dispatch]]

@@ -58,7 +58,7 @@ __kernel void example(__global float* in, __global float* out) {
 ```
 
 - AMD RDNA 기준 wavefront(64 lanes)당 ~256 KB 레지스터 파일
-- 레지스터를 많이 쓸수록 동시에 실행할 수 있는 wavefront 수가 줄어든다 → [[gpu-occupancy]] 참고
+- 레지스터를 많이 쓸수록 동시에 실행할 수 있는 wavefront 수가 줄어든다 → [[occupancy]] 참고
 
 ---
 
@@ -112,7 +112,7 @@ float x = in[get_global_id(0) * 64];  // work-item들이 띄엄띄엄 접근
 
 - OpenCL의 `clCreateBuffer`로 만든 버퍼가 여기 있다
 - VRAM bandwidth: ~500 GB/s (GDDR6) ~ 5 TB/s (HBM3)
-- **memory-bound 커널**은 여기서 막힌다 → [[gpu-occupancy]] + Roofline 모델 참고
+- **memory-bound 커널**은 여기서 막힌다 → [[occupancy]] + Roofline 모델 참고
 
 **coalesced access가 왜 중요한가:**
 

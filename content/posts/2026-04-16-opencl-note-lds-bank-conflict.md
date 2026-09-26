@@ -109,7 +109,7 @@ __kernel void transpose_padded(__global float* in, __global float* out) {
 ## 관련 글
 
 - [Roofline 모델](/opencl-note-roofline-model/) — memory bound 판단 프레임
-- [Memory coalescing 노트](/opencl-memory-coalescing-patterns/) — global memory 접근 패턴 최적화
+- [Memory coalescing 노트](/opencl-note-memory-coalescing/) — global memory 접근 패턴 최적화
 - [GPU 메모리 계층 전체 지도](/gpu-memory-hierarchy/) — __private/__local/__global 큰 그림
 
 ## 관련 용어

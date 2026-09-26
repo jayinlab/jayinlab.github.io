@@ -81,9 +81,9 @@ SPIR-V는 종착점이 아니라 중간 계약이고, 성능의 마지막 승부
 
 ## 관련 글
 
-- [OpenCL C → SPIR-V → Vulkan: arg 바인딩 구조 이해](/opencl-spirv-vulkan-mapping/)
-- [같은 SPIR-V인데 왜 드라이버마다 성능이 다를까?](/same-spirv-different-driver/)
-- [OpenCL dispatch가 PM4 스케일까지 내려가는 흐름](/tiny-dispatch-pm4-scale/)
+- [OpenCL C → SPIR-V → Vulkan: arg 바인딩 구조 이해](/opencl-note-spirv-vulkan-mapping/)
+- [같은 SPIR-V인데 왜 드라이버마다 성능이 다를까?](/opencl-note-same-spirv-different-driver/)
+- [OpenCL dispatch가 PM4 스케일까지 내려가는 흐름](/opencl-note-tiny-dispatch-pm4-scale/)
 
 ## 관련 용어
 

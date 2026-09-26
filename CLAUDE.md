@@ -260,6 +260,17 @@ related: ["work-group", "NDRange"]
 ```
 
 - "관련 용어"는 `[[wikilink]]` 형식으로 나열 → JS가 glossary 링크로 변환
+- **"관련 글"은 생짜 `/slug/`가 아니라 `{{< relref >}}`로 쓴다.** `relref`는 대상이 없으면 Hugo가 빌드를 실패시키는데, 생짜 경로는 아무 경고가 없다. 2026-09-26에 고친 죽은 링크 4개는 전부 생짜 경로였고 넷 다 `opencl-note-` 접두어가 빠져 있었다.
+- **"관련 용어"에 glossary에 없는 이름을 쓰면 404로 간다.** 위키링크 JS는 존재를 확인하지 않고 항상 `wikilink` 클래스를 붙이므로, 독자에게는 멀쩡한 링크로 보인다. 필요한 용어면 `content/glossary/`에 항목을 쓰고, 이름만 어긋난 거면 있는 이름으로 맞춘다.
+
+### 발행 전 검사 둘 (Hugo가 경고하지 않는 것들)
+
+```sh
+sh scripts/check-slugs.sh    # slug 충돌 — 늦은 글이 이기고 옛 글 페이지가 사라진다
+sh scripts/check-links.sh    # ①죽은 내부 링크(exit 1) ②glossary에 없는 [[용어]] 목록(막지 않음)
+```
+
+`check-links.sh`의 ②는 실패가 아니라 **다음에 쓸 용어 목록**이다.
 
 ---
 

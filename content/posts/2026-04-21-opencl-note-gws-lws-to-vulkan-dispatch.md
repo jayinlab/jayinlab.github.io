@@ -25,9 +25,11 @@ difficulty: "beginner"
   - `vkCmdDispatch(groupCountX, groupCountY, groupCountZ)`
   로 표현된다.
 
-즉,
+GWS가 LWS로 **나누어떨어지는 uniform case**라면 축마다 다음처럼 대응한다.
 
-`groupCount = ceil(GWS / LWS)`
+`groupCount = GWS / LWS`
+
+나누어떨어지지 않는 경우에는 이 식을 그대로 `ceil` 처리해 하나의 full-size Vulkan dispatch로 바꾸면 안 된다. OpenCL의 non-uniform work-group 지원 조건과 backend의 lowering 방식까지 확인해야 한다.
 
 ---
 
@@ -55,6 +57,19 @@ difficulty: "beginner"
 - 그룹 모양이 달라졌으므로 메모리 접근/coalescing/점유율 특성이 달라질 수 있다.
 
 둘 다 총 work-item은 4096으로 같지만, **실행 조직이 달라서 성능은 달라질 수 있음**.
+
+### 나누어떨어지지 않으면? GWS=100, LWS=64
+
+이 경우 OpenCL에서 논리적으로 존재하는 work-item은 정확히 100개다. non-uniform work-group이 지원되는 조건이라면 work-group은 `64 + 36`으로 나뉜다. `gid=100..127`인 OpenCL work-item이 생기는 것이 아니다.
+
+현재 확인된 ANGLE Vulkan backend는 이 NDRange를 uniform region으로 나누어 내린다.
+
+- region A: local size 64, group count 1, `gid=0..63`
+- region B: local size 36, group count 1, `gid=64..99`
+
+따라서 일반식처럼 `ceil(100/64)=2`를 계산한 뒤 local size 64인 dispatch 하나를 실행한다고 단정하면 안 된다. 다른 구현이 padded dispatch와 guard를 사용할 가능성은 있지만, 그것은 OpenCL의 보장이 아니라 구현에서 증거로 확인할 선택이다.
+
+non-uniform 지원 조건과 ANGLE의 region lowering은 [non-uniform tail은 초과 invocation을 지우는 문제가 아니다]({{< relref "2026-10-05-wrong-note-non-uniform-tail-regions.md" >}})에서 이어서 설명한다.
 
 ---
 
@@ -97,13 +112,17 @@ ANGLE/OpenCL-on-Vulkan 경로에서도 최종적으로는
 - 오해 3: Vulkan dispatch xyz가 곧 total thread 수다
   - ❌ dispatch는 group 수, 실제 thread 수는 `groupCount * local_size`
 
+- 오해 4: 나누어떨어지지 않으면 항상 `ceil(GWS/LWS)`개의 full-size group을 띄우고 남는 invocation을 자동으로 지운다
+  - ❌ OpenCL contract는 remainder work-group을 정의한다. Vulkan lowering 방식은 구현 증거를 확인해야 한다.
+
 ---
 
 ## 초압축 암기 카드
 
 - `GWS = 전체`, `LWS = 그룹`
-- `dispatch = 그룹 개수`
-- `총 work-item = 그룹 개수 × 그룹 크기`
+- uniform case: `dispatch = 그룹 개수`
+- uniform case: `총 work-item = 그룹 개수 × 그룹 크기`
+- non-uniform case: remainder work-group과 backend의 region lowering을 별도로 확인
 - `LWS=NULL -> 내부 자동 결정 -> 그래도 최종 숫자 필요`
 
 ---

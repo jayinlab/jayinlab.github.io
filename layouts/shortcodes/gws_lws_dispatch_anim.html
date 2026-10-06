@@ -69,7 +69,7 @@
     },
     {
       id: 'groupcount',
-      desc: '<span class="step-num">3</span><span class="badge-cl">OpenCL</span>→<span class="badge-vk">Vulkan</span>&nbsp;<strong>groupCount = ceil(GWS / LWS)</strong><br><span style="color:#9aa6bd;font-size:12px;">X: 64÷8=8, Y: 64÷8=8 → <code>dispatch(8, 8, 1)</code>. Vulkan에서는 group 개수를 넘깁니다.<br><span class="badge-del">배송 비유</span>&nbsp;오늘 필요한 <b>트럭 대수 = 8×8 = 64대</b>.</span>'
+      desc: '<span class="step-num">3</span><span class="badge-cl">OpenCL</span>→<span class="badge-vk">Vulkan</span>&nbsp;<strong>uniform case: groupCount = GWS / LWS</strong><br><span style="color:#9aa6bd;font-size:12px;">이 예시는 각 축이 정확히 나누어떨어집니다. X: 64÷8=8, Y: 64÷8=8 → <code>dispatch(8, 8, 1)</code>.<br><span class="badge-del">배송 비유</span>&nbsp;오늘 필요한 <b>트럭 대수 = 8×8 = 64대</b>. 남는 박스가 있는 non-uniform case는 별도 region lowering이 필요합니다.</span>'
     },
     {
       id: 'null_lws',
@@ -170,7 +170,7 @@
               <div style="flex:1;min-width:160px;border:1px solid #7ee0c633;border-radius:8px;padding:12px;background:rgba(126,224,198,.04);">
                 <div style="font-size:10px;font-weight:700;color:#7ee0c6;margin-bottom:6px;">Command Buffer (실행 시점)</div>
                 <code style="font-family:ui-monospace,monospace;font-size:12px;color:#7ee0c6;display:block;line-height:1.9;">vkCmdDispatch(8, 8, 1)</code>
-                <div style="font-size:10px;color:#6b7fa3;margin-top:6px;">← groupCount = ceil(GWS / LWS)</div>
+                <div style="font-size:10px;color:#6b7fa3;margin-top:6px;">← uniform case: groupCount = GWS / LWS</div>
               </div>
             </div>
             <div style="background:#0a0e1a;border:1px solid #2a3142;border-radius:8px;padding:10px;font-size:12px;color:#9aa6bd;text-align:center;">
@@ -208,7 +208,7 @@
         const rows = [
           ['📦 전체 박스 수',       'GWS (64×64 = 4,096)',       '—',                                   '—'],
           ['🚛 트럭 1대 처리 단위', 'LWS (8×8 = 64)',             'local_size(8,8,1) in shader',         '—'],
-          ['🚚 필요한 트럭 대수',   'ceil(GWS/LWS) = 8×8 = 64',  'vkCmdDispatch(8, 8, 1)',              'IT_DISPATCH_DIRECT DIM_X/Y/Z'],
+          ['🚚 필요한 트럭 대수',   'uniform: GWS/LWS = 8×8 = 64', 'vkCmdDispatch(8, 8, 1)',             'IT_DISPATCH_DIRECT DIM_X/Y/Z'],
           ['❓ 트럭 크기 자동결정', 'LWS = NULL',                 '드라이버/런타임이 내부 결정',         '—'],
           ['⚙️ 신호실 출발 명령',   '(내부)',                      '(드라이버 변환)',                     'IT_DISPATCH_DIRECT'],
         ];

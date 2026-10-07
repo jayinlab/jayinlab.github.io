@@ -22,7 +22,7 @@
 </style>
 
 <div class="gwd-card">
-  <div class="gwd-title">GWS / LWS → Vulkan Dispatch → PM4 (택배 비유 포함)</div>
+  <div class="gwd-title">GWS / LWS → Vulkan Dispatch → PM4 (uniform 예시, 택배 비유 포함)</div>
   <div class="ctrl-row">
     <button id="gwd-prev">← 이전</button>
     <button id="gwd-next" class="primary">다음 →</button>
@@ -77,11 +77,11 @@
     },
     {
       id: 'vulkan',
-      desc: '<span class="step-num">5</span><span class="badge-vk">Vulkan</span>&nbsp;<strong>shader local_size + vkCmdDispatch로 분리</strong><br><span style="color:#9aa6bd;font-size:12px;">LWS는 SPIR-V 셰이더에 <code>local_size</code>로 고정되고, groupCount는 <code>vkCmdDispatch(8,8,1)</code>로 넘어갑니다.<br>총 work-item = local(8×8) × groups(8×8) = 4,096 ✓</span>'
+      desc: '<span class="step-num">5</span><span class="badge-vk">Vulkan</span>&nbsp;<strong>shader local_size + vkCmdDispatch로 분리</strong><br><span style="color:#9aa6bd;font-size:12px;">LWS는 pipeline에서 확정되는 SPIR-V <code>local_size</code>와 대응하고, groupCount는 <code>vkCmdDispatch(8,8,1)</code>로 넘어갑니다.<br>총 work-item = local(8×8) × groups(8×8) = 4,096 ✓</span>'
     },
     {
       id: 'pm4',
-      desc: '<span class="step-num">6</span><span class="badge-pm4">PM4</span>&nbsp;<strong>드라이버 → IT_DISPATCH_DIRECT 패킷</strong><br><span style="color:#9aa6bd;font-size:12px;">vkCmdDispatch가 PM4 <code>IT_DISPATCH_DIRECT</code> 패킷으로 변환됩니다. DIM_X/Y/Z = groupCount.<br><span class="badge-del">배송 비유</span>&nbsp;"신호실에 트럭 8×8 출발 명령 전송"</span>'
+      desc: '<span class="step-num">6</span><span class="badge-pm4">PM4</span>&nbsp;<strong>드라이버 → AMD dispatch 패킷 (개념도)</strong><br><span style="color:#9aa6bd;font-size:12px;">이 uniform 예시에서 AMD 드라이버가 dispatch에 필요한 PM4 패킷과 상태를 만듭니다. 아래 <code>IT_DISPATCH_DIRECT</code>는 개념도이며 실제 패킷·필드는 target의 command trace로 확인해야 합니다.<br><span class="badge-del">배송 비유</span>&nbsp;"신호실에 트럭 8×8 출발 명령 전송"</span>'
     },
     {
       id: 'table',
@@ -162,9 +162,9 @@
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;">
               <div style="flex:1;min-width:160px;border:1px solid #8ab4ff33;border-radius:8px;padding:12px;background:rgba(138,180,255,.04);">
-                <div style="font-size:10px;font-weight:700;color:#8ab4ff;margin-bottom:6px;">SPIR-V 셰이더 (컴파일 타임에 고정)</div>
+                <div style="font-size:10px;font-weight:700;color:#8ab4ff;margin-bottom:6px;">SPIR-V / pipeline (생성 시 확정)</div>
                 <code style="font-family:ui-monospace,monospace;font-size:11px;color:#7ee0c6;line-height:1.9;display:block;">layout(<br>&nbsp;&nbsp;local_size_x = 8,<br>&nbsp;&nbsp;local_size_y = 8,<br>&nbsp;&nbsp;local_size_z = 1) in;</code>
-                <div style="font-size:10px;color:#6b7fa3;margin-top:6px;">← LWS가 셰이더에 박힌다</div>
+                <div style="font-size:10px;color:#6b7fa3;margin-top:6px;">← local size는 pipeline에서 확정 (specialization 가능)</div>
               </div>
               <div style="display:flex;align-items:center;font-size:24px;color:#4f648f;">+</div>
               <div style="flex:1;min-width:160px;border:1px solid #7ee0c633;border-radius:8px;padding:12px;background:rgba(126,224,198,.04);">
@@ -185,11 +185,11 @@
             <div style="flex:1;min-width:140px;border:1px solid #7ee0c633;border-radius:8px;padding:12px;background:rgba(126,224,198,.04);">
               <div style="font-size:10px;font-weight:700;color:#7ee0c6;margin-bottom:8px;">Vulkan API</div>
               <code style="font-family:ui-monospace,monospace;font-size:11px;color:#7ee0c6;line-height:1.8;display:block;">vkCmdDispatch(8, 8, 1)</code>
-              <div style="font-size:10px;color:#6b7fa3;margin-top:6px;">드라이버가 패킷으로 변환</div>
+              <div style="font-size:10px;color:#6b7fa3;margin-top:6px;">드라이버가 dispatch 명령을 인코딩</div>
             </div>
             <div style="display:flex;align-items:center;font-size:22px;color:#4f648f;">→</div>
             <div style="flex:1;min-width:190px;border:1px solid #ff909033;border-radius:8px;padding:12px;background:rgba(255,144,144,.04);">
-              <div style="font-size:10px;font-weight:700;color:#ff9090;margin-bottom:8px;">PM4 패킷</div>
+              <div style="font-size:10px;font-weight:700;color:#ff9090;margin-bottom:8px;">PM4 패킷 예시</div>
               <code style="font-family:ui-monospace,monospace;font-size:10px;color:#ff9090;display:block;line-height:1.9;">IT_DISPATCH_DIRECT {<br>&nbsp;&nbsp;DIM_X = 8,&nbsp; // groupCountX<br>&nbsp;&nbsp;DIM_Y = 8,&nbsp; // groupCountY<br>&nbsp;&nbsp;DIM_Z = 1,&nbsp; // groupCountZ<br>&nbsp;&nbsp;DISPATCH_INITIATOR<br>}</code>
             </div>
             <div style="display:flex;align-items:center;font-size:22px;color:#4f648f;">→</div>
@@ -200,7 +200,7 @@
             </div>
           </div>
           <div style="margin-top:8px;font-size:11px;color:#6b7fa3;text-align:center;">
-            <span style="color:#ffc850">🚛</span>&nbsp;"신호실 출발 명령" = IT_DISPATCH_DIRECT (DIM_X=8, DIM_Y=8, DIM_Z=1)
+            <span style="color:#ffc850">🚛</span>&nbsp;"신호실 출발 명령" — 실제 PM4 형식은 target trace 확인
           </div>`;
         break;
 
@@ -208,9 +208,9 @@
         const rows = [
           ['📦 전체 박스 수',       'GWS (64×64 = 4,096)',       '—',                                   '—'],
           ['🚛 트럭 1대 처리 단위', 'LWS (8×8 = 64)',             'local_size(8,8,1) in shader',         '—'],
-          ['🚚 필요한 트럭 대수',   'uniform: GWS/LWS = 8×8 = 64', 'vkCmdDispatch(8, 8, 1)',             'IT_DISPATCH_DIRECT DIM_X/Y/Z'],
+          ['🚚 필요한 트럭 대수',   'uniform: GWS/LWS = 8×8 = 64', 'vkCmdDispatch(8, 8, 1)',             'AMD dispatch 패킷 (target별 확인)'],
           ['❓ 트럭 크기 자동결정', 'LWS = NULL',                 '드라이버/런타임이 내부 결정',         '—'],
-          ['⚙️ 신호실 출발 명령',   '(내부)',                      '(드라이버 변환)',                     'IT_DISPATCH_DIRECT'],
+          ['⚙️ 신호실 출발 명령',   '(내부)',                      '(드라이버 변환)',                     'PM4 인코딩 (개념도)'],
         ];
         el.innerHTML = `<table class="mapping-table">
           <thead><tr>

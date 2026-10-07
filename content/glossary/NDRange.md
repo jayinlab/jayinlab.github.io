@@ -17,7 +17,8 @@ NDRange는 "N-Dimensional Range"의 약자다. 커널이 몇 개의 [[work-item]
 - 1D, 2D, 3D 중 하나로 지정 가능
 - `global_work_size`: 전체 work-item 수
 - `local_work_size`: 한 [[work-group]] 안의 work-item 수
-- `global_work_size / local_work_size` = work-group 총 개수
+- 각 축이 나누어떨어지는 **uniform case**에서는 `global_work_size / local_work_size` = 그 축의 work-group 수
+- 나누어떨어지지 않을 때는 지원 조건을 만족해야 remainder work-group을 만들 수 있다. 예를 들어 1D `GWS=100, LWS=64`라면 OpenCL work-group은 64개와 36개 work-item으로 구성되며, 128개 OpenCL work-item이 생기는 것은 아니다. Vulkan으로 내리는 방식은 구현마다 다르다.
 
 ```c
 // 예시: 1024개 work-item을 64개씩 묶어 실행

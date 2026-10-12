@@ -14,7 +14,7 @@ OpenCL 초반에는 `clFlush`와 `clFinish`를 비슷하게 느끼기 쉽다. �
 
 핵심만 먼저 정리하면:
 
-- `clFlush`: host가 queue에 쌓아둔 명령을 **device 쪽으로 밀어 넣는 힌트**
+- `clFlush`: 그 queue에 앞서 enqueue한 명령이 device에 발행되도록 **flush**한다. 명령의 완료까지 기다리지는 않는다
 - `clFinish`: queue의 이전 명령이 **모두 끝날 때까지 host를 블로킹**
 
 즉, `clFlush`는 "보내기"에 가깝고, `clFinish`는 "끝날 때까지 기다리기"에 가깝다.
@@ -35,7 +35,7 @@ for (int i = 0; i < N; ++i) {
 반대로 `clFlush`는 필요할 때만 넣어도 된다.
 
 - 짧은 작업을 enqueue한 뒤 바로 다른 host 작업을 할 때
-- 구현체/드라이버가 submit을 지연할 수 있어, 빠른 전달을 유도하고 싶을 때
+- 다른 host 작업을 계속하거나 다른 queue의 명령이 이 queue의 event를 기다릴 때, 앞서 enqueue한 명령의 발행을 명시적으로 보장해야 할 때
 
 ## 실전 기준 (간단 체크)
 

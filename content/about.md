@@ -6,6 +6,8 @@ title: "About"
 
 GPU 내부 구조와 그래픽스 API를 처음부터 뜯어보면서 남기는 학습 기록입니다. 틀린 이해를 고치는 과정도 그대로 남겨둡니다.
 
+[GPU Sim](https://jayinlab.github.io/gpu-sim/)은 이 블로그에서 공부한 Queue → PM4 → CP → CU 흐름을 직접 한 박자씩 넘겨 보는 시뮬레이터 모음입니다. Claude가 만들고 OCL이 기술 사실을 검토합니다.
+
 ## 주로 다루는 것
 
 - **OpenCL** — memory model, work-item/work-group, barrier, coalescing

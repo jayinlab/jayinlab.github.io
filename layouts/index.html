@@ -1,5 +1,6 @@
 {{ define "main" }}
   {{ $posts := where .Site.RegularPages "Section" "posts" }}
+  <p><a href="https://jayinlab.github.io/gpu-sim/">GPU Sim</a> — Queue → PM4 → CP → CU 흐름을 한 박자씩 넘겨 보세요.</p>
   <h2>Posts</h2>
   <p class="post-count">총 {{ len $posts }}개 포스트</p>
   <ul class="post-list">

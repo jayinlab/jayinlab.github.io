@@ -1,187 +1,35 @@
-<div id="cfa-root" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e6ebf5;">
+<div id="cfa-root" class="cfa">
 <style>
-#cfa-root * { box-sizing:border-box; }
-#cfa-root .cfa-card { background:#0f1624; border:1px solid #2a3142; border-radius:12px; padding:14px 16px; margin-bottom:12px; }
-#cfa-root .cfa-title { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6b7fa3; margin-bottom:10px; }
-#cfa-root .step-box { background:rgba(138,180,255,.07); border:1px solid #2a3142; border-left:3px solid #8ab4ff; border-radius:8px; padding:10px 14px; min-height:52px; line-height:1.7; margin-bottom:12px; }
-#cfa-root .step-num { display:inline-block; background:#8ab4ff; color:#0b0d12; font-weight:700; font-size:11px; border-radius:999px; padding:1px 7px; margin-right:6px; }
-#cfa-root .ctrl-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
-#cfa-root button { background:#141a26; border:1px solid #2a3142; border-radius:8px; color:#e6ebf5; padding:6px 14px; cursor:pointer; font-size:12px; transition:background .2s,border-color .2s; }
-#cfa-root button:hover { background:#1e2840; border-color:#8ab4ff; }
-#cfa-root button.primary { background:rgba(138,180,255,.15); border-color:#8ab4ff; color:#8ab4ff; font-weight:600; }
-#cfa-root .step-counter { color:#6b7fa3; font-size:12px; margin-left:auto; }
-#cfa-root .lanes { display:flex; flex-direction:column; gap:6px; }
-#cfa-root .lane { display:flex; align-items:stretch; gap:0; border-radius:8px; overflow:hidden; border:1px solid #2a3142; }
-#cfa-root .lane-label { width:80px; min-width:80px; background:#0a0e1a; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#6b7fa3; padding:10px 6px; text-align:center; border-right:1px solid #2a3142; }
-#cfa-root .lane-body { flex:1; background:#141a26; padding:8px 10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-height:44px; }
-#cfa-root .tag { display:inline-block; padding:3px 9px; border-radius:6px; font-size:11px; font-weight:600; border:1px solid; white-space:nowrap; }
-#cfa-root .tag-idle { background:rgba(107,127,163,.1); border-color:#2a3142; color:#6b7fa3; }
-#cfa-root .tag-active { background:rgba(138,180,255,.2); border-color:#8ab4ff; color:#8ab4ff; }
-#cfa-root .tag-wait { background:rgba(255,200,80,.12); border-color:#ffc850; color:#ffc850; }
-#cfa-root .tag-done { background:rgba(126,224,198,.15); border-color:#7ee0c6; color:#7ee0c6; }
-#cfa-root .tag-gpu { background:rgba(255,144,144,.12); border-color:#ff9090; color:#ff9090; }
-#cfa-root .arrow-down { text-align:center; color:#4f648f; font-size:16px; line-height:1; margin:2px 0; }
+.cfa{font:14px/1.6 system-ui,sans-serif;color:#e6ebf5;background:#0f1624;border:1px solid #2a3142;border-radius:12px;padding:18px;margin:18px 0}
+.cfa *{box-sizing:border-box}.cfa h3{font-size:16px;margin:0 0 8px}.cfa p{margin:6px 0 12px}.cfa .controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.cfa button{background:#141a26;border:1px solid #8ab4ff;border-radius:7px;color:#e6ebf5;padding:6px 12px;cursor:pointer}.cfa button:focus-visible{outline:2px solid #7ee0c6;outline-offset:2px}.cfa .step{border-left:3px solid #8ab4ff;background:#182235;border-radius:5px;padding:10px 14px;min-height:80px}.cfa .lanes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.cfa .lane{background:#141a26;border:1px solid #2a3142;border-radius:7px;padding:8px;min-height:65px}.cfa .lane b{display:block;color:#8ab4ff}.cfa small{color:#b7c4db}.cfa .fallback{border-top:1px solid #2a3142;margin-top:14px;padding-top:8px}
+@media(max-width:650px){.cfa .lanes{grid-template-columns:1fr}}
 </style>
-
-<div class="cfa-card">
-  <div class="cfa-title">clFinish() 내부 연쇄 흐름 시뮬레이터</div>
-  <div class="ctrl-row">
-    <button id="cfa-prev">← 이전</button>
-    <button id="cfa-next" class="primary">다음 단계 →</button>
-    <button id="cfa-auto">▶ 자동 재생</button>
-    <button id="cfa-reset">↺ 처음</button>
-    <span class="step-counter" id="cfa-counter">Step 0 / 7</span>
-  </div>
-  <div class="step-box" id="cfa-desc">
-    <span class="step-num">시작</span>
-    <strong>"다음 단계"를 눌러 clFinish()의 내부를 따라가세요.</strong>
-  </div>
-  <div class="lanes">
-    <div class="lane">
-      <div class="lane-label">App<br>(CPU)</div>
-      <div class="lane-body" id="cfa-l0"><span class="tag tag-idle">대기 중</span></div>
-    </div>
-    <div class="arrow-down">↕</div>
-    <div class="lane">
-      <div class="lane-label">Driver<br>(ANGLE)</div>
-      <div class="lane-body" id="cfa-l1"><span class="tag tag-idle">대기 중</span></div>
-    </div>
-    <div class="arrow-down">↕</div>
-    <div class="lane">
-      <div class="lane-label">GPU<br>Command</div>
-      <div class="lane-body" id="cfa-l2"><span class="tag tag-idle">대기 중</span></div>
-    </div>
-    <div class="arrow-down">↕</div>
-    <div class="lane">
-      <div class="lane-label">GPU<br>Execution</div>
-      <div class="lane-body" id="cfa-l3"><span class="tag tag-idle">대기 중</span></div>
-    </div>
-    <div class="arrow-down">↕</div>
-    <div class="lane">
-      <div class="lane-label">OS /<br>Kernel</div>
-      <div class="lane-body" id="cfa-l4"><span class="tag tag-idle">대기 중</span></div>
-    </div>
-  </div>
+<h3>clFinish: 완료 대기의 층위</h3>
+<p>OpenCL의 보장과 ANGLE·AMDGPU의 구현 예를 구분하며 따라가 보세요. 순서는 개념 모델이며, 특정 호출마다 모든 단계가 새로 생성된다는 뜻은 아닙니다.</p>
+<div class="controls">
+<button type="button" data-cfa="prev">← 이전</button><button type="button" data-cfa="next">다음 →</button><button type="button" data-cfa="auto">▶ 자동 재생</button><button type="button" data-cfa="reset">↺ 처음</button><span id="cfa-counter" aria-live="polite">0 / 5</span>
 </div>
-
+<div id="cfa-step" class="step" aria-live="polite">다음을 누르면 OpenCL 계약부터 시작합니다.</div>
+<div class="lanes"><div class="lane"><b>Application</b><span id="cfa-app">clFinish 호출 전</span></div><div class="lane"><b>Runtime / driver</b><span id="cfa-driver">제출·대기 전</span></div><div class="lane"><b>GPU / KMD</b><span id="cfa-gpu">작업 진행 전</span></div></div>
+<div class="fallback"><small>텍스트 요약: clFinish 호출 → 해당 큐의 미제출 명령 진행 → 큐의 앞선 명령 완료 → 런타임이 완료 확인 → 반환. ANGLE의 queue serial 대기와 GFX9 compute ring의 RELEASE_MEM은 각각 구현 예입니다.</small></div>
 <script>
-(function(){
-  const STEPS = [
-    {
-      desc: '<span class="step-num">1</span><strong>App: <code>clFinish(queue)</code> 호출</strong><br><span style="color:#9aa6bd;font-size:12px;">애플리케이션이 clFinish를 호출합니다. "이 큐의 모든 명령이 GPU에서 끝날 때까지 기다려"라는 의미입니다. CPU 스레드가 이 함수 안으로 들어갑니다.</span>',
-      lanes: [
-        '<span class="tag tag-active">clFinish(queue) 호출</span>',
-        '<span class="tag tag-idle">대기 중</span>',
-        '<span class="tag tag-idle">대기 중</span>',
-        '<span class="tag tag-idle">대기 중</span>',
-        '<span class="tag tag-idle">대기 중</span>',
-      ]
-    },
-    {
-      desc: '<span class="step-num">2</span><strong>Driver: VkFence 생성 + IT_EVENT_WRITE 패킷 삽입</strong><br><span style="color:#9aa6bd;font-size:12px;">ANGLE 드라이버가 VkFence를 생성합니다. 동시에 ring buffer에 <code>IT_EVENT_WRITE</code> 패킷을 삽입합니다 — "이 패킷을 처리하면 fence 메모리에 완료 값을 써라"는 GPU에 대한 지시입니다.</span>',
-      lanes: [
-        '<span class="tag tag-wait">진입 중 (블로킹 대기)</span>',
-        '<span class="tag tag-active">VkFence 생성</span><span class="tag tag-active">IT_EVENT_WRITE → ring buf</span>',
-        '<span class="tag tag-idle">대기 중</span>',
-        '<span class="tag tag-idle">대기 중</span>',
-        '<span class="tag tag-idle">대기 중</span>',
-      ]
-    },
-    {
-      desc: '<span class="step-num">3</span><strong>Driver: vkQueueSubmit → GPU에 명령 전달</strong><br><span style="color:#9aa6bd;font-size:12px;">드라이버가 vkQueueSubmit을 호출합니다. ring buffer에 있는 모든 명령(이전 enqueue된 커널 + IT_EVENT_WRITE 포함)이 GPU CP(Command Processor)로 전달됩니다.</span>',
-      lanes: [
-        '<span class="tag tag-wait">블로킹 대기 중</span>',
-        '<span class="tag tag-active">vkQueueSubmit</span>',
-        '<span class="tag tag-active">명령 수신 완료</span>',
-        '<span class="tag tag-idle">이전 명령 실행 중...</span>',
-        '<span class="tag tag-idle">대기 중</span>',
-      ]
-    },
-    {
-      desc: '<span class="step-num">4</span><strong>CPU: vkWaitForFences → CPU 스레드 잠듦</strong><br><span style="color:#9aa6bd;font-size:12px;">드라이버가 vkWaitForFences를 호출합니다. fence가 아직 signal되지 않았으므로 OS가 이 CPU 스레드를 sleep 상태로 전환합니다. CPU는 다른 일을 하거나 유휴 상태가 됩니다.</span>',
-      lanes: [
-        '<span class="tag tag-wait">💤 CPU 스레드 잠듦</span>',
-        '<span class="tag tag-wait">vkWaitForFences (OS 대기)</span>',
-        '<span class="tag tag-active">명령 순서대로 처리 중</span>',
-        '<span class="tag tag-gpu">이전 커널 실행 중...</span>',
-        '<span class="tag tag-wait">스레드 sleep 처리</span>',
-      ]
-    },
-    {
-      desc: '<span class="step-num">5</span><strong>GPU: 이전 모든 명령 실행 완료 → IT_EVENT_WRITE 처리</strong><br><span style="color:#9aa6bd;font-size:12px;">GPU CP가 ring buffer의 명령을 순서대로 처리합니다. 이전 dispatch들이 완료된 후, IT_EVENT_WRITE 패킷을 처리합니다 — <code>CACHE_FLUSH_AND_INV</code> 후 fence 메모리 주소에 완료 값을 기록합니다.</span>',
-      lanes: [
-        '<span class="tag tag-wait">💤 CPU 스레드 잠듦</span>',
-        '<span class="tag tag-wait">vkWaitForFences (OS 대기)</span>',
-        '<span class="tag tag-done">IT_EVENT_WRITE 처리</span>',
-        '<span class="tag tag-done">모든 명령 완료 ✓</span>',
-        '<span class="tag tag-wait">fence 신호 감지 대기</span>',
-      ]
-    },
-    {
-      desc: '<span class="step-num">6</span><strong>OS: fence 메모리 값 변경 감지 → CPU 스레드 깨움</strong><br><span style="color:#9aa6bd;font-size:12px;">GPU가 fence 메모리에 완료 값을 씁니다. OS 커널이 이 변경을 감지하고 sleep 중인 CPU 스레드를 깨웁니다. 인터럽트 또는 polling 방식 — 드라이버 구현에 따라 다릅니다.</span>',
-      lanes: [
-        '<span class="tag tag-active">스레드 깨어남 ✓</span>',
-        '<span class="tag tag-active">fence 완료 확인</span>',
-        '<span class="tag tag-done">완료</span>',
-        '<span class="tag tag-done">완료 ✓</span>',
-        '<span class="tag tag-done">스레드 wake-up 전송 ✓</span>',
-      ]
-    },
-    {
-      desc: '<span class="step-num">7</span><strong>App: clFinish() 반환</strong><br><span style="color:#9aa6bd;font-size:12px;">드라이버가 VkFence를 정리(vkDestroyFence)하고, clFinish가 반환됩니다. 이 시점 이후부터 큐에 enqueue된 모든 명령의 결과가 CPU에서 관찰 가능합니다.</span>',
-      lanes: [
-        '<span class="tag tag-done">clFinish() 반환 ✓</span>',
-        '<span class="tag tag-done">VkFence 정리 완료</span>',
-        '<span class="tag tag-done">완료</span>',
-        '<span class="tag tag-done">완료</span>',
-        '<span class="tag tag-done">완료</span>',
-      ]
-    },
+(()=>{
+  const root=document.getElementById('cfa-root');
+  const steps=[
+    {desc:'1. 앱이 clFinish(queue)를 호출합니다. 사양상 이 큐의 이전 명령 완료까지 기다립니다.',app:'clFinish 안에서 대기',driver:'큐 범위 확인',gpu:'다른 큐까지 idle일 필요 없음'},
+    {desc:'2. 런타임이 아직 제출되지 않은 명령을 진행시킵니다. ANGLE에서는 필요할 때 flush하는 경로가 있습니다.',app:'반환 전',driver:'필요하면 flush·제출',gpu:'명령을 받는 중'},
+    {desc:'3. GPU가 해당 큐의 앞선 작업을 완료합니다. GFX9 compute ring의 KMD fence 기록에는 RELEASE_MEM을 쓰는 경로가 있습니다. 패킷은 세대·ring·구현별로 다릅니다.',app:'완료 대기',driver:'완료 추적',gpu:'작업 완료·fence sequence 기록 예'},
+    {desc:'4. ANGLE 예에서는 queue serial 완료를 기다리고 관련 event·메모리 상태를 정리합니다. VkFence 신규 생성이나 host sleep은 OpenCL의 필수 단계가 아닙니다.',app:'아직 반환 전',driver:'queue serial 완료 확인',gpu:'완료'},
+    {desc:'5. clFinish가 반환합니다. 보장되는 범위는 지정한 command queue의 이전 명령입니다.',app:'호출 반환',driver:'대기 종료',gpu:'다른 큐 작업은 계속 가능'}
   ];
-
-  let step = 0, autoTimer = null;
-  const total = STEPS.length;
-
-  function render() {
-    document.getElementById('cfa-counter').textContent = 'Step ' + step + ' / ' + total;
-    if (step === 0) {
-      document.getElementById('cfa-desc').innerHTML = '<span class="step-num">시작</span><strong>"다음 단계"를 눌러 clFinish()의 내부를 따라가세요.</strong>';
-      ['cfa-l0','cfa-l1','cfa-l2','cfa-l3','cfa-l4'].forEach(id => {
-        document.getElementById(id).innerHTML = '<span class="tag tag-idle">대기 중</span>';
-      });
-      return;
-    }
-    const s = STEPS[step - 1];
-    document.getElementById('cfa-desc').innerHTML = s.desc;
-    ['cfa-l0','cfa-l1','cfa-l2','cfa-l3','cfa-l4'].forEach((id, i) => {
-      document.getElementById(id).innerHTML = s.lanes[i];
-    });
-  }
-
-  function stopAuto() {
-    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
-    document.getElementById('cfa-auto').textContent = '▶ 자동 재생';
-  }
-
-  document.getElementById('cfa-next').addEventListener('click', () => {
-    stopAuto();
-    if (step < total) { step++; render(); }
-  });
-  document.getElementById('cfa-prev').addEventListener('click', () => {
-    stopAuto();
-    if (step > 0) { step--; render(); }
-  });
-  document.getElementById('cfa-reset').addEventListener('click', () => { stopAuto(); step = 0; render(); });
-  document.getElementById('cfa-auto').addEventListener('click', () => {
-    if (autoTimer) { stopAuto(); return; }
-    document.getElementById('cfa-auto').textContent = '⏸ 일시정지';
-    if (step === 0) { step = 1; render(); }
-    autoTimer = setInterval(() => {
-      if (step >= total) { stopAuto(); return; }
-      step++; render();
-    }, 2600);
-  });
-
+  let index=0,timer=null;
+  const get=id=>root.querySelector(id);
+  function render(){const s=steps[index-1];get('#cfa-counter').textContent=index+' / '+steps.length;get('#cfa-step').textContent=s?s.desc:'다음을 누르면 OpenCL 계약부터 시작합니다.';get('#cfa-app').textContent=s?s.app:'clFinish 호출 전';get('#cfa-driver').textContent=s?s.driver:'제출·대기 전';get('#cfa-gpu').textContent=s?s.gpu:'작업 진행 전';}
+  function stop(){if(timer){clearInterval(timer);timer=null;}get('[data-cfa="auto"]').textContent='▶ 자동 재생';}
+  get('[data-cfa="prev"]').addEventListener('click',()=>{stop();index=Math.max(0,index-1);render();});
+  get('[data-cfa="next"]').addEventListener('click',()=>{stop();index=Math.min(steps.length,index+1);render();});
+  get('[data-cfa="reset"]').addEventListener('click',()=>{stop();index=0;render();});
+  get('[data-cfa="auto"]').addEventListener('click',()=>{if(timer){stop();return;}if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;if(index===steps.length)index=0;index++;render();get('[data-cfa="auto"]').textContent='⏸ 일시정지';timer=setInterval(()=>{if(index===steps.length){stop();return;}index++;render();},3000);});
   render();
 })();
 </script>

@@ -1,5 +1,5 @@
 ---
-title: "clFinish의 내부 구현 — Fence, Semaphore, Event 완전 분해"
+title: "clFinish의 완료 대기 — OpenCL 보장과 Vulkan·AMDGPU 구현 예"
 date: 2026-04-13
 slug: "clfinish-internals"
 draft: false
@@ -11,153 +11,83 @@ animation: true
 layer: "VK"
 ---
 
-`clFinish(queue)` — "큐의 모든 명령이 끝날 때까지 기다려라." 한 줄짜리 API지만, 내부에서는 Vulkan Fence, PM4 EVENT_WRITE, OS 대기 기본 요소들이 연쇄적으로 동작한다.
+> **정정 · 2026-10-15**: 이 글은 과거에 `clFinish`가 반드시 `VkFence`를 만들고 `vkWaitForFences`로 기다리며, `IT_EVENT_WRITE(CACHE_FLUSH_AND_INV)`가 fence 값을 쓴다고 설명했습니다. 이는 OpenCL의 API 보장과 특정 구현의 동작을 섞은 잘못된 일반화였습니다. 아래 본문과 애니메이션을 수정했으며, GFX9 compute ring의 fence 기록 예는 `RELEASE_MEM`으로 바로잡았습니다.
 
----
+`clFinish(queue)`의 핵심은 간단합니다. **해당 command queue에서 앞서 enqueue된 명령의 완료를 기다린다.** CPU가 어떤 Vulkan 객체로 기다리는지, GPU가 어떤 PM4 패킷으로 완료를 기록하는지는 이 API가 정하지 않습니다.
+
+> OpenCL 사양: “blocks until all previously queued OpenCL commands in a command-queue are issued to the associated device and have completed.” 즉 해당 큐의 이전 명령이 디바이스에 제출되고 완료될 때까지 호출자가 기다립니다. 다른 큐까지 전부 idle이어야 한다는 뜻은 아닙니다. [Khronos OpenCL API 사양 — Flush and Finish](https://registry.khronos.org/OpenCL/specs/unified/html/OpenCL_API.html#_flush_and_finish)
 
 {{< clfinish_anim >}}
 
-## 전체 흐름
+## 전체 흐름: 보장과 구현 예를 분리하기
 
-```
-clFinish(queue)
-  │
-  ├─ ANGLE: vkQueueSubmit + VkFence 생성
-  │         IT_EVENT_WRITE 패킷 ring buffer에 삽입
-  │
-  ├─ GPU: 모든 이전 명령 실행
-  │       IT_EVENT_WRITE → fence memory 값 갱신
-  │
-  └─ CPU: vkWaitForFences → OS가 대기
-          fence 값 변경 감지 → 스레드 재개
+```text
+OpenCL 앱: clFinish(queue) 호출
+  → 런타임: 그 큐의 미제출 명령이 있다면 제출되도록 진행
+  → 디바이스: 해당 큐의 이전 명령 완료
+  → 런타임: 완료를 확인하고 호출자에게 반환
 ```
 
----
-
-## 각 동기화 기본 요소
-
-### Fence — CPU가 GPU 완료를 기다릴 때
-
-```c
-// Vulkan fence 흐름
-VkFence fence;
-vkCreateFence(device, &fenceInfo, NULL, &fence);
-
-vkQueueSubmit(queue, 1, &submitInfo, fence);  // GPU 작업 제출 + fence 연결
-
-vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);  // CPU 블로킹 대기
-// ← 여기서 CPU 스레드가 잠든다 (OS 레벨 대기)
-// GPU가 완료하면 fence에 signal → OS가 스레드 깨움
-```
-
-`clFinish`는 내부적으로 이 패턴을 사용한다.
+ANGLE의 Vulkan backend에서는 `finishInternal()` 경로에서 필요하면 명령을 flush하고 **queue serial**의 완료를 기다립니다. `finishQueueSerialInternal()`은 완료 후 관련 메모리 객체와 event 상태도 정리합니다. 이것은 구현 예이지 `clFinish = VkFence 생성`이라는 API 계약이 아닙니다. [ANGLE `CLCommandQueueVk.cpp`](https://github.com/google/angle/blob/main/src/libANGLE/renderer/vulkan/CLCommandQueueVk.cpp)
 
 ```mermaid
 sequenceDiagram
     participant App as Application (CPU)
-    participant Driver as Driver
+    participant CL as OpenCL runtime (ANGLE 예)
     participant GPU
-    App->>Driver: clFinish(queue)
-    Driver->>Driver: VkFence 생성
-    Driver->>GPU: vkQueueSubmit (IT_EVENT_WRITE 포함)
-    Driver->>App: vkWaitForFences (CPU 블로킹)
-    Note over App: CPU 스레드 잠듦
-    GPU->>GPU: 이전 명령 모두 실행
-    GPU->>Driver: IT_EVENT_WRITE → fence memory 값 갱신
-    Driver->>App: fence signal 감지 → 스레드 깨움
-    Note over App: clFinish 반환
+    App->>CL: clFinish(queue)
+    CL->>CL: 필요하면 미제출 작업 flush
+    CL->>GPU: 기록된 작업 제출 (구현 방식)
+    CL->>CL: queue serial 완료 대기
+    GPU-->>CL: 해당 serial까지 작업 완료
+    CL->>CL: event·메모리 상태 정리
+    CL-->>App: clFinish 반환
 ```
 
-### Semaphore — GPU와 GPU 사이 동기화
+대기 중 host thread가 실제로 sleep하는지, 잠시 polling하는지, 어떤 OS primitive를 쓰는지는 구현과 상황에 달려 있습니다.
 
-Fence가 CPU-GPU 사이라면, Semaphore는 **GPU Queue와 Queue 사이**다.
+## Vulkan의 Fence·Semaphore·Event는 각각 무엇인가
 
-```c
-// VkSemaphore: Queue A 완료 후 Queue B 시작
-vkQueueSubmit(queueA, 1, &submitA, VK_NULL_HANDLE);  // signal semaphore
+이 셋은 **Vulkan 동기화 도구의 예**이지 OpenCL 함수와 일대일로 짝지어지는 물건이 아닙니다.
 
-VkSubmitInfo submitB = {
-    .waitSemaphoreCount = 1,
-    .pWaitSemaphores = &semaphore,    // queueA가 signal할 때까지 대기
-    .pWaitDstStageMask = &waitStage,
-};
-vkQueueSubmit(queueB, 1, &submitB, fence);
+| Vulkan 도구 | 대표적인 역할 | 주의할 점 |
+|---|---|---|
+| `VkFence` | host가 queue 제출 완료를 확인·대기 | 어떤 OpenCL `clFinish`도 반드시 새 `VkFence`를 만들 필요는 없음 |
+| `VkSemaphore` | queue 제출 사이의 GPU-side 의존성 | OpenCL event wait-list와 일대일 대응하지 않음 |
+| `VkEvent` | command buffer 안에서 설정·대기하는 device-side 동기화 | OpenCL event나 user event와 다른 객체 |
+
+예를 들어 Vulkan 애플리케이션은 `vkQueueSubmit`에 `VkFence`를 연결하고 `vkWaitForFences`로 기다릴 수 있습니다. **이것은 가능한 Vulkan 패턴**이지 ANGLE의 `clFinish` 호출 순서를 재현한 코드는 아닙니다. semaphore는 제출 사이 의존성, event는 command buffer 내부 의존성 표현에 쓰일 수 있지만, 실제 OpenCL backend의 선택은 별도로 확인해야 합니다.
+
+## PM4 수준: GFX9 compute ring의 fence 기록 예
+
+OpenCL API 호출에서 특정 PM4 opcode로 곧장 내려가는 고정된 대응은 없습니다. AMDGPU의 **GFX9 compute ring fence 방출 경로**에서는 KMD가 `PACKET3_RELEASE_MEM`을 사용해 지정한 주소에 fence sequence 값을 기록합니다. 이 완료 기록은 host가 제출된 작업의 진행을 추적하는 데 쓰입니다. [Linux amdgpu `gfx_v9_0.c`](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/amd/amdgpu/gfx_v9_0.c)
+
+```text
+GFX9 compute ring의 한 예:
+  이전 작업 진행 → KMD가 넣은 RELEASE_MEM 실행
+  → fence 주소에 sequence 값 기록 → 대기 경로가 완료를 관찰
 ```
 
-```mermaid
-sequenceDiagram
-    participant QA as Queue A (GPU)
-    participant QB as Queue B (GPU)
-    participant CPU
-    QA->>QA: 작업 실행
-    QA->>QB: Semaphore signal (완료)
-    QB-->>QB: Semaphore wait 해제
-    QB->>QB: 작업 시작
-    QB->>CPU: Fence signal
-```
-
-### Event — 파이프라인 내부의 세밀한 동기화
-
-`VkEvent`는 Fence/Semaphore보다 세밀하다. 파이프라인 내부의 특정 스테이지가 끝났는지를 체크한다.
-
-```c
-vkCmdSetEvent(cmdBuf, event, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-// ... 다른 명령들 ...
-vkCmdWaitEvents(cmdBuf, 1, &event,
-    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,   // src
-    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,   // dst
-    ...);
-```
-
----
-
-## IT_EVENT_WRITE — PM4 수준에서 무슨 일이 일어나는가
-
-`clFinish` → `vkQueueSubmit` → 드라이버가 ring buffer에 `IT_EVENT_WRITE` 패킷을 삽입한다.
-
-```
-IT_EVENT_WRITE 패킷:
-  Header: Type=3, Opcode=0x46, Count=3
-  EVENT_TYPE: CACHE_FLUSH_AND_INV  ← 캐시 flush + invalidate
-  ADDRESS_LO: fence 메모리 주소 하위 32bit
-  ADDRESS_HI: fence 메모리 주소 상위 32bit
-```
-
-GPU CP가 이 패킷을 처리하면:
-1. 이전 모든 명령의 메모리 쓰기가 flush된다
-2. 지정한 메모리 주소에 완료 값을 쓴다
-3. CPU는 이 메모리 주소를 polling하거나 OS interrupt로 감지한다
-
----
-
-## 세 가지 동기화 기본 요소 비교
-
-| | Fence | Semaphore | Event |
-|--|-------|-----------|-------|
-| **대상** | CPU ↔ GPU | GPU ↔ GPU (Queue 간) | GPU 내부 (파이프라인 내) |
-| **세밀도** | submit 단위 | submit 단위 | stage 단위 |
-| **CPU 블로킹** | O (vkWaitForFences) | X | X |
-| **OpenCL 대응** | clFinish, clWaitForEvents | (없음, 내부 처리) | clSetUserEventStatus |
-| **PM4 패킷** | IT_EVENT_WRITE | IT_RELEASE_MEM | IT_EVENT_WRITE |
-
----
+기존 글의 `IT_EVENT_WRITE(CACHE_FLUSH_AND_INV)` 패킷 예시는 **이 fence 값 기록의 설명으로 틀렸습니다.** `EVENT_WRITE`의 cache event와 fence sequence 쓰기를 동일시하면 안 됩니다. cache 가시성 요구와 완료 신호는 관련될 수 있지만 서로 같은 동작이 아니며, 실제 패킷·대기 경로는 GPU 세대, ring 종류, 드라이버 구현에 따라 달라집니다.
 
 ## OpenCL 관점 정리
 
-| OpenCL API | 내부 동작 |
-|------------|----------|
-| `clFinish(queue)` | VkFence + vkWaitForFences (CPU 블로킹) |
-| `clFlush(queue)` | vkQueueSubmit (제출만, 대기 없음) |
-| `clWaitForEvents(events)` | VkEvent 또는 Fence의 조합 |
-| `clEnqueueBarrierWithWaitList` | vkCmdPipelineBarrier |
+| OpenCL API | 사양이 보장하는 것 | 구현 예·주의점 |
+|---|---|---|
+| `clFinish(queue)` | 그 큐의 이전 명령을 제출하고 완료까지 기다림 | ANGLE은 queue serial 대기 경로 사용. `VkFence` 생성은 필수가 아님 |
+| `clFlush(queue)` | 그 큐의 이전 명령이 **언젠가** 디바이스에 제출되도록 함; 완료 대기 아님 | Vulkan backend에서 제출 호출이 필요할 수 있지만 `clFlush = vkQueueSubmit 한 번`은 아님 |
+| `clWaitForEvents(events)` | 지정한 event들의 완료를 기다림 | OpenCL event가 곧 `VkEvent`라는 뜻이 아님 |
+| `clEnqueueBarrierWithWaitList` | 해당 큐의 명령 의존성을 형성 | Vulkan barrier·동기화 명령의 조합은 구현에 따름 |
+
+핵심 구분은 **완료를 기다리는 OpenCL 계약**, **Vulkan backend가 선택한 대기 메커니즘**, **AMDGPU가 완료를 기록하는 패킷**입니다. 세 층을 같은 이름의 “fence” 하나로 합치면 디버깅할 때 길을 잃기 쉽습니다.
 
 ---
 
 ## 관련 글
 
-- [vkCmdPipelineBarrier 깊이 파기](/vulkan-pipeline-barrier/) — GPU 내부 순서 보장
-- [PM4 Indirect Buffer](/pm4-indirect-buffer/) — IT_EVENT_WRITE가 IB와 어떻게 함께 쓰이는가
-- [PM4 제출 흐름](/pm4-submit-flow-animation/) — ring buffer에 IT_EVENT_WRITE가 어떻게 들어가는가
+- [vkCmdPipelineBarrier 깊이 파기](/vulkan-pipeline-barrier/) — GPU 내부 순서와 메모리 의존성
+- [PM4 Indirect Buffer](/pm4-indirect-buffer/) — IB에 담기는 PM4 흐름
+- [PM4 제출 흐름](/pm4-submit-flow-animation/) — ring buffer와 제출 경로
 
 ## 관련 용어
 
